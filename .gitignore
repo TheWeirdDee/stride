@@ -49,8 +49,8 @@ coverage/
 *.tsbuildinfo
 next-env.d.ts
 
-# Vercel
-.vercel
+# Netlify
+.netlify/
 
 # Misc
 *.pem
