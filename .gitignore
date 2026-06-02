@@ -1,41 +1,69 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Dependencies
+node_modules/
+.npm
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+# Environment files — NEVER commit these
+# Matches .env, .env.local, .env.production, .env.staging, etc. in any folder
+**/.env
+**/.env.*
+!**/.env.example
 
-# testing
-/coverage
+# Build outputs
+.next/
+out/
+dist/
+build/
 
-# next.js
-/.next/
-/out/
+# Hardhat
+contracts/artifacts/
+contracts/cache/
+contracts/typechain-types/
+contracts/node_modules/
 
-# production
-/build
+# Deployment records (auto-generated, contain addresses not secrets)
+# Uncomment the line below if you want to keep them out of git:
+# contracts/deployments/
 
-# misc
+# Supabase local
+supabase/.branches/
+supabase/.temp/
+
+# OS
 .DS_Store
-*.pem
+Thumbs.db
 
-# debug
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# Testing
+coverage/
 
-# vercel
-.vercel
-
-# typescript
+# TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Vercel
+.vercel
+
+# Misc
+*.pem
+*.key
+*.p12
+*.pfx
+keystore*.json
+**/secrets.*
+backend/node_modules/
+
+# Ignore all markdown files except README
+**/*.md
+!**/README.md
+!**/readme.md
+!**/README.MD
+!**/README
