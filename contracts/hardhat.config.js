@@ -19,7 +19,6 @@ module.exports = {
         ? [process.env.DEPLOYER_PRIVATE_KEY]
         : [],
       chainId: 42220,
-      gasPrice: 5000000000,
     },
     alfajores: {
       url: "https://alfajores-forno.celo-testnet.org",
