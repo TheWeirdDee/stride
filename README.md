@@ -1,10 +1,21 @@
-# Stride 🏃
+# Stride
 
 > Commit to your movement. Prove it on-chain. Get rewarded.
 
 Stride is a MiniPay-native fitness accountability app built on Celo. Users stake cUSD as a personal commitment to a walk or run goal, track their live GPS route, and automatically receive their stake back plus a bonus reward when they complete it.
 
 **No competition. No leaderboards. Just you, your goal, and your word on-chain.**
+
+---
+
+## Deployed Contracts — Celo Mainnet
+
+| Contract | Address |
+|---|---|
+| StrideRewardPool | [0xf9A538c04f580eDf8c51069555ED6B880552C337](https://celoscan.io/address/0xf9A538c04f580eDf8c51069555ED6B880552C337#code) |
+| StrideCommitment | [0x3ebbFE73400E5D65477c61EE3b5278c56fBa6a77](https://celoscan.io/address/0x3ebbFE73400E5D65477c61EE3b5278c56fBa6a77#code) |
+
+Both contracts are verified on Celoscan.
 
 ---
 
@@ -24,14 +35,14 @@ Stride is a MiniPay-native fitness accountability app built on Celo. Users stake
 | Layer | Technology |
 |---|---|
 | Blockchain | Celo Mainnet |
-| Smart Contracts | Solidity + Hardhat |
-| Frontend | Next.js 14 (App Router) |
+| Smart Contracts | Solidity 0.8.28 + Hardhat |
+| Frontend | Next.js (App Router) |
 | Wallet / Payments | MiniPay + wagmi + viem |
 | Maps | Mapbox GL JS |
 | Styling | Tailwind CSS |
-| Backend | Node.js + Express (optional, for GPS verification assist) |
+| Backend | Node.js + Express |
 | Database | Supabase (Postgres) |
-| Deployment | Vercel (frontend) |
+| Deployment | Netlify |
 
 ---
 
@@ -39,77 +50,54 @@ Stride is a MiniPay-native fitness accountability app built on Celo. Users stake
 
 ```
 stride/
-├── contracts/              # Solidity smart contracts
-│   ├── StrideCommitment.sol
-│   ├── StrideRewardPool.sol
-│   └── deploy/
-├── frontend/               # Next.js app
-│   ├── src/
-│   │   ├── app/            # App router pages
-│   │   ├── components/     # UI components
-│   │   ├── hooks/          # Custom React hooks
-│   │   ├── utils/          # Helpers and constants
-│   │   └── context/        # Global state
-│   └── public/
-├── backend/                # GPS verification service (optional)
-├── docs/                   # Documentation
-│   ├── SMART_CONTRACTS.md
-│   ├── ARCHITECTURE.md
-│   ├── MINIPAY.md
-│   └── ANTI_GAMING.md
-├── BUILD_PLAN.md           # 15-day build plan
-└── README.md
+├── contracts/              # Hardhat project
+│   ├── contracts/
+│   │   ├── StrideCommitment.sol
+│   │   ├── StrideRewardPool.sol
+│   │   └── mocks/
+│   ├── deploy/
+│   ├── test/
+│   └── deployments/
+├── src/                    # Next.js frontend (App Router)
+│   └── app/
+├── backend/                # GPS verification service
+└── public/
 ```
 
 ---
 
 ## Getting Started
 
-### Prerequisites
-
-- Node.js 18+
-- A Celo wallet with cUSD for deployment
-- Hardhat
-- MiniPay (Opera Mini with MiniPay) for testing on device
-
-### Install
-
-```bash
-git clone https://github.com/yourusername/stride
-cd stride
-npm install
-```
-
-### Deploy Contracts
+### Contracts
 
 ```bash
 cd contracts
+npm install
+cp .env.example .env   # fill in your keys
 npx hardhat compile
-npx hardhat run deploy/deploy.js --network celo
+npx hardhat run deploy/01_deploy_reward_pool.js --network celo
+npx hardhat run deploy/02_deploy_commitment.js --network celo
 ```
 
-See [SMART_CONTRACTS.md](./docs/SMART_CONTRACTS.md) for full deployment guide.
-
-### Run Frontend
+### Frontend
 
 ```bash
-cd frontend
 npm install
+cp .env.local.example .env.local   # fill in your keys
 npm run dev
 ```
 
----
+### Backend
 
-## Key Links
-
-- [Smart Contract Docs](./docs/SMART_CONTRACTS.md)
-- [Architecture Overview](./docs/ARCHITECTURE.md)
-- [MiniPay Integration Guide](./docs/MINIPAY.md)
-- [Anti-Gaming Strategy](./docs/ANTI_GAMING.md)
-- [15-Day Build Plan](./BUILD_PLAN.md)
+```bash
+cd backend
+npm install
+cp .env.example .env   # fill in VERIFIER_PRIVATE_KEY
+node server.js
+```
 
 ---
 
 ## License
 
-MIT — your code, your IP.
+MIT
