@@ -1,12 +1,30 @@
 'use client'
 
-import { WagmiProvider } from 'wagmi'
+import { ReactNode, useState, useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { WagmiProvider } from 'wagmi'
 import { wagmiConfig } from '@/config/wagmi'
-import { useState } from 'react'
+import { registerMiniPayHook } from '@/utils/minipay'
 
-export function Providers({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient())
+interface ProvidersProps {
+  children: ReactNode
+}
+
+export function Providers({ children }: ProvidersProps) {
+  useEffect(() => {
+    registerMiniPayHook()
+  }, [])
+
+  // Create the QueryClient inside the component state to ensure
+  // a unique query client instance per request in server-side rendering
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        refetchOnWindowFocus: false,
+        retry: 1,
+      },
+    },
+  }))
 
   return (
     <WagmiProvider config={wagmiConfig}>
