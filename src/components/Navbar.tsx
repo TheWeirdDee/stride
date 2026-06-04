@@ -7,7 +7,7 @@ import { useAccount, useConnect, useDisconnect, useReadContract } from 'wagmi'
 import { formatEther } from 'viem'
 import { Activity, Compass, BookOpen, User, Wallet, LogOut, Menu, X } from 'lucide-react'
 import { CUSD_ADDRESS } from '@/utils/constants'
-import { cusdAbi } from '@/abi/cusd'
+import { cusdABI } from '@/abi/cusd'
 
 export default function Navbar() {
   const pathname = usePathname()
@@ -20,7 +20,7 @@ export default function Navbar() {
   // Read cUSD balance
   const { data: rawBalance } = useReadContract({
     address: CUSD_ADDRESS,
-    abi: cusdAbi,
+    abi: cusdABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
     query: {
