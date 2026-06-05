@@ -382,7 +382,7 @@ export default function LandingPage() {
       <a className="btn btn-dark" href="#how" style={{"width":"100%","justifyContent":"center"}}>See how it works</a>
     </div>
     <div className="stake-card">
-      <div className="row1"><span>Today's stake</span><span>5 km · 2h window</span></div>
+      <div className="row1"><span>Today&apos;s stake</span><span>5 km · 2h window</span></div>
       <div className="stake-amt"><b>$1.00</b><small>cUSD</small></div>
       <ul className="stake-list">
         <li>Full stake returned on finish</li>
@@ -560,7 +560,7 @@ export default function LandingPage() {
     </div>
     <div className="prog-head" style={{"margin":"42px 0 4px"}}>
       <h2 className="display">Small stake.<br /><em>Real skin in the game.</em></h2>
-      <p>Pick what you can afford to lose and what you'd love to keep. The bonus scales with the pool and your streak — never guaranteed, always fair.</p>
+      <p>Pick what you can afford to lose and what you&apos;d love to keep. The bonus scales with the pool and your streak — never guaranteed, always fair.</p>
     </div>
     <div className="tier-rows">
       <div className="tier-row">
@@ -623,14 +623,14 @@ export default function LandingPage() {
     </div>
     <div className="story-grid">
       <div className="story">
-        <p className="quote">I never stuck to a routine until my own money was on the line. Forty-one days straight now — the streak is the best coach I've ever had.</p>
+        <p className="quote">I never stuck to a routine until my own money was on the line. Forty-one days straight now — the streak is the best coach I&apos;ve ever had.</p>
         <div className="story-by">
           <div className="avatar">A</div>
           <div><b>Amara O.</b><span>Lagos · 41-day streak</span></div>
         </div>
       </div>
       <div className="story">
-        <p className="quote">Staking ten cents sounds like nothing, but knowing I'd lose it got me out the door at 6am. The bonus landing back in MiniPay feels unreal.</p>
+        <p className="quote">Staking ten cents sounds like nothing, but knowing I&apos;d lose it got me out the door at 6am. The bonus landing back in MiniPay feels unreal.</p>
         <div className="story-by">
           <div className="avatar" style={{"background":"#0a5aa2"}}>D</div>
           <div><b>Daniel K.</b><span>Nairobi · 5 km daily</span></div>
@@ -652,7 +652,7 @@ export default function LandingPage() {
   <div className="glow"></div>
   <div className="inner wrap">
     <h2 className="display">Ready to <em>commit?</em></h2>
-    <p>Open MiniPay, stake a cent, and turn today's walk into something you'll actually finish. Your stride starts now.</p>
+    <p>Open MiniPay, stake a cent, and turn today&apos;s walk into something you&apos;ll actually finish. Your stride starts now.</p>
     <div className="cta-actions">
       <a className="btn btn-lime" href="#">Start a Commitment <span className="arrow-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
       <a className="btn btn-ghost" href="#how">See how it works</a>
@@ -684,7 +684,7 @@ export default function LandingPage() {
         <h6>Content</h6>
         <a href="#">Warmups</a>
         <a href="#">Cooldowns</a>
-        <a href="#">Beginner's guide</a>
+        <a href="#">Beginner&apos;s guide</a>
         <a href="#">Hydration &amp; breathing</a>
       </div>
       <div className="foot-news">
