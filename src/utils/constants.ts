@@ -8,5 +8,9 @@ export const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || 'https://forno.celo.or
 export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || 'Stride'
 export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001'
 
+export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+export const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+
 export const MIN_STAKE_CUSD = 0.01
 export const GRACE_PERIOD_SECONDS = 60
+
