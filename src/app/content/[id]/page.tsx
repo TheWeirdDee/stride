@@ -101,6 +101,10 @@ export default function ContentDetailPage() {
         }
 
         // Fetch from Supabase
+        if (!supabase) {
+          setGuide(STATIC_GUIDES[0])
+          return
+        }
         const { data, error } = await supabase
           .from('content')
           .select('*')
