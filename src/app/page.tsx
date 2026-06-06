@@ -43,6 +43,7 @@ function LandingPageContent() {
   // Open onboarding if query param present
   useEffect(() => {
     if (searchParams.get('onboard') === 'true') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setOnboardingStep(1)
       setIsOnboardingOpen(true)
       router.replace('/')
