@@ -58,16 +58,28 @@ export function useCreateCommitment() {
       if (selectError) throw selectError
 
       if (!data) {
+        // Read local storage onboarding details if they exist
+        let localNickname = 'Anonymous Mover'
+        let localCity = 'Lagos'
+        let localFitness = 'beginner'
+        
+        if (typeof window !== 'undefined') {
+          localNickname = localStorage.getItem('stride_onboarding_nickname') || localNickname
+          localCity = localStorage.getItem('stride_onboarding_city') || localCity
+          localFitness = localStorage.getItem('stride_onboarding_fitness') || localFitness
+        }
+
         const { error: insertError } = await supabase
           .from('users')
           .insert({
             wallet_address: userAddress,
-            nickname: 'Anonymous Mover',
+            nickname: localNickname,
+            city: localCity,
             streak_current: 0,
             streak_best: 0,
             total_distance: 0,
             total_earnings: 0,
-            fitness_level: 'beginner',
+            fitness_level: localFitness,
           })
         if (insertError) throw insertError
       }
