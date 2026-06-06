@@ -1,17 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAccount, useConnect, useDisconnect, useReadContract } from 'wagmi'
 import { formatEther } from 'viem'
-import { Activity, Compass, BookOpen, User, Wallet, LogOut, Menu, X } from 'lucide-react'
+import { Activity, Compass, BookOpen, User, Wallet, LogOut, Menu, X, ArrowRight } from 'lucide-react'
 import { CUSD_ADDRESS } from '@/utils/constants'
 import { cusdABI } from '@/abi/cusd'
 
 export default function Navbar() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [nickname, setNickname] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedNickname = localStorage.getItem('stride_onboarding_nickname')
+      setNickname(storedNickname)
+    }
+  }, [pathname])
 
   const { address, isConnected } = useAccount()
   const { connect, connectors } = useConnect()
@@ -109,14 +117,22 @@ export default function Navbar() {
                   <LogOut className="h-3.5 w-3.5 text-zinc-400 hover:text-rose-500 transition-colors" />
                 </button>
               </div>
-            ) : (
-              <button
-                onClick={handleConnect}
-                className="flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white px-4 py-2 text-sm font-semibold shadow-md shadow-emerald-500/10 hover:shadow-emerald-500/20 active:scale-95 transition-all duration-200"
+            ) : nickname ? (
+              <Link
+                href="/profile"
+                className="flex items-center gap-2 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 p-1.5 pl-3 pr-3 shadow-inner text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer"
               >
-                <Wallet className="h-4 w-4" />
-                <span>Connect Wallet</span>
-              </button>
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
+                <span>Guest: <span className="font-bold text-zinc-900 dark:text-zinc-100">{nickname}</span></span>
+              </Link>
+            ) : (
+              <Link
+                href="/?onboard=true"
+                className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white px-4 py-2 text-sm font-semibold shadow-md shadow-emerald-500/10 hover:shadow-emerald-500/20 active:scale-95 transition-all duration-200"
+              >
+                <span>Get Started</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             )}
 
             {/* Mobile Menu Button */}
