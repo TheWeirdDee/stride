@@ -128,6 +128,7 @@ export default function ContentDetailPage() {
   useEffect(() => {
     if (guide) {
       const stepsCount = guide.body.split('\n').filter(line => line.trim()).length
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCompletedSteps(new Array(stepsCount).fill(false))
     }
   }, [guide])
