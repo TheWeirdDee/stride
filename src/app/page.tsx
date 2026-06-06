@@ -1,22 +1,132 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useAccount, useConnect, useDisconnect } from 'wagmi'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { supabase } from '@/utils/supabase'
+import {
+  ChevronRight,
+  Sparkles,
+  MapPin,
+  Trophy,
+  Compass,
+  Activity,
+  Check,
+  Heart,
+  User,
+  Clock,
+  Flame,
+  Info,
+  CheckCircle2,
+  Coins,
+  Wallet
+} from 'lucide-react'
 
-export default function LandingPage() {
+function LandingPageContent() {
   const { address, isConnected } = useAccount()
   const { connect, connectors } = useConnect()
   const { disconnect } = useDisconnect()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
-  const connectWallet = async () => {
-    const connector = connectors.find(c => c.id === 'injected') || connectors[0]
-    if (connector) {
-      connect({ connector })
+  // Onboarding States
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false)
+  const [onboardingStep, setOnboardingStep] = useState(1)
+  const [activityPreference, setActivityPreference] = useState<'walk' | 'run' | 'both'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('stride_onboarding_activity') as 'walk' | 'run' | 'both') || 'walk'
+    }
+    return 'walk'
+  })
+
+  // Open onboarding if query param present
+  useEffect(() => {
+    if (searchParams.get('onboard') === 'true') {
+      setOnboardingStep(1)
+      setIsOnboardingOpen(true)
+      router.replace('/')
+    }
+  }, [searchParams, router])
+  const [fitnessLevel, setFitnessLevel] = useState<'beginner' | 'intermediate' | 'active'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('stride_onboarding_fitness') as 'beginner' | 'intermediate' | 'active') || 'beginner'
+    }
+    return 'beginner'
+  })
+  const [nickname, setNickname] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('stride_onboarding_nickname') || ''
+    }
+    return ''
+  })
+  const [city, setCity] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('stride_onboarding_city') || ''
+    }
+    return ''
+  })
+  const [isSubmittingProfile, setIsSubmittingProfile] = useState(false)
+
+  // Trigger Supabase write and redirect when wallet connects during onboarding
+  useEffect(() => {
+    if (isConnected && address && isSubmittingProfile) {
+      const saveProfile = async () => {
+        try {
+          const { error } = await supabase
+            .from('users')
+            .upsert({
+              wallet_address: address,
+              nickname: nickname || 'Anonymous Mover',
+              city: city || 'Lagos',
+              fitness_level: fitnessLevel,
+            }, { onConflict: 'wallet_address' })
+
+          if (error) {
+            console.error('Error upserting user onboarding profile:', error)
+          }
+
+          // Save settings locally as well
+          localStorage.setItem('stride_onboarding_activity', activityPreference)
+          localStorage.setItem('stride_onboarding_fitness', fitnessLevel)
+          localStorage.setItem('stride_onboarding_nickname', nickname)
+          localStorage.setItem('stride_onboarding_city', city)
+
+          setIsSubmittingProfile(false)
+          setIsOnboardingOpen(false)
+          router.push('/commitment/new')
+        } catch (err) {
+          console.error(err)
+          setIsSubmittingProfile(false)
+        }
+      }
+      saveProfile()
+    }
+  }, [isConnected, address, isSubmittingProfile, nickname, city, fitnessLevel, activityPreference, router])
+
+  const connectAndSave = async () => {
+    setIsSubmittingProfile(true)
+    try {
+      const connector = connectors.find(c => c.id === 'injected') || connectors[0]
+      if (connector) {
+        connect({ connector })
+      }
+    } catch (err) {
+      console.error(err)
+      setIsSubmittingProfile(false)
     }
   }
+
+  const skipOnboarding = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('stride_onboarding_activity', activityPreference)
+      localStorage.setItem('stride_onboarding_fitness', fitnessLevel)
+      localStorage.setItem('stride_onboarding_nickname', nickname)
+      localStorage.setItem('stride_onboarding_city', city)
+    }
+    setIsOnboardingOpen(false)
+  }
+
 
   return (
     <div className="landing-page-container">
@@ -348,7 +458,7 @@ export default function LandingPage() {
       {isConnected ? (
         <Link className="btn btn-light" href="/profile">View Profile</Link>
       ) : (
-        <button className="btn btn-light" onClick={connectWallet}>Connect Wallet</button>
+        <button className="btn btn-light" onClick={() => { setOnboardingStep(1); setIsOnboardingOpen(true); }}>Get Started</button>
       )}
     </div>
   </div>
@@ -369,7 +479,7 @@ export default function LandingPage() {
     </div>
     <h1 className="hero-h1">Put Your Money <span className="lite">Where Your</span> Miles Are</h1>
     <p className="hero-sub">Stake cUSD on a walk or run goal. Track your live route. Finish it and your stake comes back — plus a bonus. Built on Celo, native to MiniPay.</p>
-    <form className="hero-cta" onSubmit={(e) => e.preventDefault()}>
+    <form className="hero-cta" onSubmit={(e) => { e.preventDefault(); setOnboardingStep(1); setIsOnboardingOpen(true); }}>
       <input type="text" placeholder="Set your goal — e.g. 5 km today" aria-label="Goal" />
       <button className="btn btn-lime" type="submit">Start a Commitment</button>
     </form>
@@ -654,7 +764,7 @@ export default function LandingPage() {
     <h2 className="display">Ready to <em>commit?</em></h2>
     <p>Open MiniPay, stake a cent, and turn today&apos;s walk into something you&apos;ll actually finish. Your stride starts now.</p>
     <div className="cta-actions">
-      <a className="btn btn-lime" href="#">Start a Commitment <span className="arrow-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+      <button className="btn btn-lime" onClick={() => { setOnboardingStep(1); setIsOnboardingOpen(true); }}>Start a Commitment <span className="arrow-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>
       <a className="btn btn-ghost" href="#how">See how it works</a>
     </div>
   </div>
@@ -708,6 +818,209 @@ export default function LandingPage() {
 </footer>
 
 
+      {/* Onboarding Flow Modal Overlay */}
+      {isOnboardingOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 max-w-md w-full p-6 shadow-2xl flex flex-col gap-6 text-zinc-900 dark:text-zinc-50 relative overflow-hidden animate-in zoom-in-95 duration-250">
+            {/* Modal Header Progress */}
+            <div className="flex justify-between items-center text-xs font-bold text-zinc-400 dark:text-zinc-500">
+              <span className="uppercase tracking-wider">Step {onboardingStep} of 4</span>
+              <button 
+                onClick={() => setIsOnboardingOpen(false)}
+                className="text-zinc-450 hover:text-zinc-650 dark:hover:text-zinc-200 text-lg transition-colors font-mono"
+              >
+                ✕
+              </button>
+            </div>
+            {/* Step indicators */}
+            <div className="flex gap-1.5 h-1 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+              <div className="h-full bg-emerald-500 rounded-full transition-all duration-300" style={{ width: `${(onboardingStep / 4) * 100}%` }} />
+            </div>
+
+            {/* Step 1: Preferences */}
+            {onboardingStep === 1 && (
+              <div className="flex flex-col gap-4">
+                <div>
+                  <h3 className="text-xl font-bold tracking-tight">Choose your preference</h3>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">What kind of workouts do you do most?</p>
+                </div>
+                <div className="flex flex-col gap-3">
+                  {[
+                    { key: 'walk', title: 'Walk', desc: 'General activity, steps & casual walking' },
+                    { key: 'run', title: 'Run', desc: 'Cardio, jogging & long-distance running' },
+                    { key: 'both', title: 'Both', desc: 'Hybrid walks and runs' }
+                  ].map((opt) => (
+                    <button
+                      key={opt.key}
+                      onClick={() => setActivityPreference(opt.key as 'walk' | 'run' | 'both')}
+                      className={`flex flex-col p-4 rounded-2xl border-2 text-left transition-all ${
+                        activityPreference === opt.key 
+                          ? 'border-emerald-500 bg-emerald-500/5 text-emerald-950 dark:text-emerald-400' 
+                          : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-350'
+                      }`}
+                    >
+                      <span className="font-bold text-sm">{opt.title}</span>
+                      <span className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">{opt.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Fitness Level */}
+            {onboardingStep === 2 && (
+              <div className="flex flex-col gap-4">
+                <div>
+                  <h3 className="text-xl font-bold tracking-tight">Select Fitness Level</h3>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Help us customize target suggestions for you.</p>
+                </div>
+                <div className="flex flex-col gap-3">
+                  {[
+                    { key: 'beginner', title: 'Beginner', desc: 'Just getting started, walking or returning' },
+                    { key: 'intermediate', title: 'Intermediate', desc: 'Can run a few kilometres or walk regularly' },
+                    { key: 'active', title: 'Active', desc: 'Walk or run daily, comfortable with challenges' }
+                  ].map((opt) => (
+                    <button
+                      key={opt.key}
+                      onClick={() => setFitnessLevel(opt.key as 'beginner' | 'intermediate' | 'active')}
+                      className={`flex flex-col p-4 rounded-2xl border-2 text-left transition-all ${
+                        fitnessLevel === opt.key 
+                          ? 'border-emerald-500 bg-emerald-500/5 text-emerald-950 dark:text-emerald-400' 
+                          : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-350'
+                      }`}
+                    >
+                      <span className="font-bold text-sm">{opt.title}</span>
+                      <span className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">{opt.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Profile Settings */}
+            {onboardingStep === 3 && (
+              <div className="flex flex-col gap-4">
+                <div>
+                  <h3 className="text-xl font-bold tracking-tight">Create your profile</h3>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Set your nickname and home city.</p>
+                </div>
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Nickname</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Speedster"
+                      value={nickname}
+                      onChange={(e) => setNickname(e.target.value)}
+                      className="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-transparent text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 dark:text-white"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">City</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Lagos"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      className="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-transparent text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 dark:text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Access Unlocked */}
+            {onboardingStep === 4 && (
+              <div className="flex flex-col gap-5 text-center items-center py-2 animate-in fade-in duration-200">
+                <div className="h-14 w-14 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                  <Sparkles className="h-7 w-7 animate-pulse" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <h3 className="text-xl font-bold tracking-tight">You&apos;re All Set!</h3>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto">
+                    Your profile has been created locally. You now have full access to explore Stride!
+                  </p>
+                </div>
+                <div className="w-full text-left p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-150 dark:border-zinc-850 flex flex-col gap-2.5 text-xs">
+                  <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
+                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span>Browse and study fitness guides</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
+                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span>View community metrics and heatmaps</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
+                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span>See active routes near your city</span>
+                  </div>
+                </div>
+                <p className="text-[11px] text-zinc-400 leading-normal max-w-xs">
+                  To commit to a goal with skin in the game (cUSD) and earn rewards, connect your wallet below. Otherwise, feel free to skip and explore first!
+                </p>
+              </div>
+            )}
+
+            {/* Navigation buttons */}
+            <div className="flex gap-3 mt-2">
+              {onboardingStep > 1 && !isSubmittingProfile && (
+                <button
+                  onClick={() => setOnboardingStep(prev => prev - 1)}
+                  className="py-3 px-4 rounded-full border border-zinc-200 dark:border-zinc-850 bg-white dark:bg-zinc-950 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900 font-bold transition-colors"
+                >
+                  Back
+                </button>
+              )}
+              {onboardingStep < 4 ? (
+                <button
+                  onClick={() => setOnboardingStep(prev => prev + 1)}
+                  className="flex-1 py-3.5 rounded-full bg-zinc-950 dark:bg-zinc-50 text-white dark:text-zinc-950 font-bold transition-all text-sm flex items-center justify-center gap-2 active:scale-95"
+                >
+                  Continue
+                </button>
+              ) : (
+                <div className="flex flex-col gap-2 w-full">
+                  <button
+                    onClick={connectAndSave}
+                    disabled={isSubmittingProfile}
+                    className="w-full py-3.5 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-bold transition-all text-sm flex items-center justify-center gap-2 active:scale-95 shadow-md hover:shadow-lg shadow-emerald-500/10"
+                  >
+                    {isSubmittingProfile ? (
+                      <span>Connecting...</span>
+                    ) : (
+                      <>
+                        <Wallet className="h-4 w-4" />
+                        <span>Connect Wallet &amp; Start Staking</span>
+                      </>
+                    )}
+                  </button>
+                  {!isSubmittingProfile && (
+                    <button
+                      onClick={skipOnboarding}
+                      className="w-full py-2.5 rounded-full bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-all text-xs font-bold"
+                    >
+                      Skip and Explore First
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+  )
+}
+
+export default function LandingPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center min-h-[80vh] w-full text-center">
+        <div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full mb-4 mx-auto"></div>
+        <p className="text-zinc-500 dark:text-zinc-400 font-semibold">Loading Stride...</p>
+      </div>
+    }>
+      <LandingPageContent />
+    </Suspense>
   )
 }
