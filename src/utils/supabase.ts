@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './constants'
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
@@ -7,4 +7,11 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   )
 }
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+// Only initialise the client when both env vars are present.
+// During Next.js build-time prerendering the vars may be absent (e.g. on
+// Netlify before env vars are configured), and calling createClient() without
+// a URL throws "supabaseUrl is required." which aborts the build.
+export const supabase: SupabaseClient | null =
+  SUPABASE_URL && SUPABASE_ANON_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    : null

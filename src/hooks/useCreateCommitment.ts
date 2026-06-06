@@ -49,6 +49,7 @@ export function useCreateCommitment() {
   // Ensure user profile exists in Supabase
   const ensureUserExists = async (userAddress: string) => {
     try {
+      if (!supabase) return // client unavailable (env vars missing)
       const { data, error: selectError } = await supabase
         .from('users')
         .select('wallet_address')
@@ -162,22 +163,26 @@ export function useCreateCommitment() {
 
       // Step E: Save the commitment to Supabase
       const expiresAt = new Date(Date.now() + durationSeconds * 1000).toISOString()
-      const { error: dbError } = await supabase
-        .from('commitments')
-        .insert({
-          commitment_id_chain: commitmentIdChain,
-          wallet_address: address,
-          stake_amount: parseFloat(stakeAmount),
-          goal_type: goalType,
-          goal_value: goalValue,
-          status: 'active',
-          expires_at: expiresAt,
-        })
+      if (supabase) {
+        const { error: dbError } = await supabase
+          .from('commitments')
+          .insert({
+            commitment_id_chain: commitmentIdChain,
+            wallet_address: address,
+            stake_amount: parseFloat(stakeAmount),
+            goal_type: goalType,
+            goal_value: goalValue,
+            status: 'active',
+            expires_at: expiresAt,
+          })
 
-      if (dbError) {
-        console.error('Error inserting commitment into database:', dbError)
-        // We do not fail the main user flow if DB insert fails since on-chain TX succeeded,
-        // but we flag it in logs.
+        if (dbError) {
+          console.error('Error inserting commitment into database:', dbError)
+          // We do not fail the main user flow if DB insert fails since on-chain TX succeeded,
+          // but we flag it in logs.
+        }
+      } else {
+        console.warn('Supabase client unavailable, commitment not saved to database.')
       }
 
       // Refresh cache/state

@@ -74,17 +74,19 @@ function LandingPageContent() {
     if (isConnected && address && isSubmittingProfile) {
       const saveProfile = async () => {
         try {
-          const { error } = await supabase
-            .from('users')
-            .upsert({
-              wallet_address: address,
-              nickname: nickname || 'Anonymous Mover',
-              city: city || 'Lagos',
-              fitness_level: fitnessLevel,
-            }, { onConflict: 'wallet_address' })
+          if (supabase) {
+            const { error } = await supabase
+              .from('users')
+              .upsert({
+                wallet_address: address,
+                nickname: nickname || 'Anonymous Mover',
+                city: city || 'Lagos',
+                fitness_level: fitnessLevel,
+              }, { onConflict: 'wallet_address' })
 
-          if (error) {
-            console.error('Error upserting user onboarding profile:', error)
+            if (error) {
+              console.error('Error upserting user onboarding profile:', error)
+            }
           }
 
           // Save settings locally as well

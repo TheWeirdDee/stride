@@ -93,6 +93,10 @@ export default function ContentHubPage() {
     async function fetchGuides() {
       try {
         setLoading(true)
+        if (!supabase) {
+          setGuides(STATIC_GUIDES)
+          return
+        }
         const { data, error } = await supabase
           .from('content')
           .select('*')

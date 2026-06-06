@@ -74,6 +74,7 @@ export default function ProfilePage() {
       setLoading(true)
       if (isConnected && address) {
         try {
+          if (!supabase) throw new Error('Supabase client unavailable')
           // Check if profile exists in database
           const { data, error } = await supabase
             .from('users')
