@@ -821,155 +821,309 @@ function LandingPageContent() {
 </footer>
 
 
-      {/* Onboarding Flow Modal Overlay */}
+      {/* Onboarding Flow — Full-screen on mobile, centred card on desktop */}
       {isOnboardingOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 max-w-md w-full p-6 shadow-2xl flex flex-col gap-6 text-zinc-900 dark:text-zinc-50 relative overflow-hidden animate-in zoom-in-95 duration-250">
-            {/* Modal Header Progress */}
-            <div className="flex justify-between items-center text-xs font-bold text-zinc-400 dark:text-zinc-500">
-              <span className="uppercase tracking-wider">Step {onboardingStep} of 4</span>
-              <button 
-                onClick={() => setIsOnboardingOpen(false)}
-                className="text-zinc-450 hover:text-zinc-650 dark:hover:text-zinc-200 text-lg transition-colors font-mono"
-              >
-                ✕
-              </button>
-            </div>
-            {/* Step indicators */}
-            <div className="flex gap-1.5 h-1 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-              <div className="h-full bg-emerald-500 rounded-full transition-all duration-300" style={{ width: `${(onboardingStep / 4) * 100}%` }} />
-            </div>
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center"
+          style={{
+            background: 'linear-gradient(135deg, #0a0f0d 0%, #0d1f18 40%, #071a2e 100%)'
+          }}
+        >
+          {/* Decorative blobs */}
+          <div style={{
+            position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none'
+          }}>
+            <div style={{
+              position: 'absolute', top: '-20%', left: '-10%',
+              width: '60vw', height: '60vw', maxWidth: 480, maxHeight: 480,
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(16,185,129,0.18) 0%, transparent 70%)',
+              filter: 'blur(40px)'
+            }} />
+            <div style={{
+              position: 'absolute', bottom: '-15%', right: '-10%',
+              width: '50vw', height: '50vw', maxWidth: 400, maxHeight: 400,
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(6,182,212,0.14) 0%, transparent 70%)',
+              filter: 'blur(40px)'
+            }} />
+          </div>
 
-            {/* Step 1: Preferences */}
-            {onboardingStep === 1 && (
-              <div className="flex flex-col gap-4">
-                <div>
-                  <h3 className="text-xl font-bold tracking-tight">Choose your preference</h3>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">What kind of workouts do you do most?</p>
+          {/* Card */}
+          <div
+            className="relative w-full flex flex-col"
+            style={{
+              maxWidth: 480,
+              margin: '0 auto',
+              /* Full height on mobile, auto on desktop */
+              height: 'calc(var(--vh, 1vh) * 100)',
+              maxHeight: '100dvh',
+            }}
+          >
+            {/* Inner scrollable area */}
+            <div
+              className="flex flex-col gap-6 overflow-y-auto"
+              style={{
+                flex: 1,
+                padding: '32px 24px 24px',
+                /* On large screens show as rounded card with bg */
+              }}
+            >
+              {/* Stride logo / wordmark at top */}
+              <div className="flex items-center gap-2 mb-2">
+                <div style={{
+                  width: 32, height: 32, borderRadius: 10,
+                  background: 'linear-gradient(135deg,#10b981,#06b6d4)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                 </div>
-                <div className="flex flex-col gap-3">
-                  {[
-                    { key: 'walk', title: 'Walk', desc: 'General activity, steps & casual walking' },
-                    { key: 'run', title: 'Run', desc: 'Cardio, jogging & long-distance running' },
-                    { key: 'both', title: 'Both', desc: 'Hybrid walks and runs' }
-                  ].map((opt) => (
-                    <button
-                      key={opt.key}
-                      onClick={() => setActivityPreference(opt.key as 'walk' | 'run' | 'both')}
-                      className={`flex flex-col p-4 rounded-2xl border-2 text-left transition-all ${
-                        activityPreference === opt.key 
-                          ? 'border-emerald-500 bg-emerald-500/5 text-emerald-950 dark:text-emerald-400' 
-                          : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-350'
-                      }`}
-                    >
-                      <span className="font-bold text-sm">{opt.title}</span>
-                      <span className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">{opt.desc}</span>
-                    </button>
-                  ))}
-                </div>
+                <span style={{ fontWeight: 800, fontSize: 20, color: '#fff', letterSpacing: '-0.03em' }}>Stride</span>
               </div>
-            )}
 
-            {/* Step 2: Fitness Level */}
-            {onboardingStep === 2 && (
-              <div className="flex flex-col gap-4">
-                <div>
-                  <h3 className="text-xl font-bold tracking-tight">Select Fitness Level</h3>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Help us customize target suggestions for you.</p>
-                </div>
-                <div className="flex flex-col gap-3">
-                  {[
-                    { key: 'beginner', title: 'Beginner', desc: 'Just getting started, walking or returning' },
-                    { key: 'intermediate', title: 'Intermediate', desc: 'Can run a few kilometres or walk regularly' },
-                    { key: 'active', title: 'Active', desc: 'Walk or run daily, comfortable with challenges' }
-                  ].map((opt) => (
-                    <button
-                      key={opt.key}
-                      onClick={() => setFitnessLevel(opt.key as 'beginner' | 'intermediate' | 'active')}
-                      className={`flex flex-col p-4 rounded-2xl border-2 text-left transition-all ${
-                        fitnessLevel === opt.key 
-                          ? 'border-emerald-500 bg-emerald-500/5 text-emerald-950 dark:text-emerald-400' 
-                          : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-350'
-                      }`}
-                    >
-                      <span className="font-bold text-sm">{opt.title}</span>
-                      <span className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">{opt.desc}</span>
-                    </button>
-                  ))}
-                </div>
+              {/* Step counter + close */}
+              <div className="flex justify-between items-center">
+                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6ee7b7' }}>
+                  Step {onboardingStep} of 4
+                </span>
+                <button
+                  onClick={() => setIsOnboardingOpen(false)}
+                  style={{
+                    width: 32, height: 32, borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.08)',
+                    border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#9ca3af', fontSize: 16, lineHeight: 1
+                  }}
+                  aria-label="Close onboarding"
+                >
+                  ✕
+                </button>
               </div>
-            )}
 
-            {/* Step 3: Profile Settings */}
-            {onboardingStep === 3 && (
-              <div className="flex flex-col gap-4">
-                <div>
-                  <h3 className="text-xl font-bold tracking-tight">Create your profile</h3>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Set your nickname and home city.</p>
-                </div>
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Nickname</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Speedster"
-                      value={nickname}
-                      onChange={(e) => setNickname(e.target.value)}
-                      className="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-transparent text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 dark:text-white"
-                    />
+              {/* Progress bar */}
+              <div style={{ height: 4, borderRadius: 99, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                <div
+                  style={{
+                    height: '100%',
+                    width: `${(onboardingStep / 4) * 100}%`,
+                    borderRadius: 99,
+                    background: 'linear-gradient(90deg,#10b981,#06b6d4)',
+                    transition: 'width 0.35s ease'
+                  }}
+                />
+              </div>
+
+              {/* ── Step 1: Activity Preference ── */}
+              {onboardingStep === 1 && (
+                <div className="flex flex-col gap-5">
+                  <div>
+                    <h3 style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
+                      Choose your preference
+                    </h3>
+                    <p style={{ fontSize: 14, color: '#9ca3af', marginTop: 6 }}>What kind of workouts do you do most?</p>
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">City</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Lagos"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      className="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-transparent text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 dark:text-white"
-                    />
+                  <div className="flex flex-col gap-3">
+                    {[
+                      { key: 'walk', title: 'Walk', desc: 'General activity, steps & casual walking', icon: '🚶' },
+                      { key: 'run', title: 'Run', desc: 'Cardio, jogging & long-distance running', icon: '🏃' },
+                      { key: 'both', title: 'Both', desc: 'Hybrid walks and runs', icon: '⚡' }
+                    ].map((opt) => (
+                      <button
+                        key={opt.key}
+                        onClick={() => setActivityPreference(opt.key as 'walk' | 'run' | 'both')}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 14,
+                          padding: '16px 18px',
+                          borderRadius: 16,
+                          border: activityPreference === opt.key
+                            ? '2px solid #10b981'
+                            : '2px solid rgba(255,255,255,0.1)',
+                          background: activityPreference === opt.key
+                            ? 'rgba(16,185,129,0.12)'
+                            : 'rgba(255,255,255,0.04)',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.18s ease',
+                          width: '100%'
+                        }}
+                      >
+                        <span style={{ fontSize: 24, flexShrink: 0 }}>{opt.icon}</span>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: 15, color: activityPreference === opt.key ? '#6ee7b7' : '#fff' }}>{opt.title}</div>
+                          <div style={{ fontSize: 13, color: '#6b7280', marginTop: 2 }}>{opt.desc}</div>
+                        </div>
+                        {activityPreference === opt.key && (
+                          <div style={{ marginLeft: 'auto', flexShrink: 0 }}>
+                            <Check className="h-5 w-5" style={{ color: '#10b981' }} />
+                          </div>
+                        )}
+                      </button>
+                    ))}
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Step 4: Access Unlocked */}
-            {onboardingStep === 4 && (
-              <div className="flex flex-col gap-5 text-center items-center py-2 animate-in fade-in duration-200">
-                <div className="h-14 w-14 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
-                  <Sparkles className="h-7 w-7 animate-pulse" />
+              {/* ── Step 2: Fitness Level ── */}
+              {onboardingStep === 2 && (
+                <div className="flex flex-col gap-5">
+                  <div>
+                    <h3 style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
+                      Select Fitness Level
+                    </h3>
+                    <p style={{ fontSize: 14, color: '#9ca3af', marginTop: 6 }}>Help us customize target suggestions for you.</p>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    {[
+                      { key: 'beginner', title: 'Beginner', desc: 'Just getting started, walking or returning', icon: '🌱' },
+                      { key: 'intermediate', title: 'Intermediate', desc: 'Can run a few kilometres or walk regularly', icon: '🔥' },
+                      { key: 'active', title: 'Active', desc: 'Walk or run daily, comfortable with challenges', icon: '⚡' }
+                    ].map((opt) => (
+                      <button
+                        key={opt.key}
+                        onClick={() => setFitnessLevel(opt.key as 'beginner' | 'intermediate' | 'active')}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 14,
+                          padding: '16px 18px',
+                          borderRadius: 16,
+                          border: fitnessLevel === opt.key
+                            ? '2px solid #10b981'
+                            : '2px solid rgba(255,255,255,0.1)',
+                          background: fitnessLevel === opt.key
+                            ? 'rgba(16,185,129,0.12)'
+                            : 'rgba(255,255,255,0.04)',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.18s ease',
+                          width: '100%'
+                        }}
+                      >
+                        <span style={{ fontSize: 24, flexShrink: 0 }}>{opt.icon}</span>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: 15, color: fitnessLevel === opt.key ? '#6ee7b7' : '#fff' }}>{opt.title}</div>
+                          <div style={{ fontSize: 13, color: '#6b7280', marginTop: 2 }}>{opt.desc}</div>
+                        </div>
+                        {fitnessLevel === opt.key && (
+                          <div style={{ marginLeft: 'auto', flexShrink: 0 }}>
+                            <Check className="h-5 w-5" style={{ color: '#10b981' }} />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-col gap-1.5">
-                  <h3 className="text-xl font-bold tracking-tight">You&apos;re All Set!</h3>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto">
-                    Your profile has been created locally. You now have full access to explore Stride!
+              )}
+
+              {/* ── Step 3: Profile ── */}
+              {onboardingStep === 3 && (
+                <div className="flex flex-col gap-5">
+                  <div>
+                    <h3 style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
+                      Create your profile
+                    </h3>
+                    <p style={{ fontSize: 14, color: '#9ca3af', marginTop: 6 }}>Set your nickname and home city.</p>
+                  </div>
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-2">
+                      <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6b7280' }}>Nickname</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Speedster"
+                        value={nickname}
+                        onChange={(e) => setNickname(e.target.value)}
+                        style={{
+                          padding: '14px 16px', borderRadius: 14,
+                          border: '2px solid rgba(255,255,255,0.1)',
+                          background: 'rgba(255,255,255,0.05)',
+                          color: '#fff', fontSize: 15, outline: 'none',
+                          width: '100%', boxSizing: 'border-box'
+                        }}
+                        onFocus={(e) => { e.target.style.borderColor = '#10b981' }}
+                        onBlur={(e) => { e.target.style.borderColor = 'rgba(255,255,255,0.1)' }}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6b7280' }}>City</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Lagos"
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        style={{
+                          padding: '14px 16px', borderRadius: 14,
+                          border: '2px solid rgba(255,255,255,0.1)',
+                          background: 'rgba(255,255,255,0.05)',
+                          color: '#fff', fontSize: 15, outline: 'none',
+                          width: '100%', boxSizing: 'border-box'
+                        }}
+                        onFocus={(e) => { e.target.style.borderColor = '#10b981' }}
+                        onBlur={(e) => { e.target.style.borderColor = 'rgba(255,255,255,0.1)' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Step 4: Access Unlocked ── */}
+              {onboardingStep === 4 && (
+                <div className="flex flex-col gap-5 items-center text-center py-2">
+                  <div style={{
+                    width: 72, height: 72, borderRadius: 22,
+                    background: 'linear-gradient(135deg,rgba(16,185,129,0.2),rgba(6,182,212,0.2))',
+                    border: '1.5px solid rgba(16,185,129,0.3)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}>
+                    <Sparkles className="h-8 w-8" style={{ color: '#10b981' }} />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <h3 style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.03em' }}>You&apos;re All Set!</h3>
+                    <p style={{ fontSize: 14, color: '#9ca3af', maxWidth: 280 }}>
+                      Your profile has been created locally. You now have full access to explore Stride!
+                    </p>
+                  </div>
+                  <div style={{
+                    width: '100%', padding: '16px 18px', borderRadius: 16,
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1.5px solid rgba(255,255,255,0.08)',
+                    display: 'flex', flexDirection: 'column', gap: 12, textAlign: 'left'
+                  }}>
+                    {[
+                      'Browse and study fitness guides',
+                      'View community metrics and heatmaps',
+                      'See active routes near your city'
+                    ].map((item) => (
+                      <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <Check className="h-4 w-4" style={{ color: '#10b981', flexShrink: 0 }} />
+                        <span style={{ fontSize: 14, color: '#d1d5db' }}>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p style={{ fontSize: 12, color: '#6b7280', maxWidth: 300, lineHeight: 1.6 }}>
+                    To stake cUSD and earn rewards, connect your wallet. Or skip and explore first!
                   </p>
                 </div>
-                <div className="w-full text-left p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-150 dark:border-zinc-850 flex flex-col gap-2.5 text-xs">
-                  <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span>Browse and study fitness guides</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span>View community metrics and heatmaps</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span>See active routes near your city</span>
-                  </div>
-                </div>
-                <p className="text-[11px] text-zinc-400 leading-normal max-w-xs">
-                  To commit to a goal with skin in the game (cUSD) and earn rewards, connect your wallet below. Otherwise, feel free to skip and explore first!
-                </p>
-              </div>
-            )}
+              )}
+            </div>{/* end scrollable */}
 
-            {/* Navigation buttons */}
-            <div className="flex gap-3 mt-2">
+            {/* Sticky bottom nav */}
+            <div style={{
+              padding: '16px 24px 32px',
+              borderTop: '1px solid rgba(255,255,255,0.06)',
+              background: 'rgba(0,0,0,0.3)',
+              backdropFilter: 'blur(20px)',
+              display: 'flex',
+              gap: 12
+            }}>
               {onboardingStep > 1 && !isSubmittingProfile && (
                 <button
                   onClick={() => setOnboardingStep(prev => prev - 1)}
-                  className="py-3 px-4 rounded-full border border-zinc-200 dark:border-zinc-850 bg-white dark:bg-zinc-950 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900 font-bold transition-colors"
+                  style={{
+                    padding: '14px 20px', borderRadius: 99,
+                    border: '2px solid rgba(255,255,255,0.12)',
+                    background: 'transparent',
+                    color: '#9ca3af', fontWeight: 700, fontSize: 14,
+                    cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0
+                  }}
                 >
                   Back
                 </button>
@@ -977,30 +1131,49 @@ function LandingPageContent() {
               {onboardingStep < 4 ? (
                 <button
                   onClick={() => setOnboardingStep(prev => prev + 1)}
-                  className="flex-1 py-3.5 rounded-full bg-zinc-950 dark:bg-zinc-50 text-white dark:text-zinc-950 font-bold transition-all text-sm flex items-center justify-center gap-2 active:scale-95"
+                  style={{
+                    flex: 1, padding: '15px', borderRadius: 99,
+                    border: 'none',
+                    background: 'linear-gradient(90deg,#10b981,#06b6d4)',
+                    color: '#fff', fontWeight: 800, fontSize: 15,
+                    cursor: 'pointer', letterSpacing: '-0.01em',
+                    transition: 'opacity 0.18s'
+                  }}
                 >
                   Continue
                 </button>
               ) : (
-                <div className="flex flex-col gap-2 w-full">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
                   <button
                     onClick={connectAndSave}
                     disabled={isSubmittingProfile}
-                    className="w-full py-3.5 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-bold transition-all text-sm flex items-center justify-center gap-2 active:scale-95 shadow-md hover:shadow-lg shadow-emerald-500/10"
+                    style={{
+                      width: '100%', padding: '15px', borderRadius: 99,
+                      border: 'none',
+                      background: isSubmittingProfile ? '#374151' : 'linear-gradient(90deg,#10b981,#06b6d4)',
+                      color: '#fff', fontWeight: 800, fontSize: 15,
+                      cursor: isSubmittingProfile ? 'not-allowed' : 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
+                    }}
                   >
                     {isSubmittingProfile ? (
                       <span>Connecting...</span>
                     ) : (
                       <>
                         <Wallet className="h-4 w-4" />
-                        <span>Connect Wallet &amp; Start Staking</span>
+                        <span>Connect Wallet & Start Staking</span>
                       </>
                     )}
                   </button>
                   {!isSubmittingProfile && (
                     <button
                       onClick={skipOnboarding}
-                      className="w-full py-2.5 rounded-full bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-all text-xs font-bold"
+                      style={{
+                        width: '100%', padding: '12px', borderRadius: 99,
+                        border: 'none', background: 'transparent',
+                        color: '#6b7280', fontWeight: 700, fontSize: 13,
+                        cursor: 'pointer'
+                      }}
                     >
                       Skip and Explore First
                     </button>
