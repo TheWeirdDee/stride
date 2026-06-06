@@ -75,13 +75,15 @@ export default function ProfilePage() {
       if (isConnected && address) {
         try {
           // Check if profile exists in database
-          let { data: dbUser, error } = await supabase
+          const { data, error } = await supabase
             .from('users')
             .select('*')
             .eq('wallet_address', address)
             .maybeSingle()
 
           if (error) throw error
+
+          let dbUser = data
 
           // If connected but user doesn't exist in Supabase, sync local state
           if (!dbUser) {
