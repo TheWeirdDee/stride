@@ -1,17 +1,24 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './constants'
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+// A valid Supabase URL must start with https:// (or http:// for local dev)
+const isValidUrl = (url: string) => /^https?:\/\/.+/.test(url)
+
+const urlReady = !!SUPABASE_URL && isValidUrl(SUPABASE_URL)
+const keyReady = !!SUPABASE_ANON_KEY
+
+if (!urlReady || !keyReady) {
   console.warn(
-    'Supabase environment variables are missing. Please configure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your .env.local file.'
+    'Supabase client not initialised — NEXT_PUBLIC_SUPABASE_URL and/or NEXT_PUBLIC_SUPABASE_ANON_KEY are missing or invalid. ' +
+    'Configure them in your .env.local file or in Netlify environment variables.'
   )
 }
 
-// Only initialise the client when both env vars are present.
-// During Next.js build-time prerendering the vars may be absent (e.g. on
-// Netlify before env vars are configured), and calling createClient() without
-// a URL throws "supabaseUrl is required." which aborts the build.
+// Only create the client when both values are valid.
+// Calling createClient() with a missing/malformed URL throws at module
+// evaluation time which aborts Next.js SSR / Netlify builds.
 export const supabase: SupabaseClient | null =
-  SUPABASE_URL && SUPABASE_ANON_KEY
+  urlReady && keyReady
     ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
     : null
+
