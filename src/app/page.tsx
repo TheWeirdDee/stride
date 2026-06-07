@@ -20,7 +20,9 @@ import {
   Info,
   CheckCircle2,
   Coins,
-  Wallet
+  Wallet,
+  ArrowLeft,
+  ArrowRight
 } from 'lucide-react'
 
 function LandingPageContent() {
@@ -32,7 +34,7 @@ function LandingPageContent() {
 
   // Onboarding States
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false)
-  const [onboardingStep, setOnboardingStep] = useState(1)
+  const [onboardingStep, setOnboardingStep] = useState(0)
   const [activityPreference, setActivityPreference] = useState<'walk' | 'run' | 'both'>(() => {
     if (typeof window !== 'undefined') {
       return (localStorage.getItem('stride_onboarding_activity') as 'walk' | 'run' | 'both') || 'walk'
@@ -44,7 +46,7 @@ function LandingPageContent() {
   useEffect(() => {
     if (searchParams.get('onboard') === 'true') {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setOnboardingStep(1)
+      setOnboardingStep(0)
       setIsOnboardingOpen(true)
       router.replace('/')
     }
@@ -121,13 +123,16 @@ function LandingPageContent() {
   }
 
   const skipOnboarding = () => {
+    const finalNickname = nickname.trim() || 'Guest Mover'
+    const finalCity = city.trim() || 'Lagos'
     if (typeof window !== 'undefined') {
       localStorage.setItem('stride_onboarding_activity', activityPreference)
       localStorage.setItem('stride_onboarding_fitness', fitnessLevel)
-      localStorage.setItem('stride_onboarding_nickname', nickname)
-      localStorage.setItem('stride_onboarding_city', city)
+      localStorage.setItem('stride_onboarding_nickname', finalNickname)
+      localStorage.setItem('stride_onboarding_city', finalCity)
     }
     setIsOnboardingOpen(false)
+    router.push('/community')
   }
 
 
@@ -168,6 +173,13 @@ function LandingPageContent() {
     color:var(--ink);
     -webkit-font-smoothing:antialiased;
     overflow-x:hidden;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
   .landing-page-container img {display:block;max-width:100%;height:100%;object-fit:cover;}
   .landing-page-container a {color:inherit;text-decoration:none;}
@@ -222,11 +234,13 @@ function LandingPageContent() {
   .tag{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:8px 15px;}
   .tag .dot{width:6px;height:6px;border-radius:50%;background:var(--lime);}
 
-  .hero-h1{font-size:clamp(44px,5.6vw,78px);font-weight:700;line-height:1.0;letter-spacing:-.03em;max-width:14ch;}
+  .hero-h1{font-size:clamp(32px,5.6vw,78px);font-weight:700;line-height:1.0;letter-spacing:-.03em;max-width:14ch;}
   .hero-h1 .lite{color:rgba(255,255,255,.62);}
   .hero-sub{margin-top:22px;max-width:36ch;font-size:18px;line-height:1.55;color:rgba(255,255,255,.82);}
 
   .hero-cta{margin-top:30px;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:7px 7px 7px 22px;max-width:430px;backdrop-filter:blur(8px);}
+  .hero-get-started{margin-top:28px;display:inline-flex;align-items:center;gap:10px;background:var(--lime);color:var(--lime-ink);font-weight:800;font-size:17px;border:none;cursor:pointer;padding:18px 32px;border-radius:999px;font-family:var(--sans);transition:.18s ease;}
+  .hero-get-started:hover{background:var(--lime-deep);transform:translateY(-2px);}
   .hero-cta input{flex:1;background:transparent;border:none;outline:none;color:#fff;font-family:var(--sans);font-size:15px;}
   .hero-cta input::placeholder{color:rgba(255,255,255,.6);}
 
@@ -431,14 +445,28 @@ function LandingPageContent() {
     .foot-top{grid-template-columns:1fr 1fr;}
   }
   @media(max-width:680px){
-    .wrap{padding:0 22px;}
+    .wrap{padding:0 18px;}
     .nav-menu{display:none;}
-    .nav-inner{padding:18px 22px;}
-    .hero-inner{padding:104px 22px 40px;}
+    .nav-inner{padding:16px 18px;}
+    .hero{min-height:100dvh;}
+    .hero-inner{padding:90px 18px 36px;}
+    .hero-h1{font-size:clamp(28px,9.5vw,44px);letter-spacing:-.02em;}
+    .hero-sub{font-size:15px;max-width:100%;}
+    .hero-tags{gap:7px;}
+    .tag{font-size:12px;padding:6px 11px;}
     .steps,.prog-grid,.story-grid,.stat-band,.tier-stakes,.foot-top,.screens-scroll{grid-template-columns:1fr;}
     .tier-row{grid-template-columns:60px 1fr;gap:12px;}
     .tier-row .td,.tier-row .tt span{display:none;}
-    .hero-cta{max-width:100%;}
+    .hero-cta{max-width:100%;display:none;}
+    .hero-get-started{width:100%;justify-content:center;margin-top:24px;}
+    .hero-foot{display:none;}
+    .prog-head h2{font-size:clamp(36px,11vw,68px);}
+    .about-h2{font-size:clamp(30px,8vw,54px);}
+    .cta-band h2{font-size:clamp(36px,11vw,80px);}
+    .sband b{font-size:clamp(36px,10vw,60px);}
+    .big-num b{font-size:clamp(60px,18vw,100px);}
+    .foot-top{grid-template-columns:1fr;}
+    .foot-bot{flex-direction:column;align-items:flex-start;gap:14px;}
   }
 ` }} />
 
@@ -475,17 +503,21 @@ function LandingPageContent() {
   </div>
   <div className="hero-inner">
     <div className="hero-tags">
-      <span className="tag"><span className="dot"></span>Walk</span>
-      <span className="tag"><span className="dot"></span>Run</span>
-      <span className="tag"><span className="dot"></span>Commit &amp; Earn</span>
-      <span className="tag"><span className="dot"></span>Built on Celo</span>
+      <span className="tag"><span className="dot"></span>Built on Celo · MiniPay native</span>
     </div>
     <h1 className="hero-h1">Put Your Money <span className="lite">Where Your</span> Miles Are</h1>
-    <p className="hero-sub">Stake cUSD on a walk or run goal. Track your live route. Finish it and your stake comes back — plus a bonus. Built on Celo, native to MiniPay.</p>
-    <form className="hero-cta" onSubmit={(e) => { e.preventDefault(); setOnboardingStep(1); setIsOnboardingOpen(true); }}>
+    <p className="hero-sub">Stake a little. Move for real. Get your stake back plus a bonus the moment you finish.</p>
+    <form className="hero-cta" onSubmit={(e) => { e.preventDefault(); setOnboardingStep(0); setIsOnboardingOpen(true); }}>
       <input type="text" placeholder="Set your goal — e.g. 5 km today" aria-label="Goal" />
       <button className="btn btn-lime" type="submit">Start a Commitment</button>
     </form>
+    <button
+      className="hero-get-started"
+      onClick={() => { setOnboardingStep(0); setIsOnboardingOpen(true); }}
+    >
+      Get started
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
   </div>
 
   <aside className="hero-cards">
@@ -821,372 +853,273 @@ function LandingPageContent() {
 </footer>
 
 
-      {/* Onboarding Flow — Full-screen on mobile, centred card on desktop */}
+      {/* Onboarding Flow — Full-screen slides */}
       {isOnboardingOpen && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center"
-          style={{
-            background: 'linear-gradient(135deg, #0a0f0d 0%, #0d1f18 40%, #071a2e 100%)'
-          }}
-        >
-          {/* Decorative blobs */}
-          <div style={{
-            position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none'
-          }}>
-            <div style={{
-              position: 'absolute', top: '-20%', left: '-10%',
-              width: '60vw', height: '60vw', maxWidth: 480, maxHeight: 480,
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(16,185,129,0.18) 0%, transparent 70%)',
-              filter: 'blur(40px)'
-            }} />
-            <div style={{
-              position: 'absolute', bottom: '-15%', right: '-10%',
-              width: '50vw', height: '50vw', maxWidth: 400, maxHeight: 400,
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(6,182,212,0.14) 0%, transparent 70%)',
-              filter: 'blur(40px)'
-            }} />
-          </div>
+        <div className="fixed inset-0 z-[100] overflow-hidden" style={{ background: '#0a0a0a' }}>
 
-          {/* Card */}
-          <div
-            className="relative w-full flex flex-col"
-            style={{
-              maxWidth: 480,
-              margin: '0 auto',
-              /* Full height on mobile, auto on desktop */
-              height: 'calc(var(--vh, 1vh) * 100)',
-              maxHeight: '100dvh',
-            }}
-          >
-            {/* Inner scrollable area */}
-            <div
-              className="flex flex-col gap-6 overflow-y-auto"
-              style={{
-                flex: 1,
-                padding: '32px 24px 24px',
-                /* On large screens show as rounded card with bg */
-              }}
-            >
-              {/* Stride logo / wordmark at top */}
-              <div className="flex items-center gap-2 mb-2">
-                <div style={{
-                  width: 32, height: 32, borderRadius: 10,
-                  background: 'linear-gradient(135deg,#10b981,#06b6d4)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}>
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          {/* ─── SLIDE CAROUSEL (step 0) ─── */}
+          {onboardingStep === 0 && (() => {
+            const slides = [
+              {
+                step: 'STEP 01 — COMMIT',
+                headline: 'Back your goal with a stake',
+                body: 'Pick a distance or step goal, then lock in as little as $0.01 cUSD. Skin in the game beats willpower.',
+                icon: (
+                  <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                )
+              },
+              {
+                step: 'STEP 02 — MOVE',
+                headline: 'Track your route in real time',
+                body: 'Hit start and your live GPS route draws on the map. Distance, pace and time update every second.',
+                icon: (
+                  <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 12h4l2-7 4 14 2-7h6"/>
+                  </svg>
+                )
+              },
+              {
+                step: 'STEP 03 — EARN',
+                headline: 'Finish and get paid instantly',
+                body: 'Complete your goal and the contract releases your stake plus a bonus from the reward pool — straight to your wallet.',
+                icon: (
+                  <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="9"/>
+                    <path d="M12 7v5l3 3"/>
+                  </svg>
+                )
+              }
+            ]
+            const [slideIdx, setSlideIdx] = React.useState(0)
+            const slide = slides[slideIdx]
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', maxWidth: 430, margin: '0 auto', background: '#0a0a0a' }}>
+                {/* Top bar */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '52px 28px 0' }}>
+                  <span style={{ fontWeight: 800, fontSize: 22, color: '#fff', letterSpacing: '-0.03em' }}>
+                    Stride<span style={{ color: '#cdfb46' }}>&gt;&gt;&gt;</span>
+                  </span>
+                  <button
+                    onClick={skipOnboarding}
+                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)', fontWeight: 700, fontSize: 14, cursor: 'pointer', letterSpacing: '0.06em' }}
+                  >SKIP</button>
                 </div>
-                <span style={{ fontWeight: 800, fontSize: 20, color: '#fff', letterSpacing: '-0.03em' }}>Stride</span>
-              </div>
 
-              {/* Step counter + close */}
-              <div className="flex justify-between items-center">
-                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6ee7b7' }}>
-                  Step {onboardingStep} of 4
-                </span>
-                <button
-                  onClick={() => setIsOnboardingOpen(false)}
-                  style={{
-                    width: 32, height: 32, borderRadius: '50%',
-                    background: 'rgba(255,255,255,0.08)',
-                    border: 'none', cursor: 'pointer',
+                {/* Icon + text */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', padding: '0 28px' }}>
+                  <div style={{
+                    width: 140, height: 140, borderRadius: 36,
+                    background: '#cdfb46',
+                    boxShadow: '0 0 70px rgba(205,251,70,0.35)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#9ca3af', fontSize: 16, lineHeight: 1
-                  }}
-                  aria-label="Close onboarding"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Progress bar */}
-              <div style={{ height: 4, borderRadius: 99, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-                <div
-                  style={{
-                    height: '100%',
-                    width: `${(onboardingStep / 4) * 100}%`,
-                    borderRadius: 99,
-                    background: 'linear-gradient(90deg,#10b981,#06b6d4)',
-                    transition: 'width 0.35s ease'
-                  }}
-                />
-              </div>
-
-              {/* ── Step 1: Activity Preference ── */}
-              {onboardingStep === 1 && (
-                <div className="flex flex-col gap-5">
-                  <div>
-                    <h3 style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
-                      Choose your preference
-                    </h3>
-                    <p style={{ fontSize: 14, color: '#9ca3af', marginTop: 6 }}>What kind of workouts do you do most?</p>
-                  </div>
-                  <div className="flex flex-col gap-3">
-                    {[
-                      { key: 'walk', title: 'Walk', desc: 'General activity, steps & casual walking', icon: '🚶' },
-                      { key: 'run', title: 'Run', desc: 'Cardio, jogging & long-distance running', icon: '🏃' },
-                      { key: 'both', title: 'Both', desc: 'Hybrid walks and runs', icon: '⚡' }
-                    ].map((opt) => (
-                      <button
-                        key={opt.key}
-                        onClick={() => setActivityPreference(opt.key as 'walk' | 'run' | 'both')}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 14,
-                          padding: '16px 18px',
-                          borderRadius: 16,
-                          border: activityPreference === opt.key
-                            ? '2px solid #10b981'
-                            : '2px solid rgba(255,255,255,0.1)',
-                          background: activityPreference === opt.key
-                            ? 'rgba(16,185,129,0.12)'
-                            : 'rgba(255,255,255,0.04)',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          transition: 'all 0.18s ease',
-                          width: '100%'
-                        }}
-                      >
-                        <span style={{ fontSize: 24, flexShrink: 0 }}>{opt.icon}</span>
-                        <div>
-                          <div style={{ fontWeight: 700, fontSize: 15, color: activityPreference === opt.key ? '#6ee7b7' : '#fff' }}>{opt.title}</div>
-                          <div style={{ fontSize: 13, color: '#6b7280', marginTop: 2 }}>{opt.desc}</div>
-                        </div>
-                        {activityPreference === opt.key && (
-                          <div style={{ marginLeft: 'auto', flexShrink: 0 }}>
-                            <Check className="h-5 w-5" style={{ color: '#10b981' }} />
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* ── Step 2: Fitness Level ── */}
-              {onboardingStep === 2 && (
-                <div className="flex flex-col gap-5">
-                  <div>
-                    <h3 style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
-                      Select Fitness Level
-                    </h3>
-                    <p style={{ fontSize: 14, color: '#9ca3af', marginTop: 6 }}>Help us customize target suggestions for you.</p>
-                  </div>
-                  <div className="flex flex-col gap-3">
-                    {[
-                      { key: 'beginner', title: 'Beginner', desc: 'Just getting started, walking or returning', icon: '🌱' },
-                      { key: 'intermediate', title: 'Intermediate', desc: 'Can run a few kilometres or walk regularly', icon: '🔥' },
-                      { key: 'active', title: 'Active', desc: 'Walk or run daily, comfortable with challenges', icon: '⚡' }
-                    ].map((opt) => (
-                      <button
-                        key={opt.key}
-                        onClick={() => setFitnessLevel(opt.key as 'beginner' | 'intermediate' | 'active')}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 14,
-                          padding: '16px 18px',
-                          borderRadius: 16,
-                          border: fitnessLevel === opt.key
-                            ? '2px solid #10b981'
-                            : '2px solid rgba(255,255,255,0.1)',
-                          background: fitnessLevel === opt.key
-                            ? 'rgba(16,185,129,0.12)'
-                            : 'rgba(255,255,255,0.04)',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          transition: 'all 0.18s ease',
-                          width: '100%'
-                        }}
-                      >
-                        <span style={{ fontSize: 24, flexShrink: 0 }}>{opt.icon}</span>
-                        <div>
-                          <div style={{ fontWeight: 700, fontSize: 15, color: fitnessLevel === opt.key ? '#6ee7b7' : '#fff' }}>{opt.title}</div>
-                          <div style={{ fontSize: 13, color: '#6b7280', marginTop: 2 }}>{opt.desc}</div>
-                        </div>
-                        {fitnessLevel === opt.key && (
-                          <div style={{ marginLeft: 'auto', flexShrink: 0 }}>
-                            <Check className="h-5 w-5" style={{ color: '#10b981' }} />
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* ── Step 3: Profile ── */}
-              {onboardingStep === 3 && (
-                <div className="flex flex-col gap-5">
-                  <div>
-                    <h3 style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
-                      Create your profile
-                    </h3>
-                    <p style={{ fontSize: 14, color: '#9ca3af', marginTop: 6 }}>Set your nickname and home city.</p>
-                  </div>
-                  <div className="flex flex-col gap-4">
-                    <div className="flex flex-col gap-2">
-                      <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6b7280' }}>Nickname</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Speedster"
-                        value={nickname}
-                        onChange={(e) => setNickname(e.target.value)}
-                        style={{
-                          padding: '14px 16px', borderRadius: 14,
-                          border: '2px solid rgba(255,255,255,0.1)',
-                          background: 'rgba(255,255,255,0.05)',
-                          color: '#fff', fontSize: 15, outline: 'none',
-                          width: '100%', boxSizing: 'border-box'
-                        }}
-                        onFocus={(e) => { e.target.style.borderColor = '#10b981' }}
-                        onBlur={(e) => { e.target.style.borderColor = 'rgba(255,255,255,0.1)' }}
-                      />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6b7280' }}>City</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Lagos"
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        style={{
-                          padding: '14px 16px', borderRadius: 14,
-                          border: '2px solid rgba(255,255,255,0.1)',
-                          background: 'rgba(255,255,255,0.05)',
-                          color: '#fff', fontSize: 15, outline: 'none',
-                          width: '100%', boxSizing: 'border-box'
-                        }}
-                        onFocus={(e) => { e.target.style.borderColor = '#10b981' }}
-                        onBlur={(e) => { e.target.style.borderColor = 'rgba(255,255,255,0.1)' }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ── Step 4: Access Unlocked ── */}
-              {onboardingStep === 4 && (
-                <div className="flex flex-col gap-5 items-center text-center py-2">
-                  <div style={{
-                    width: 72, height: 72, borderRadius: 22,
-                    background: 'linear-gradient(135deg,rgba(16,185,129,0.2),rgba(6,182,212,0.2))',
-                    border: '1.5px solid rgba(16,185,129,0.3)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    marginBottom: 48, alignSelf: 'center'
                   }}>
-                    <Sparkles className="h-8 w-8" style={{ color: '#10b981' }} />
+                    {slide.icon}
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <h3 style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.03em' }}>You&apos;re All Set!</h3>
-                    <p style={{ fontSize: 14, color: '#9ca3af', maxWidth: 280 }}>
-                      Your profile has been created locally. You now have full access to explore Stride!
-                    </p>
-                  </div>
-                  <div style={{
-                    width: '100%', padding: '16px 18px', borderRadius: 16,
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1.5px solid rgba(255,255,255,0.08)',
-                    display: 'flex', flexDirection: 'column', gap: 12, textAlign: 'left'
-                  }}>
-                    {[
-                      'Browse and study fitness guides',
-                      'View community metrics and heatmaps',
-                      'See active routes near your city'
-                    ].map((item) => (
-                      <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <Check className="h-4 w-4" style={{ color: '#10b981', flexShrink: 0 }} />
-                        <span style={{ fontSize: 14, color: '#d1d5db' }}>{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <p style={{ fontSize: 12, color: '#6b7280', maxWidth: 300, lineHeight: 1.6 }}>
-                    To stake cUSD and earn rewards, connect your wallet. Or skip and explore first!
+                  <p style={{ fontFamily: 'var(--mono,monospace)', fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', color: '#cdfb46', textTransform: 'uppercase', marginBottom: 14 }}>
+                    {slide.step}
+                  </p>
+                  <h2 style={{ fontFamily: 'var(--display,sans-serif)', fontSize: 'clamp(28px,8vw,38px)', fontWeight: 900, lineHeight: 1.05, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em', marginBottom: 16 }}>
+                    {slide.headline}
+                  </h2>
+                  <p style={{ fontSize: 15, lineHeight: 1.6, color: 'rgba(255,255,255,0.6)', maxWidth: 320 }}>
+                    {slide.body}
                   </p>
                 </div>
-              )}
-            </div>{/* end scrollable */}
 
-            {/* Sticky bottom nav */}
-            <div style={{
-              padding: '16px 24px 32px',
-              borderTop: '1px solid rgba(255,255,255,0.06)',
-              background: 'rgba(0,0,0,0.3)',
-              backdropFilter: 'blur(20px)',
-              display: 'flex',
-              gap: 12
-            }}>
-              {onboardingStep > 1 && !isSubmittingProfile && (
-                <button
-                  onClick={() => setOnboardingStep(prev => prev - 1)}
-                  style={{
-                    padding: '14px 20px', borderRadius: 99,
-                    border: '2px solid rgba(255,255,255,0.12)',
-                    background: 'transparent',
-                    color: '#9ca3af', fontWeight: 700, fontSize: 14,
-                    cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0
-                  }}
-                >
-                  Back
-                </button>
-              )}
-              {onboardingStep < 4 ? (
-                <button
-                  onClick={() => setOnboardingStep(prev => prev + 1)}
-                  style={{
-                    flex: 1, padding: '15px', borderRadius: 99,
-                    border: 'none',
-                    background: 'linear-gradient(90deg,#10b981,#06b6d4)',
-                    color: '#fff', fontWeight: 800, fontSize: 15,
-                    cursor: 'pointer', letterSpacing: '-0.01em',
-                    transition: 'opacity 0.18s'
-                  }}
-                >
-                  Continue
-                </button>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
-                  <button
-                    onClick={connectAndSave}
-                    disabled={isSubmittingProfile}
-                    style={{
-                      width: '100%', padding: '15px', borderRadius: 99,
-                      border: 'none',
-                      background: isSubmittingProfile ? '#374151' : 'linear-gradient(90deg,#10b981,#06b6d4)',
-                      color: '#fff', fontWeight: 800, fontSize: 15,
-                      cursor: isSubmittingProfile ? 'not-allowed' : 'pointer',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
-                    }}
-                  >
-                    {isSubmittingProfile ? (
-                      <span>Connecting...</span>
-                    ) : (
-                      <>
-                        <Wallet className="h-4 w-4" />
-                        <span>Connect Wallet & Start Staking</span>
-                      </>
-                    )}
-                  </button>
-                  {!isSubmittingProfile && (
+                {/* Dots + CTA */}
+                <div style={{ padding: '32px 28px 48px' }}>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 28 }}>
+                    {slides.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setSlideIdx(i)}
+                        style={{
+                          width: i === slideIdx ? 28 : 8, height: 8,
+                          borderRadius: 99, border: 'none',
+                          background: i === slideIdx ? '#cdfb46' : 'rgba(255,255,255,0.2)',
+                          cursor: 'pointer', transition: 'all 0.25s ease', padding: 0
+                        }}
+                      />
+                    ))}
+                  </div>
+                  {slideIdx < slides.length - 1 ? (
                     <button
-                      onClick={skipOnboarding}
-                      style={{
-                        width: '100%', padding: '12px', borderRadius: 99,
-                        border: 'none', background: 'transparent',
-                        color: '#6b7280', fontWeight: 700, fontSize: 13,
-                        cursor: 'pointer'
-                      }}
+                      onClick={() => setSlideIdx(i => i + 1)}
+                      style={{ width: '100%', height: 56, borderRadius: 999, background: '#cdfb46', border: 'none', color: '#1c2900', fontWeight: 800, fontSize: 17, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, fontFamily: 'var(--sans,sans-serif)' }}
                     >
-                      Skip and Explore First
+                      Next <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
                     </button>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      <button
+                        onClick={() => setOnboardingStep(2)}
+                        style={{ width: '100%', height: 56, borderRadius: 999, background: '#cdfb46', border: 'none', color: '#1c2900', fontWeight: 800, fontSize: 17, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, fontFamily: 'var(--sans,sans-serif)' }}
+                      >
+                        Get started <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                      </button>
+                      <button
+                        onClick={connectAndSave}
+                        style={{ width: '100%', height: 48, borderRadius: 999, border: '1.5px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer', fontFamily: 'var(--sans,sans-serif)' }}
+                      >
+                        I already have a wallet
+                      </button>
+                    </div>
                   )}
                 </div>
-              )}
+              </div>
+            )
+          })()}
+
+          {/* ─── PROFILE STEPS (step 2-5) ─── */}
+          {onboardingStep >= 2 && (
+            <div style={{ background: 'linear-gradient(135deg, #0a0f0d 0%, #0d1f18 40%, #071a2e 100%)', height: '100dvh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+              {/* Blobs */}
+              <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+                <div style={{ position: 'absolute', top: '-20%', left: '-10%', width: '60vw', height: '60vw', maxWidth: 480, maxHeight: 480, borderRadius: '50%', background: 'radial-gradient(circle, rgba(16,185,129,0.18) 0%, transparent 70%)', filter: 'blur(40px)' }} />
+                <div style={{ position: 'absolute', bottom: '-15%', right: '-10%', width: '50vw', height: '50vw', maxWidth: 400, maxHeight: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.14) 0%, transparent 70%)', filter: 'blur(40px)' }} />
+              </div>
+
+              <div className="relative w-full flex flex-col" style={{ maxWidth: 480, margin: '0 auto', height: '100dvh' }}>
+                {/* Scrollable */}
+                <div className="flex flex-col gap-6 overflow-y-auto no-scrollbar" style={{ flex: 1, padding: '32px 24px 24px' }}>
+                  {/* Header */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <div style={{ width: 32, height: 32, borderRadius: 10, background: 'linear-gradient(135deg,#10b981,#06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    </div>
+                    <span style={{ fontWeight: 800, fontSize: 20, color: '#fff', letterSpacing: '-0.03em' }}>Stride</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6ee7b7' }}>Step {onboardingStep - 1} of 4</span>
+                    <button onClick={() => setIsOnboardingOpen(false)} style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 16 }} aria-label="Close">✕</button>
+                  </div>
+                  <div style={{ height: 4, borderRadius: 99, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${((onboardingStep - 1) / 4) * 100}%`, borderRadius: 99, background: 'linear-gradient(90deg,#10b981,#06b6d4)', transition: 'width 0.35s ease' }} />
+                  </div>
+
+                  {/* Step 2: Activity */}
+                  {onboardingStep === 2 && (
+                    <div className="flex flex-col gap-5">
+                      <div>
+                        <h3 style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.2 }}>Choose your preference</h3>
+                        <p style={{ fontSize: 14, color: '#9ca3af', marginTop: 6 }}>What kind of workouts do you do most?</p>
+                      </div>
+                      <div className="flex flex-col gap-3">
+                        {[{key:'walk',title:'Walk',desc:'General activity, steps & casual walking',icon:'🚶'},{key:'run',title:'Run',desc:'Cardio, jogging & long-distance running',icon:'🏃'},{key:'both',title:'Both',desc:'Hybrid walks and runs',icon:'⚡'}].map((opt) => (
+                          <button key={opt.key} onClick={() => setActivityPreference(opt.key as 'walk'|'run'|'both')} style={{ display:'flex',alignItems:'center',gap:14,padding:'16px 18px',borderRadius:16,border:activityPreference===opt.key?'2px solid #10b981':'2px solid rgba(255,255,255,0.1)',background:activityPreference===opt.key?'rgba(16,185,129,0.12)':'rgba(255,255,255,0.04)',cursor:'pointer',textAlign:'left',transition:'all 0.18s ease',width:'100%' }}>
+                            <span style={{ fontSize: 24, flexShrink: 0 }}>{opt.icon}</span>
+                            <div>
+                              <div style={{ fontWeight:700,fontSize:15,color:activityPreference===opt.key?'#6ee7b7':'#fff' }}>{opt.title}</div>
+                              <div style={{ fontSize:13,color:'#6b7280',marginTop:2 }}>{opt.desc}</div>
+                            </div>
+                            {activityPreference===opt.key&&<div style={{marginLeft:'auto',flexShrink:0}}><Check className="h-5 w-5" style={{color:'#10b981'}}/></div>}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 3: Fitness Level */}
+                  {onboardingStep === 3 && (
+                    <div className="flex flex-col gap-5">
+                      <div>
+                        <h3 style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.2 }}>Select Fitness Level</h3>
+                        <p style={{ fontSize: 14, color: '#9ca3af', marginTop: 6 }}>Help us customize target suggestions for you.</p>
+                      </div>
+                      <div className="flex flex-col gap-3">
+                        {[{key:'beginner',title:'Beginner',desc:'Just getting started, walking or returning',icon:'🌱'},{key:'intermediate',title:'Intermediate',desc:'Can run a few kilometres or walk regularly',icon:'🔥'},{key:'active',title:'Active',desc:'Walk or run daily, comfortable with challenges',icon:'⚡'}].map((opt) => (
+                          <button key={opt.key} onClick={() => setFitnessLevel(opt.key as 'beginner'|'intermediate'|'active')} style={{ display:'flex',alignItems:'center',gap:14,padding:'16px 18px',borderRadius:16,border:fitnessLevel===opt.key?'2px solid #10b981':'2px solid rgba(255,255,255,0.1)',background:fitnessLevel===opt.key?'rgba(16,185,129,0.12)':'rgba(255,255,255,0.04)',cursor:'pointer',textAlign:'left',transition:'all 0.18s ease',width:'100%' }}>
+                            <span style={{ fontSize: 24, flexShrink: 0 }}>{opt.icon}</span>
+                            <div>
+                              <div style={{ fontWeight:700,fontSize:15,color:fitnessLevel===opt.key?'#6ee7b7':'#fff' }}>{opt.title}</div>
+                              <div style={{ fontSize:13,color:'#6b7280',marginTop:2 }}>{opt.desc}</div>
+                            </div>
+                            {fitnessLevel===opt.key&&<div style={{marginLeft:'auto',flexShrink:0}}><Check className="h-5 w-5" style={{color:'#10b981'}}/></div>}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 4: Profile */}
+                  {onboardingStep === 4 && (
+                    <div className="flex flex-col gap-5">
+                      <div>
+                        <h3 style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.2 }}>Create your profile</h3>
+                        <p style={{ fontSize: 14, color: '#9ca3af', marginTop: 6 }}>Set your nickname and home city.</p>
+                      </div>
+                      <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-2">
+                          <label style={{ fontSize:11,fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'#6b7280' }}>Nickname</label>
+                          <input type="text" placeholder="e.g. Speedster" value={nickname} onChange={(e)=>setNickname(e.target.value)} style={{ padding:'14px 16px',borderRadius:14,border:'2px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.05)',color:'#fff',fontSize:15,outline:'none',width:'100%',boxSizing:'border-box' }} onFocus={(e)=>{e.target.style.borderColor='#10b981'}} onBlur={(e)=>{e.target.style.borderColor='rgba(255,255,255,0.1)'}}/>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <label style={{ fontSize:11,fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'#6b7280' }}>City</label>
+                          <input type="text" placeholder="e.g. Lagos" value={city} onChange={(e)=>setCity(e.target.value)} style={{ padding:'14px 16px',borderRadius:14,border:'2px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.05)',color:'#fff',fontSize:15,outline:'none',width:'100%',boxSizing:'border-box' }} onFocus={(e)=>{e.target.style.borderColor='#10b981'}} onBlur={(e)=>{e.target.style.borderColor='rgba(255,255,255,0.1)'}}/>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 5: Done */}
+                  {onboardingStep === 5 && (
+                    <div className="flex flex-col gap-5 items-center text-center py-2">
+                      <div style={{ width:72,height:72,borderRadius:22,background:'linear-gradient(135deg,rgba(16,185,129,0.2),rgba(6,182,212,0.2))',border:'1.5px solid rgba(16,185,129,0.3)',display:'flex',alignItems:'center',justifyContent:'center' }}>
+                        <Sparkles className="h-8 w-8" style={{ color: '#10b981' }} />
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <h3 style={{ fontSize:26,fontWeight:800,color:'#fff',letterSpacing:'-0.03em' }}>You&apos;re All Set!</h3>
+                        <p style={{ fontSize:14,color:'#9ca3af',maxWidth:280 }}>Your profile has been created locally. You now have full access to explore Stride!</p>
+                      </div>
+                      <div style={{ width:'100%',padding:'16px 18px',borderRadius:16,background:'rgba(255,255,255,0.04)',border:'1.5px solid rgba(255,255,255,0.08)',display:'flex',flexDirection:'column',gap:12,textAlign:'left' }}>
+                        {['Browse and study fitness guides','View community metrics and heatmaps','See active routes near your city'].map((item)=>(
+                          <div key={item} style={{ display:'flex',alignItems:'center',gap:10 }}>
+                            <Check className="h-4 w-4" style={{ color:'#10b981',flexShrink:0 }}/>
+                            <span style={{ fontSize:14,color:'#d1d5db' }}>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Bottom nav */}
+                <div style={{ padding:'16px 24px 32px',borderTop:'1px solid rgba(255,255,255,0.06)',background:'rgba(0,0,0,0.3)',backdropFilter:'blur(20px)',display:'flex',alignItems:'flex-start',gap:12 }}>
+                  {onboardingStep > 2 && !isSubmittingProfile && (
+                    <button onClick={()=>setOnboardingStep(prev=>prev-1)} style={{ height:'50px',padding:'0 20px',borderRadius:99,border:'2px solid rgba(255,255,255,0.12)',background:'transparent',color:'#9ca3af',fontWeight:700,fontSize:14,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0,display:'inline-flex',alignItems:'center',justifyContent:'center',gap:8,boxSizing:'border-box' }}>
+                      <ArrowLeft className="h-4 w-4" /><span>Back</span>
+                    </button>
+                  )}
+                  {onboardingStep < 5 ? (
+                    <button onClick={()=>setOnboardingStep(prev=>prev+1)} style={{ flex:1,height:'50px',padding:'0 15px',borderRadius:99,border:'none',background:'#cdfb46',color:'#1c2900',fontWeight:800,fontSize:15,cursor:'pointer',letterSpacing:'-0.01em',transition:'opacity 0.18s',boxSizing:'border-box',display:'flex',alignItems:'center',justifyContent:'center',gap:8 }}>
+                      Continue <ArrowRight className="h-4 w-4" />
+                    </button>
+                  ) : (
+                    <div style={{ display:'flex',flexDirection:'column',gap:10,width:'100%' }}>
+                      <button onClick={connectAndSave} disabled={isSubmittingProfile} style={{ width:'100%',height:'50px',padding:'0 15px',borderRadius:99,border:'none',background:isSubmittingProfile?'#374151':'linear-gradient(90deg,#10b981,#06b6d4)',color:'#fff',fontWeight:800,fontSize:15,cursor:isSubmittingProfile?'not-allowed':'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,boxSizing:'border-box' }}>
+                        {isSubmittingProfile?<span>Connecting...</span>:<><Wallet className="h-4 w-4"/><span>Connect Wallet & Start Staking</span></>}
+                      </button>
+                      {!isSubmittingProfile&&(
+                        <button onClick={skipOnboarding} style={{ width:'100%',padding:'12px',borderRadius:99,border:'none',background:'transparent',color:'#6b7280',fontWeight:700,fontSize:13,cursor:'pointer' }}>
+                          Skip and Explore First
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>
   )
 }
+
 
 export default function LandingPage() {
   return (
