@@ -6,7 +6,7 @@ export const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 42220)
 export const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || 'https://forno.celo.org'
 
 export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || 'Stride'
-export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001'
+export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? ''
 
 export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 export const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
