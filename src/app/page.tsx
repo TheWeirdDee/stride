@@ -70,6 +70,7 @@ function LandingPageContent() {
     return ''
   })
   const [isSubmittingProfile, setIsSubmittingProfile] = useState(false)
+  const [slideIdx, setSlideIdx] = useState(0)
 
   // Trigger Supabase write and redirect when wallet connects during onboarding
   useEffect(() => {
@@ -489,7 +490,7 @@ function LandingPageContent() {
       {isConnected ? (
         <Link className="btn btn-light" href="/profile">View Profile</Link>
       ) : (
-        <button className="btn btn-light" onClick={() => { setOnboardingStep(1); setIsOnboardingOpen(true); }}>Get Started</button>
+        <button className="btn btn-light" onClick={() => { setOnboardingStep(0); setSlideIdx(0); setIsOnboardingOpen(true); }}>Get Started</button>
       )}
     </div>
   </div>
@@ -893,7 +894,6 @@ function LandingPageContent() {
                 )
               }
             ]
-            const [slideIdx, setSlideIdx] = React.useState(0)
             const slide = slides[slideIdx]
             return (
               <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', maxWidth: 430, margin: '0 auto', background: '#0a0a0a' }}>
