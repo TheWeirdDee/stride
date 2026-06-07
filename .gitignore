@@ -15,6 +15,9 @@ out/
 dist/
 build/
 
+# Private/Sensitive Data
+/private/
+
 # Hardhat
 contracts/artifacts/
 contracts/cache/
@@ -68,3 +71,5 @@ backend/node_modules/
 !**/readme.md
 !**/README.MD
 !**/README
+
+ 
