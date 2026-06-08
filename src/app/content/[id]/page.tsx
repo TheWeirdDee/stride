@@ -183,7 +183,7 @@ export default function ContentDetailPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 animate-in fade-in duration-300">
-      {/* Back to Guides */}
+      
       <Link
         href="/content"
         className="inline-flex items-center gap-1.5 text-xs font-bold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors mb-6 uppercase tracking-wider"
