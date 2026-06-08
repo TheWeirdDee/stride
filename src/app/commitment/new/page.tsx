@@ -26,7 +26,6 @@ export default function NewCommitmentPage() {
   const { isConnected } = useAccount()
   const { connect, connectors } = useConnect()
   
-  // Custom hook containing web3 operations
   const {
     balance,
     hasActiveCommitment,
