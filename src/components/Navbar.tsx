@@ -16,7 +16,7 @@ export default function Navbar() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedNickname = localStorage.getItem('stride_onboarding_nickname')
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setNickname(storedNickname)
     }
   }, [pathname])
