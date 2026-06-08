@@ -3,8 +3,7 @@ import { keccak256, encodePacked } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { randomBytes } from 'crypto'
 
-// ─── Validation Rules (mirrors backend/server.js) ────────────
-
+ 
 const RULES = {
   walk: { maxSpeedKmh: 8, minMinutesPerKm: 7 },
   run: { maxSpeedKmh: 25, minMinutesPerKm: 3.5 },
