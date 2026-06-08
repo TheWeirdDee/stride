@@ -15,7 +15,6 @@ interface ContentItem {
   activity: 'walk' | 'run' | 'both'
 }
 
-// Fallback data matching the SQL seed in schema.sql
 const STATIC_GUIDES: ContentItem[] = [
   {
     id: 'walk-warmup',
