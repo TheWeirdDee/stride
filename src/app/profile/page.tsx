@@ -68,7 +68,6 @@ export default function ProfilePage() {
 
   const balance = rawBalance ? Number(formatEther(rawBalance)).toFixed(2) : '0.00'
 
-  // Load profile (Guest or Web3)
   useEffect(() => {
     async function loadProfile() {
       setLoading(true)
