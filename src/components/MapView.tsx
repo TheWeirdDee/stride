@@ -16,7 +16,6 @@ export function MapView({ path, isActive }: MapViewProps) {
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const markerRef = useRef<mapboxgl.Marker | null>(null)
 
-  // Set the token
   mapboxgl.accessToken = MAPBOX_TOKEN
 
   useEffect(() => {
