@@ -11,7 +11,7 @@ interface RouteCardProps {
   rewardCUSD: number
   date: string
   activityType: 'walk' | 'run'
-  // Abstract path coordinates as SVG drawing command (e.g., "M10 80 Q 52.5 10, 95 80 T 180 80")
+   
   svgPath: string
 }
 
