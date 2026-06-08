@@ -32,7 +32,6 @@ export default function CommunityFeedPage() {
   const [feed, setFeed] = useState<FeedItem[]>(INITIAL_FEED)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
-  // Ticker simulation adding new feed items dynamically
   useEffect(() => {
     const users = ['FastWalker', 'CeloChamp', 'LagosStride', 'DailyMover', 'KilometreKing', 'RunFast']
     const cities = ['Lagos', 'Nairobi', 'Accra', 'Kampala', 'Kigali', 'Dar es Salaam']
