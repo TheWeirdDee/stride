@@ -42,7 +42,6 @@ export default function SessionPage() {
   const [errorMsg, setErrorMsg] = useState('')
   const [txHash, setTxHash] = useState('')
 
-  // Pause tracking
   const pauseCountRef = useRef(0)
   const totalPauseMsRef = useRef(0)
   const pauseStartRef = useRef<number | null>(null)
