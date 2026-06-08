@@ -54,7 +54,7 @@ export default function NewCommitmentPage() {
   // Quick pick stake options
   const stakeOptions = ['0.01', '0.10', '0.25', '0.50', '1.00']
 
-  // Duration Options in hours
+   
   const durationOptions = [
     { label: '1 Hour', value: 1, seconds: 3600 },
     { label: '2 Hours', value: 2, seconds: 7200 },
