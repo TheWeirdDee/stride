@@ -32,7 +32,6 @@ function LandingPageContent() {
   const [obStake, setObStake] = useState(1)
   const [obConnecting, setObConnecting] = useState(false)
 
-  // Open onboarding if query param present
   useEffect(() => {
     if (searchParams.get('onboard') === 'true') {
       setObScreen('splash')
