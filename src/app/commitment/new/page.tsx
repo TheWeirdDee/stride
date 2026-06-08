@@ -49,8 +49,6 @@ export default function NewCommitmentPage() {
   const [isCustomStakeActive, setIsCustomStakeActive] = useState<boolean>(false)
   const [localError, setLocalError] = useState<string | null>(null)
 
-  // Default values are synchronized directly on selection in Step 1
-
   // Quick pick stake options
   const stakeOptions = ['0.01', '0.10', '0.25', '0.50', '1.00']
 
