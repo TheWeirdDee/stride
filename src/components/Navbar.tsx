@@ -3,11 +3,9 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useAccount, useConnect, useDisconnect, useReadContract } from 'wagmi'
+import { useAccount, useConnect, useDisconnect, useBalance } from 'wagmi'
 import { formatEther } from 'viem'
 import { Activity, Compass, BookOpen, User, Wallet, LogOut, Menu, X, ArrowRight } from 'lucide-react'
-import { CUSD_ADDRESS } from '@/utils/constants'
-import { cusdABI } from '@/abi/cusd'
 
 export default function Navbar() {
   const pathname = usePathname()
@@ -24,18 +22,12 @@ export default function Navbar() {
   const { connect, connectors } = useConnect()
   const { disconnect } = useDisconnect()
 
-  // Read cUSD balance
-  const { data: rawBalance } = useReadContract({
-    address: CUSD_ADDRESS,
-    abi: cusdABI,
-    functionName: 'balanceOf',
-    args: address ? [address] : undefined,
-    query: {
-      enabled: !!address,
-    }
+  const { data: balanceData } = useBalance({
+    address: address,
+    query: { enabled: !!address },
   })
 
-  const balance = rawBalance ? Number(formatEther(rawBalance)).toFixed(2) : '0.00'
+  const balance = balanceData ? parseFloat(formatEther(balanceData.value)).toFixed(4) : '0.0000'
 
   const navLinks = [
     { name: 'Explore', href: '/', icon: Compass },
@@ -104,7 +96,7 @@ export default function Navbar() {
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                   <span className="font-mono">${balance}</span>
-                  <span className="text-zinc-400 dark:text-zinc-500 font-normal">cUSD</span>
+                  <span className="text-zinc-400 dark:text-zinc-500 font-normal">CELO</span>
                 </div>
                 {/* Account button / dropdown */}
                 <button
