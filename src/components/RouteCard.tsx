@@ -109,8 +109,8 @@ export default function RouteCard({
             <span className="text-xs font-bold uppercase tracking-wider">Earned</span>
           </div>
           <div className="flex items-baseline gap-0.5 text-zinc-900 dark:text-zinc-50 font-bold font-mono">
-            <span className="text-emerald-500 font-extrabold text-base">+${rewardCUSD.toFixed(2)}</span>
-            <span className="text-[9px] font-medium text-zinc-500 ml-0.5">cUSD</span>
+            <span className="text-emerald-500 font-extrabold text-base">+{rewardCUSD.toFixed(4)}</span>
+            <span className="text-[9px] font-medium text-zinc-500 ml-0.5">CELO</span>
           </div>
         </div>
       </div>
