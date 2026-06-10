@@ -40,12 +40,11 @@ export const commitmentABI = [
   {
     type: 'function',
     name: 'createCommitment',
-    stateMutability: 'nonpayable',
+    stateMutability: 'payable',
     inputs: [
       { name: 'distanceGoalMeters', type: 'uint256' },
       { name: 'stepGoal', type: 'uint256' },
       { name: 'timeWindowSeconds', type: 'uint256' },
-      { name: 'stakeAmount', type: 'uint256' },
     ],
     outputs: [],
   },
