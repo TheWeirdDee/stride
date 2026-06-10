@@ -1,11 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAccount, useConnect, useDisconnect, useReadContract } from 'wagmi'
+import { useAccount, useConnect, useDisconnect, useBalance } from 'wagmi'
 import { formatEther } from 'viem'
 import { supabase } from '@/utils/supabase'
-import { CUSD_ADDRESS } from '@/utils/constants'
-import { cusdABI } from '@/abi/cusd'
 import { useRouter } from 'next/navigation'
 import {
   User,
@@ -55,18 +53,12 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
 
-  // Read cUSD balance
-  const { data: rawBalance } = useReadContract({
-    address: CUSD_ADDRESS,
-    abi: cusdABI,
-    functionName: 'balanceOf',
-    args: address ? [address] : undefined,
-    query: {
-      enabled: !!address,
-    }
+  const { data: balanceData } = useBalance({
+    address: address,
+    query: { enabled: !!address },
   })
 
-  const balance = rawBalance ? Number(formatEther(rawBalance)).toFixed(2) : '0.00'
+  const balance = balanceData ? parseFloat(formatEther(balanceData.value)).toFixed(4) : '0.0000'
 
   useEffect(() => {
     async function loadProfile() {
@@ -85,20 +77,17 @@ export default function ProfilePage() {
 
           let dbUser = data
 
-          // If connected but user doesn't exist in Supabase, sync local state
+          // If connected but user doesn't exist in Supabase, create with defaults
           if (!dbUser) {
             setSyncing(true)
-            const localNickname = localStorage.getItem('stride_onboarding_nickname') || 'Anonymous Mover'
-            const localCity = localStorage.getItem('stride_onboarding_city') || 'Lagos'
-            const localFitness = localStorage.getItem('stride_onboarding_fitness') || 'beginner'
 
             const { data: insertedUser, error: insertError } = await supabase
               .from('users')
               .insert({
                 wallet_address: address,
-                nickname: localNickname,
-                city: localCity,
-                fitness_level: localFitness,
+                nickname: 'Anonymous Mover',
+                city: 'Unknown',
+                fitness_level: 'beginner',
                 streak_current: 0,
                 streak_best: 0,
                 total_distance: 0,
@@ -139,37 +128,13 @@ export default function ProfilePage() {
           }
 
         } catch (err) {
-          console.error('Database load failed, fallback to local storage:', err)
-          loadLocalFallback()
+          console.error('Profile load failed:', err)
         } finally {
           setLoading(false)
         }
       } else {
-        // Guest user
-        loadLocalFallback()
+        // Disconnected — keep whatever profile state is already in memory
         setLoading(false)
-      }
-    }
-
-    function loadLocalFallback() {
-      if (typeof window !== 'undefined') {
-        const localNickname = localStorage.getItem('stride_onboarding_nickname') || ''
-        const localCity = localStorage.getItem('stride_onboarding_city') || ''
-        const localFitness = (localStorage.getItem('stride_onboarding_fitness') as 'beginner' | 'intermediate' | 'active') || 'beginner'
-        
-        if (localNickname) {
-          setProfile({
-            nickname: localNickname,
-            city: localCity,
-            fitness_level: localFitness,
-            streak_current: 0,
-            streak_best: 0,
-            total_distance: 0,
-            total_earnings: 0,
-          })
-        } else {
-          setProfile(null)
-        }
       }
     }
 
@@ -311,9 +276,9 @@ export default function ProfilePage() {
                 </span>
               </div>
               <div>
-                <span className="block text-[10px] text-zinc-400 uppercase font-bold tracking-wider">cUSD Balance</span>
+                <span className="block text-[10px] text-zinc-400 uppercase font-bold tracking-wider">CELO Balance</span>
                 <span className="block text-xl font-mono font-extrabold text-zinc-800 dark:text-zinc-50 mt-1">
-                  ${balance} <small className="text-xs font-normal text-zinc-400">cUSD</small>
+                  {balance} <small className="text-xs font-normal text-zinc-400">CELO</small>
                 </span>
               </div>
               <button
@@ -328,7 +293,7 @@ export default function ProfilePage() {
               <div className="flex gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-900/30 text-amber-800 dark:text-amber-400 text-xs">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                 <p className="leading-normal font-semibold">
-                  You are exploring as a guest. Connect your wallet to save data on-chain and earn cUSD rewards.
+                  You are exploring as a guest. Connect your wallet to save data on-chain and earn CELO rewards.
                 </p>
               </div>
               <button
@@ -370,7 +335,7 @@ export default function ProfilePage() {
                 >
                   <div className="flex justify-between items-center">
                     <span className="text-xs font-mono font-bold text-zinc-800 dark:text-zinc-300">
-                      Stake: ${c.stake_amount.toFixed(2)} cUSD
+                      Stake: ${c.stake_amount.toFixed(2)} CELO
                     </span>
                     <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${getStatusBadge(c.status)}`}>
                       {c.status}
@@ -406,7 +371,7 @@ export default function ProfilePage() {
               <Compass className="h-8 w-8 text-zinc-300 mx-auto mb-3" />
               <h3 className="text-sm font-bold text-zinc-700 dark:text-zinc-350">No commitments found</h3>
               <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1 mb-4">
-                You haven&apos;t staked cUSD on a workout yet.
+                You haven&apos;t staked CELO on a workout yet.
               </p>
               <button
                 onClick={() => router.push('/commitment/new')}
