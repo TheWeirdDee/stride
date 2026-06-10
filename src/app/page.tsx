@@ -1,25 +1,14 @@
 ﻿'use client'
 
-import React, { useState, useEffect, Suspense } from 'react'
+import React, { useState, useEffect, useRef, Suspense } from 'react'
 import Link from 'next/link'
 import { useAccount, useConnect, useDisconnect } from 'wagmi'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/utils/supabase'
-import {
-  ChevronRight,
-  MapPin,
-  Trophy,
-  Compass,
-  Activity,
-  User,
-  Clock,
-  Flame,
-} from 'lucide-react'
 
 function LandingPageContent() {
   const { address, isConnected } = useAccount()
   const { connect, connectors } = useConnect()
-  const { disconnect } = useDisconnect()
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -34,6 +23,9 @@ function LandingPageContent() {
   const [obName, setObName] = useState('')
   const [obHeight, setObHeight] = useState('')
   const [obWeight, setObWeight] = useState('')
+  const obNameRef = useRef(obName)
+  useEffect(() => { obNameRef.current = obName }, [obName])
+  const [isSubmittingProfile, setIsSubmittingProfile] = useState(false)
 
   useEffect(() => {
     if (searchParams.get('onboard') === 'true') {
@@ -42,7 +34,6 @@ function LandingPageContent() {
       router.replace('/')
     }
   }, [searchParams, router])
-  const [isSubmittingProfile, setIsSubmittingProfile] = useState(false)
 
   // Navigate between onboarding screens
   const go = (screen: string) => {
@@ -62,12 +53,11 @@ function LandingPageContent() {
       const saveProfile = async () => {
         try {
           if (supabase) {
-            const nickname = (typeof window !== 'undefined' ? localStorage.getItem('stride_onboarding_nickname') : null) || 'Anonymous Mover'
             const { error } = await supabase
               .from('users')
               .upsert({
                 wallet_address: address,
-                nickname,
+                nickname: obNameRef.current || 'Anonymous Mover',
                 city: 'Unknown',
                 fitness_level: 'beginner',
               }, { onConflict: 'wallet_address' })
@@ -92,13 +82,6 @@ function LandingPageContent() {
   }, [isConnected, address, isSubmittingProfile, router])
 
   const connectAndSave = async () => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('stride_onboarded', 'true')
-      localStorage.setItem('stride_onboarding_nickname', obName || 'Anonymous Mover')
-      localStorage.setItem('stride_onboarding_fitness', 'beginner')
-      if (obHeight) localStorage.setItem('stride_onboarding_height', obHeight)
-      if (obWeight) localStorage.setItem('stride_onboarding_weight', obWeight)
-    }
     setIsSubmittingProfile(true)
     try {
       const connector = connectors.find(c => c.id === 'injected') || connectors[0]
@@ -119,6 +102,7 @@ function LandingPageContent() {
 
 
   return (
+    <>
     <div className="landing-page-container">
       {/* Scoped CSS Stylesheet */}
       <style dangerouslySetInnerHTML={{ __html: `
@@ -431,7 +415,7 @@ function LandingPageContent() {
     .nav-menu{display:none;}
     .nav-inner{padding:16px 18px;}
     .hero{min-height:100dvh;}
-    .hero-inner{padding:90px 18px 36px;}
+    .hero-inner{padding:70px 18px 36px;}
     .hero-h1{font-size:clamp(28px,9.5vw,44px);letter-spacing:-.02em;}
     .hero-sub{font-size:15px;max-width:100%;}
     .hero-tags{gap:7px;}
@@ -511,7 +495,7 @@ function LandingPageContent() {
     </div>
     <div className="stake-card">
       <div className="row1"><span>Today&apos;s stake</span><span>5 km · 2h window</span></div>
-      <div className="stake-amt"><b>$1.00</b><small>cUSD</small></div>
+      <div className="stake-amt"><b>1.00</b><small>CELO</small></div>
       <ul className="stake-list">
         <li>Full stake returned on finish</li>
         <li>Bonus from the reward pool</li>
@@ -547,7 +531,7 @@ function LandingPageContent() {
     <div className="about-top">
       <h2 className="display about-h2">Commit. Move.<br /><em>Get rewarded.</em></h2>
       <div className="about-copy">
-        <p>Stride turns intention into action. You decide a goal, back it with a small cUSD stake, and the chain holds you to it. No coaches chasing you — just your own commitment, verified by your live GPS route.</p>
+        <p>Stride turns intention into action. You decide a goal, back it with a small CELO stake, and the chain holds you to it. No coaches chasing you — just your own commitment, verified by your live GPS route.</p>
         <p>Finish inside your time window and your stake returns in full, topped up with a bonus from the community reward pool. Miss it, and your stake funds the people who showed up. Simple, fair, fully on-chain.</p>
         <a className="btn btn-dark" href="#start">Start a Commitment <span className="arrow-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
       </div>
@@ -556,7 +540,7 @@ function LandingPageContent() {
       <div className="step">
         <div className="num">01</div>
         <h4>Set &amp; stake</h4>
-        <p>Pick a distance or step goal and a time window. Back it with as little as $0.01 cUSD straight from your MiniPay wallet.</p>
+        <p>Pick a distance or step goal and a time window. Back it with as little as 0.01 CELO straight from your MiniPay wallet.</p>
       </div>
       <div className="step">
         <div className="num">02</div>
@@ -711,10 +695,10 @@ function LandingPageContent() {
       </div>
     </div>
     <div className="tier-stakes">
-      <div className="tstake"><div className="tdist">1 KM</div><div className="tprice">$0.01 cUSD</div><div className="tlabel">First steps</div></div>
-      <div className="tstake hot"><div className="tdist">3 KM</div><div className="tprice">$0.10 cUSD</div><div className="tlabel">Most popular</div></div>
-      <div className="tstake"><div className="tdist">10 KM</div><div className="tprice">$0.50 cUSD</div><div className="tlabel">Distance day</div></div>
-      <div className="tstake"><div className="tdist">21 KM</div><div className="tprice">$1.00 cUSD</div><div className="tlabel">Half marathon</div></div>
+      <div className="tstake"><div className="tdist">1 KM</div><div className="tprice">0.01 CELO</div><div className="tlabel">First steps</div></div>
+      <div className="tstake hot"><div className="tdist">3 KM</div><div className="tprice">0.10 CELO</div><div className="tlabel">Most popular</div></div>
+      <div className="tstake"><div className="tdist">10 KM</div><div className="tprice">0.50 CELO</div><div className="tlabel">Distance day</div></div>
+      <div className="tstake"><div className="tdist">21 KM</div><div className="tprice">1.00 CELO</div><div className="tlabel">Half marathon</div></div>
     </div>
   </div>
 </section>
@@ -798,7 +782,7 @@ function LandingPageContent() {
         <div className="foot-badges">
           <span className="badge"><span className="b-dot"></span>Built on Celo</span>
           <span className="badge"><span className="b-dot"></span>MiniPay native</span>
-          <span className="badge"><span className="b-dot"></span>cUSD settled</span>
+          <span className="badge"><span className="b-dot"></span>CELO settled</span>
         </div>
       </div>
       <div className="foot-col">
@@ -835,6 +819,8 @@ function LandingPageContent() {
   </div>
 </footer>
 
+
+    </div>{/* /landing-page-container */}
 
       {/* Onboarding Flow — 7-screen design system */}
       {isOnboardingOpen && (
@@ -888,7 +874,7 @@ function LandingPageContent() {
           {/* ════ 2. CAROUSEL ════ */}
           {obScreen === 'carousel' && (() => {
             const OB_SLIDES = [
-              { eb:'Step 01 — Commit', title:'Back your goal with a stake', body:'Pick a distance or step goal, then lock in as little as $0.01 cUSD. Skin in the game beats willpower.' },
+              { eb:'Step 01 — Commit', title:'Back your goal with a stake', body:'Pick a distance or step goal, then lock in as little as 0.01 CELO. Skin in the game beats willpower.' },
               { eb:'Step 02 — Move',   title:'Track every metre, live',     body:'Your route draws in real time with pace, distance and time. Stride verifies it from your GPS — no faking it.' },
               { eb:'Step 03 — Earn',   title:'Finish and get paid back',    body:'Complete the goal and your stake returns in full, plus a bonus from the community pool. Miss it and it funds the finishers.' },
             ]
@@ -1012,9 +998,9 @@ function LandingPageContent() {
                 </button>
                 <span />
               </div>
-              <div className="ob-scroll" style={{ flex:1,padding:'0 20px' }}>
+              <div className="ob-scroll" style={{ flex:1,padding:'0 20px 60px' }}>
                 <h1 style={{ fontFamily:'"Anton",sans-serif',fontWeight:400,textTransform:'uppercase',lineHeight:.9,letterSpacing:'.01em',fontSize:40,color:'#f3f5f3' }}>Connect<br/>your wallet</h1>
-                <p style={{ marginTop:14,fontSize:16,lineHeight:1.55,color:'#9aa1a8' }}>Stakes settle in cUSD on Celo. Gas costs a fraction of a cent — no jargon, no card.</p>
+                <p style={{ marginTop:14,fontSize:16,lineHeight:1.55,color:'#9aa1a8' }}>Stakes settle in native CELO. Gas costs a fraction of a cent — no jargon, no card.</p>
                 <div style={{ marginTop:24,background:'#cdfb46',color:'#1b2700',borderRadius:22,padding:20 }}>
                   <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between' }}>
                     <span style={{ fontFamily:'"Space Mono",monospace',fontSize:10.5,letterSpacing:'.14em',textTransform:'uppercase' }}>Detected on this device</span>
@@ -1082,7 +1068,7 @@ function LandingPageContent() {
                     ['M8 18h6a3 3 0 0 0 0-6H10a3 3 0 0 1 0-6h6','Draw your live route'],
                     ['M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z M9 12l2 2 4-4','Verify the goal honestly'],
                     ['M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z|circle:12,12,3','Never used in the background'],
-                  ] as const).map(([ic, tx], i) => (
+                  ] as const).map(([, tx], i) => (
                     <div key={tx} style={{ display:'flex',alignItems:'center',gap:12 }}>
                       {i === 0 && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#cdfb46" strokeWidth="2" strokeLinecap="round"><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M8 18h6a3 3 0 0 0 0-6H10a3 3 0 0 1 0-6h6"/></svg>}
                       {i === 1 && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#cdfb46" strokeWidth="2" strokeLinecap="round"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>}
@@ -1138,7 +1124,7 @@ function LandingPageContent() {
                     </div>
                   </div>
                   <div style={{ marginTop:20 }}>
-                    <div style={{ fontFamily:'"Space Mono",monospace',fontSize:10.5,letterSpacing:'.18em',textTransform:'uppercase',color:'#6a7077',marginBottom:10 }}>Your stake (cUSD)</div>
+                    <div style={{ fontFamily:'"Space Mono",monospace',fontSize:10.5,letterSpacing:'.18em',textTransform:'uppercase',color:'#6a7077',marginBottom:10 }}>Your stake (CELO)</div>
                     <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:8 }}>
                       {STAKES.map((d,k) => (
                         <div key={d} onClick={() => setObStake(k)} style={{ display:'inline-flex',alignItems:'center',justifyContent:'center',padding:'11px 15px',borderRadius:14,cursor:'pointer',fontSize:14,fontWeight:600,fontFamily:'"Space Mono",monospace',color:obStake===k?'#1b2700':'#f3f5f3',background:obStake===k?'#cdfb46':'#1d2024',border:obStake===k?'1.5px solid #cdfb46':'1.5px solid transparent',transition:'.15s',textAlign:'center' }}>{d}</div>
@@ -1215,14 +1201,7 @@ function LandingPageContent() {
               </div>
               <div style={{ padding:'14px 20px 40px' }}>
                 <button
-                  onClick={() => {
-                    if (typeof window !== 'undefined') {
-                      localStorage.setItem('stride_onboarding_nickname', obName || 'Anonymous Mover')
-                      if (obHeight) localStorage.setItem('stride_onboarding_height', obHeight)
-                      if (obWeight) localStorage.setItem('stride_onboarding_weight', obWeight)
-                    }
-                    go('success')
-                  }}
+                  onClick={() => go('success')}
                   style={{ display:'inline-flex',alignItems:'center',justifyContent:'center',gap:9,fontFamily:'"Hanken Grotesk",system-ui,sans-serif',fontWeight:700,fontSize:16,border:'none',cursor:'pointer',borderRadius:999,padding:'16px 22px',width:'100%',background:'#cdfb46',color:'#1b2700' }}
                 >
                   Continue <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
@@ -1253,7 +1232,7 @@ function LandingPageContent() {
                       </div>
                       <div>
                         <b style={{ fontSize:16 }}>{DISTS[obDist]} {obMode}</b>
-                        <div style={{ fontSize:12.5,color:'#9aa1a8' }}>Staked {STAKES[obStake]} cUSD</div>
+                        <div style={{ fontSize:12.5,color:'#9aa1a8' }}>Staked {STAKES[obStake]} CELO</div>
                       </div>
                     </div>
                     <span style={{ display:'inline-flex',alignItems:'center',gap:6,fontSize:12,fontWeight:600,padding:'6px 11px',borderRadius:999,background:'rgba(205,251,70,.14)',color:'#cdfb46' }}>Ready</span>
@@ -1271,7 +1250,7 @@ function LandingPageContent() {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
 
