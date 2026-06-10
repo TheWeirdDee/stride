@@ -31,6 +31,9 @@ function LandingPageContent() {
   const [obDist, setObDist] = useState(1)
   const [obStake, setObStake] = useState(1)
   const [obConnecting, setObConnecting] = useState(false)
+  const [obName, setObName] = useState('')
+  const [obHeight, setObHeight] = useState('')
+  const [obWeight, setObWeight] = useState('')
 
   useEffect(() => {
     if (searchParams.get('onboard') === 'true') {
@@ -59,11 +62,12 @@ function LandingPageContent() {
       const saveProfile = async () => {
         try {
           if (supabase) {
+            const nickname = (typeof window !== 'undefined' ? localStorage.getItem('stride_onboarding_nickname') : null) || 'Anonymous Mover'
             const { error } = await supabase
               .from('users')
               .upsert({
                 wallet_address: address,
-                nickname: 'Anonymous Mover',
+                nickname,
                 city: 'Unknown',
                 fitness_level: 'beginner',
               }, { onConflict: 'wallet_address' })
@@ -79,6 +83,8 @@ function LandingPageContent() {
         } catch (err) {
           console.error(err)
           setIsSubmittingProfile(false)
+          setIsOnboardingOpen(false)
+          router.push('/commitment/new')
         }
       }
       saveProfile()
@@ -86,15 +92,28 @@ function LandingPageContent() {
   }, [isConnected, address, isSubmittingProfile, router])
 
   const connectAndSave = async () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('stride_onboarded', 'true')
+      localStorage.setItem('stride_onboarding_nickname', obName || 'Anonymous Mover')
+      localStorage.setItem('stride_onboarding_fitness', 'beginner')
+      if (obHeight) localStorage.setItem('stride_onboarding_height', obHeight)
+      if (obWeight) localStorage.setItem('stride_onboarding_weight', obWeight)
+    }
     setIsSubmittingProfile(true)
     try {
       const connector = connectors.find(c => c.id === 'injected') || connectors[0]
       if (connector) {
         connect({ connector })
+      } else {
+        setIsSubmittingProfile(false)
+        setIsOnboardingOpen(false)
+        router.push('/commitment/new')
       }
     } catch (err) {
       console.error(err)
       setIsSubmittingProfile(false)
+      setIsOnboardingOpen(false)
+      router.push('/commitment/new')
     }
   }
 
@@ -421,7 +440,8 @@ function LandingPageContent() {
     .tier-row{grid-template-columns:60px 1fr;gap:12px;}
     .tier-row .td,.tier-row .tt span{display:none;}
     .hero-cta{max-width:100%;display:none;}
-    .hero-get-started{width:100%;justify-content:center;margin-top:24px;}
+    .hero-get-started{position:fixed;bottom:24px;left:18px;right:18px;width:calc(100% - 36px);justify-content:center;margin-top:0;z-index:30;}
+    .hero{padding-bottom:96px;}
     .hero-foot{display:none;}
     .prog-head h2{font-size:clamp(36px,11vw,68px);}
     .about-h2{font-size:clamp(30px,8vw,54px);}
@@ -1134,7 +1154,7 @@ function LandingPageContent() {
                   </div>
                 </div>
                 <div style={{ padding:'14px 20px 40px' }}>
-                  <button onClick={() => go('success')} style={{ display:'inline-flex',alignItems:'center',justifyContent:'center',gap:9,fontFamily:'"Hanken Grotesk",system-ui,sans-serif',fontWeight:700,fontSize:16,border:'none',cursor:'pointer',borderRadius:999,padding:'16px 22px',width:'100%',background:'#cdfb46',color:'#1b2700' }}>
+                  <button onClick={() => go('profile-setup')} style={{ display:'inline-flex',alignItems:'center',justifyContent:'center',gap:9,fontFamily:'"Hanken Grotesk",system-ui,sans-serif',fontWeight:700,fontSize:16,border:'none',cursor:'pointer',borderRadius:999,padding:'16px 22px',width:'100%',background:'#cdfb46',color:'#1b2700' }}>
                     Set my first goal <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
                   </button>
                 </div>
@@ -1142,7 +1162,76 @@ function LandingPageContent() {
             )
           })()}
 
-          {/* ════ 7. SUCCESS ════ */}
+          {/* ════ 7. PROFILE SETUP ════ */}
+          {obScreen === 'profile-setup' && (
+            <div style={{ width:'100%',height:'100%',background:'#0b0c0e',color:'#f3f5f3',display:'flex',flexDirection:'column' }}>
+              <div style={{ height:64,flexShrink:0 }} />
+              <div style={{ display:'flex',alignItems:'center',padding:'6px 20px 4px' }}>
+                <button onClick={() => go('goal')} style={{ width:44,height:44,borderRadius:'50%',background:'#1d2024',border:'1px solid rgba(255,255,255,.09)',display:'grid',placeItems:'center',color:'#f3f5f3',cursor:'pointer' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 5l-7 7 7 7"/></svg>
+                </button>
+              </div>
+              <div className="ob-scroll" style={{ flex:1,padding:'0 20px' }}>
+                <h1 style={{ fontFamily:'"Anton",sans-serif',fontWeight:400,textTransform:'uppercase',lineHeight:.9,letterSpacing:'.01em',fontSize:38,color:'#f3f5f3',marginTop:16 }}>About<br/>you</h1>
+                <p style={{ marginTop:12,fontSize:15.5,color:'#9aa1a8' }}>Helps personalise pacing and calorie estimates. Stays on your device.</p>
+                <div style={{ marginTop:24,display:'flex',flexDirection:'column',gap:14 }}>
+                  <div>
+                    <label style={{ fontFamily:'"Space Mono",monospace',fontSize:10.5,letterSpacing:'.18em',textTransform:'uppercase',color:'#6a7077',display:'block',marginBottom:8 }}>Display name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Kemi, Lagos Runner…"
+                      value={obName}
+                      onChange={e => setObName(e.target.value)}
+                      style={{ width:'100%',background:'#1d2024',border:'1.5px solid rgba(255,255,255,.12)',borderRadius:14,padding:'14px 16px',color:'#f3f5f3',fontSize:16,fontFamily:'"Hanken Grotesk",system-ui,sans-serif',outline:'none',boxSizing:'border-box' as React.CSSProperties['boxSizing'] }}
+                    />
+                  </div>
+                  <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:12 }}>
+                    <div>
+                      <label style={{ fontFamily:'"Space Mono",monospace',fontSize:10.5,letterSpacing:'.18em',textTransform:'uppercase',color:'#6a7077',display:'block',marginBottom:8 }}>Height (cm)</label>
+                      <input
+                        type="number"
+                        placeholder="170"
+                        value={obHeight}
+                        onChange={e => setObHeight(e.target.value)}
+                        style={{ width:'100%',background:'#1d2024',border:'1.5px solid rgba(255,255,255,.12)',borderRadius:14,padding:'14px 16px',color:'#f3f5f3',fontSize:16,fontFamily:'"Hanken Grotesk",system-ui,sans-serif',outline:'none',boxSizing:'border-box' as React.CSSProperties['boxSizing'] }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontFamily:'"Space Mono",monospace',fontSize:10.5,letterSpacing:'.18em',textTransform:'uppercase',color:'#6a7077',display:'block',marginBottom:8 }}>Weight (kg)</label>
+                      <input
+                        type="number"
+                        placeholder="70"
+                        value={obWeight}
+                        onChange={e => setObWeight(e.target.value)}
+                        style={{ width:'100%',background:'#1d2024',border:'1.5px solid rgba(255,255,255,.12)',borderRadius:14,padding:'14px 16px',color:'#f3f5f3',fontSize:16,fontFamily:'"Hanken Grotesk",system-ui,sans-serif',outline:'none',boxSizing:'border-box' as React.CSSProperties['boxSizing'] }}
+                      />
+                    </div>
+                  </div>
+                  <div style={{ background:'#16181b',border:'1px solid rgba(255,255,255,.09)',borderRadius:18,padding:16,display:'flex',gap:10,alignItems:'flex-start' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6a7077" strokeWidth="2" strokeLinecap="round" style={{ flexShrink:0,marginTop:2 }}><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/></svg>
+                    <span style={{ fontSize:12.5,color:'#6a7077',lineHeight:1.5 }}>This data stays on your device unless you sync with a wallet.</span>
+                  </div>
+                </div>
+              </div>
+              <div style={{ padding:'14px 20px 40px' }}>
+                <button
+                  onClick={() => {
+                    if (typeof window !== 'undefined') {
+                      localStorage.setItem('stride_onboarding_nickname', obName || 'Anonymous Mover')
+                      if (obHeight) localStorage.setItem('stride_onboarding_height', obHeight)
+                      if (obWeight) localStorage.setItem('stride_onboarding_weight', obWeight)
+                    }
+                    go('success')
+                  }}
+                  style={{ display:'inline-flex',alignItems:'center',justifyContent:'center',gap:9,fontFamily:'"Hanken Grotesk",system-ui,sans-serif',fontWeight:700,fontSize:16,border:'none',cursor:'pointer',borderRadius:999,padding:'16px 22px',width:'100%',background:'#cdfb46',color:'#1b2700' }}
+                >
+                  Continue <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ════ 8. SUCCESS ════ */}
           {obScreen === 'success' && (() => {
             const DISTS = ['1 km','2 km','3 km','5 km']
             const STAKES = ['$0.01','$0.10','$0.25','$0.50']
