@@ -14,10 +14,10 @@ interface FeedItem {
 
 const INITIAL_FEED: FeedItem[] = [
   { id: '1', user: 'SpeedyMover', city: 'Nairobi', action: 'completed a run', metric: '5.2 km', timestamp: '2 mins ago' },
-  { id: '2', user: 'StrideWalker', city: 'Lagos', action: 'started a commitment', metric: '$0.50 cUSD', timestamp: '5 mins ago' },
+  { id: '2', user: 'StrideWalker', city: 'Lagos', action: 'started a commitment', metric: '0.50 CELO', timestamp: '5 mins ago' },
   { id: '3', user: 'AccraRunner', city: 'Accra', action: 'completed a run', metric: '10.0 km', timestamp: '12 mins ago' },
   { id: '4', user: 'HabitBuilder', city: 'Kampala', action: 'completed a walk', metric: '2.5 km', timestamp: '18 mins ago' },
-  { id: '5', user: 'CapeTownMover', city: 'Cape Town', action: 'started a commitment', metric: '$1.00 cUSD', timestamp: '25 mins ago' },
+  { id: '5', user: 'CapeTownMover', city: 'Cape Town', action: 'started a commitment', metric: '1.00 CELO', timestamp: '25 mins ago' },
 ]
 
 const CITIES_LEADERBOARD = [
@@ -36,7 +36,7 @@ export default function CommunityFeedPage() {
     const users = ['FastWalker', 'CeloChamp', 'LagosStride', 'DailyMover', 'KilometreKing', 'RunFast']
     const cities = ['Lagos', 'Nairobi', 'Accra', 'Kampala', 'Kigali', 'Dar es Salaam']
     const actions = ['completed a walk', 'completed a run', 'started a commitment']
-    const metrics = ['1.5 km', '3.0 km', '5.0 km', '8.0 km', '$0.10 cUSD', '$0.50 cUSD', '$1.00 cUSD']
+    const metrics = ['1.5 km', '3.0 km', '5.0 km', '8.0 km', '$0.10 CELO', '$0.50 CELO', '$1.00 CELO']
 
     const interval = setInterval(() => {
       const randomUser = users[Math.floor(Math.random() * users.length)]
