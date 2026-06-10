@@ -158,6 +158,7 @@ export default function SessionPage() {
           proof.proofNonce as `0x${string}`,
           proof.signature as `0x${string}`,
         ],
+
       })
 
       setStatusMsg('Waiting for confirmation...')
