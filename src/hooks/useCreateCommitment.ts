@@ -1,11 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { useAccount, useReadContract, useWriteContract, useConfig } from 'wagmi'
-import { formatUnits, parseUnits } from 'viem'
-import { readContract, waitForTransactionReceipt } from 'wagmi/actions'
-import { CUSD_ADDRESS, COMMITMENT_CONTRACT } from '@/utils/constants'
-import { cusdABI } from '@/abi/cusd'
+import { useAccount, useReadContract, useWriteContract, useConfig, useBalance } from 'wagmi'
+import { formatEther, parseEther } from 'viem'
+import { waitForTransactionReceipt } from 'wagmi/actions'
+import { COMMITMENT_CONTRACT } from '@/utils/constants'
 import { commitmentABI } from '@/abi/commitment'
 import { supabase } from '@/utils/supabase'
 
@@ -19,20 +18,15 @@ export function useCreateCommitment() {
   const [statusMessage, setStatusMessage] = useState<string>('Idle')
   const [error, setError] = useState<string | null>(null)
 
-  // 1. Read cUSD Balance
-  const { data: rawBalance, refetch: refetchBalance } = useReadContract({
-    address: CUSD_ADDRESS,
-    abi: cusdABI,
-    functionName: 'balanceOf',
-    args: address ? [address] : undefined,
-    query: {
-      enabled: !!address,
-    },
+  // Read native CELO balance
+  const { data: balanceData, refetch: refetchBalance } = useBalance({
+    address: address,
+    query: { enabled: !!address },
   })
 
-  const balance = rawBalance ? formatUnits(rawBalance, 18) : '0.00'
+  const balance = balanceData ? formatEther(balanceData.value) : '0.00'
 
-  // 2. Read Active Commitment ID from Chain
+  // Read Active Commitment ID from Chain
   const { data: rawActiveId, refetch: refetchActiveCommitment } = useReadContract({
     address: COMMITMENT_CONTRACT,
     abi: commitmentABI,
@@ -49,7 +43,7 @@ export function useCreateCommitment() {
   // Ensure user profile exists in Supabase
   const ensureUserExists = async (userAddress: string) => {
     try {
-      if (!supabase) return // client unavailable (env vars missing)
+      if (!supabase) return
       const { data, error: selectError } = await supabase
         .from('users')
         .select('wallet_address')
@@ -59,11 +53,10 @@ export function useCreateCommitment() {
       if (selectError) throw selectError
 
       if (!data) {
-        // Read local storage onboarding details if they exist
         let localNickname = 'Anonymous Mover'
         let localCity = 'Lagos'
         let localFitness = 'beginner'
-        
+
         if (typeof window !== 'undefined') {
           localNickname = localStorage.getItem('stride_onboarding_nickname') || localNickname
           localCity = localStorage.getItem('stride_onboarding_city') || localCity
@@ -89,7 +82,7 @@ export function useCreateCommitment() {
     }
   }
 
-  // Create commitment function
+  // Create commitment — stake amount sent as native CELO value
   const createCommitment = async (
     goalType: 'distance' | 'steps',
     goalValue: number,
@@ -107,35 +100,10 @@ export function useCreateCommitment() {
     setStatusMessage('Preparing transaction...')
 
     try {
-      const stakeWei = parseUnits(stakeAmount, 18)
+      const stakeWei = parseEther(stakeAmount)
 
-      // Ensure user profile exists in Supabase first
       await ensureUserExists(address)
 
-      // Step A: Check current allowance
-      setStatusMessage('Checking cUSD allowance...')
-      const allowance = await readContract(config, {
-        address: CUSD_ADDRESS,
-        abi: cusdABI,
-        functionName: 'allowance',
-        args: [address, COMMITMENT_CONTRACT],
-      })
-
-      // Step B: Approve if allowance is insufficient
-      if ((allowance as bigint) < stakeWei) {
-        setStatusMessage('Approving cUSD spend (Please sign in wallet)...')
-        const approveHash = await writeContractAsync({
-          address: CUSD_ADDRESS,
-          abi: cusdABI,
-          functionName: 'approve',
-          args: [COMMITMENT_CONTRACT, stakeWei],
-        })
-
-        setStatusMessage('Waiting for approval confirmation...')
-        await waitForTransactionReceipt(config, { hash: approveHash })
-      }
-
-      // Step C: Call createCommitment on StrideCommitment contract
       setStatusMessage('Creating commitment on-chain (Please sign in wallet)...')
       const goalDistance = goalType === 'distance' ? BigInt(goalValue) : BigInt(0)
       const goalSteps = goalType === 'steps' ? BigInt(goalValue) : BigInt(0)
@@ -144,7 +112,8 @@ export function useCreateCommitment() {
         address: COMMITMENT_CONTRACT,
         abi: commitmentABI,
         functionName: 'createCommitment',
-        args: [goalDistance, goalSteps, BigInt(durationSeconds), stakeWei],
+        args: [goalDistance, goalSteps, BigInt(durationSeconds)],
+        value: stakeWei,
       })
 
       setIsPending(false)
@@ -152,8 +121,8 @@ export function useCreateCommitment() {
       setStatusMessage('Waiting for commitment transaction confirmation...')
       await waitForTransactionReceipt(config, { hash: commitHash })
 
-      // Step D: Retrieve the newly created commitment ID from the chain
       setStatusMessage('Syncing data with the database...')
+      const { readContract } = await import('wagmi/actions')
       const commitmentIdChain = await readContract(config, {
         address: COMMITMENT_CONTRACT,
         abi: commitmentABI,
@@ -161,7 +130,6 @@ export function useCreateCommitment() {
         args: [address],
       })
 
-      // Step E: Save the commitment to Supabase
       const expiresAt = new Date(Date.now() + durationSeconds * 1000).toISOString()
       if (supabase) {
         const { error: dbError } = await supabase
@@ -178,14 +146,9 @@ export function useCreateCommitment() {
 
         if (dbError) {
           console.error('Error inserting commitment into database:', dbError)
-          // We do not fail the main user flow if DB insert fails since on-chain TX succeeded,
-          // but we flag it in logs.
         }
-      } else {
-        console.warn('Supabase client unavailable, commitment not saved to database.')
       }
 
-      // Refresh cache/state
       await refetchBalance()
       await refetchActiveCommitment()
 
