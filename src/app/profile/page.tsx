@@ -210,24 +210,30 @@ export default function ProfilePage() {
     )
   }
 
-  // Not Onboarded and Not Connected State
-  if (!profile && !isConnected) {
+  // Wallet not connected — show soft connect prompt, never force restart
+  if (!isConnected && !profile) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center bg-white dark:bg-zinc-950 rounded-3xl border border-zinc-150 dark:border-zinc-850 max-w-md mx-auto my-12 shadow-sm animate-in fade-in duration-300">
         <div className="h-14 w-14 rounded-2xl bg-zinc-100 dark:bg-zinc-900 text-zinc-400 flex items-center justify-center mb-6">
           <User className="h-7 w-7" />
         </div>
         <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 mb-2">
-          No Profile Found
+          Connect your wallet
         </h1>
         <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-6 max-w-xs leading-normal">
-          Complete the onboarding questions to set up your local preferences and browse guides.
+          Your stats and history are linked to your wallet. Connect to see them, or set up a local profile.
         </p>
         <button
-          onClick={() => router.push('/?onboard=true')}
-          className="w-full py-3.5 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-bold transition-all text-sm active:scale-95 shadow-md"
+          onClick={handleConnect}
+          className="w-full py-3.5 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-bold transition-all text-sm active:scale-95 shadow-md mb-3"
         >
-          Get Started
+          Connect Wallet
+        </button>
+        <button
+          onClick={() => router.push('/?onboard=true')}
+          className="w-full py-3.5 rounded-full bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold transition-all text-sm active:scale-95"
+        >
+          Set up local profile
         </button>
       </div>
     )
