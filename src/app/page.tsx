@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import React, { useState, useEffect, useRef, Suspense } from 'react'
 import Link from 'next/link'
@@ -193,8 +193,8 @@ function LandingPageContent() {
   .hero-grid-tex{position:absolute;inset:0;opacity:.10;background-image:linear-gradient(rgba(255,255,255,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.6) 1px,transparent 1px);background-size:54px 54px;mask-image:linear-gradient(180deg,#000,transparent 70%);}
   .hero-inner{position:relative;z-index:5;max-width:var(--maxw);margin:0 auto;padding:138px 40px 48px;}
 
-  .hero-photo{position:absolute;z-index:2;top:64px;bottom:0;left:50%;transform:translateX(-46%);width:min(760px,52vw);border-radius:26px;overflow:hidden;}
-  .hero-photo img{width:100%;height:100%;object-fit:cover;object-position:top center;}
+  .hero-photo{position:absolute;z-index:2;top:64px;bottom:0;left:50%;transform:translateX(-46%);width:min(760px,52vw);overflow:visible;}
+  .hero-photo img{width:100%;height:100%;object-fit:contain;object-position:bottom center;mix-blend-mode:screen;}
 
   .hero-tags{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:26px;}
   .tag{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:8px 15px;}
@@ -466,7 +466,7 @@ function LandingPageContent() {
 <header className="hero" id="top">
   <div className="hero-grid-tex"></div>
   <div className="hero-photo">
-    <img src="/images/hero-athlete.jpg" alt="Stride runner" />
+    <img src="/images/hero-athlete-3d.png" alt="Stride runner" />
   </div>
   <div className="hero-inner">
     <div className="hero-tags">
@@ -824,9 +824,9 @@ function LandingPageContent() {
 
       {/* Onboarding Flow — 7-screen design system */}
       {isOnboardingOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 100, overflow: 'hidden' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 100, overflowY: 'auto', background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
           <style dangerouslySetInnerHTML={{ __html: `
-            @keyframes ob-fade{from{transform:translateY(10px);}to{transform:translateY(0);}}
+            @keyframes ob-fade{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
             .ob-fade{animation:ob-fade .45s ease both;}
             @keyframes ob-pop{0%{transform:scale(0);}60%{transform:scale(1.15);}100%{transform:scale(1);}}
             .ob-pop{animation:ob-pop .5s cubic-bezier(.2,.8,.3,1.2) both;}
@@ -835,7 +835,7 @@ function LandingPageContent() {
             .ob-scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;}
             .ob-scroll::-webkit-scrollbar{display:none;}
           ` }} />
-          <div style={{ width:'100%',height:'100%',fontFamily:'"Hanken Grotesk",system-ui,sans-serif',WebkitFontSmoothing:'antialiased' as React.CSSProperties['WebkitFontSmoothing'] }}>
+          <div style={{ width:'100%',maxWidth:'480px',height:'90vh',maxHeight:'800px',borderRadius:'26px',overflow:'hidden',boxShadow:'0 24px 80px rgba(0,0,0,0.5)',fontFamily:'"Hanken Grotesk",system-ui,sans-serif',WebkitFontSmoothing:'antialiased' as React.CSSProperties['WebkitFontSmoothing'], display: 'flex', flexDirection: 'column' }}>
 
           {/* ════ 1. SPLASH ════ */}
           {obScreen === 'splash' && (
@@ -1017,10 +1017,19 @@ function LandingPageContent() {
                   </div>
                   <button
                     onClick={() => {
-                      setObConnecting(true)
-                      const c = connectors.find(c => c.id === 'injected') || connectors[0]
-                      if (c) connect({ connector: c })
-                      setTimeout(() => { setObConnecting(false); go('location') }, 1100)
+                      if (isConnected) {
+                        go('location');
+                        return;
+                      }
+                      setObConnecting(true);
+                      const c = connectors.find(c => c.id === 'injected') || connectors[0];
+                      if (c) {
+                        connect({ connector: c });
+                      }
+                      setTimeout(() => {
+                        setObConnecting(false);
+                        go('location');
+                      }, 1100);
                     }}
                     disabled={obConnecting}
                     style={{ display:'inline-flex',alignItems:'center',justifyContent:'center',gap:9,fontFamily:'"Hanken Grotesk",system-ui,sans-serif',fontWeight:700,fontSize:16,borderRadius:999,padding:'16px 22px',width:'100%',background:'#1b2700',color:'#cdfb46',border:'none',cursor:'pointer' }}
@@ -1239,7 +1248,34 @@ function LandingPageContent() {
                   </div>
                 </div>
                 <div style={{ padding:'14px 20px 40px' }}>
-                  <button onClick={connectAndSave} disabled={isSubmittingProfile} style={{ display:'inline-flex',alignItems:'center',justifyContent:'center',gap:9,fontFamily:'"Hanken Grotesk",system-ui,sans-serif',fontWeight:700,fontSize:16,border:'none',cursor:isSubmittingProfile?'not-allowed':'pointer',borderRadius:999,padding:'16px 22px',width:'100%',background:isSubmittingProfile?'#1d2024':'#cdfb46',color:isSubmittingProfile?'#9aa1a8':'#1b2700' }}>
+                  <button
+                    onClick={async () => {
+                      if (isConnected && address) {
+                        setIsSubmittingProfile(true);
+                        try {
+                          if (supabase) {
+                            await supabase
+                              .from('users')
+                              .upsert({
+                                wallet_address: address,
+                                nickname: obName || 'Anonymous Mover',
+                                city: 'Unknown',
+                                fitness_level: 'beginner',
+                              }, { onConflict: 'wallet_address' });
+                          }
+                        } catch (err) {
+                          console.error(err);
+                        }
+                        setIsSubmittingProfile(false);
+                        setIsOnboardingOpen(false);
+                        router.push('/commitment/new');
+                      } else {
+                        connectAndSave();
+                      }
+                    }}
+                    disabled={isSubmittingProfile}
+                    style={{ display:'inline-flex',alignItems:'center',justifyContent:'center',gap:9,fontFamily:'"Hanken Grotesk",system-ui,sans-serif',fontWeight:700,fontSize:16,border:'none',cursor:isSubmittingProfile?'not-allowed':'pointer',borderRadius:999,padding:'16px 22px',width:'100%',background:isSubmittingProfile?'#1d2024':'#cdfb46',color:isSubmittingProfile?'#9aa1a8':'#1b2700' }}
+                  >
                     {isSubmittingProfile ? 'Connecting…' : <>Enter Stride <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></>}
                   </button>
                 </div>
