@@ -4,8 +4,9 @@ import { useState } from 'react'
 import { useAccount, useReadContract, useWriteContract, useConfig, useBalance } from 'wagmi'
 import { formatEther, parseEther } from 'viem'
 import { waitForTransactionReceipt } from 'wagmi/actions'
-import { COMMITMENT_CONTRACT } from '@/utils/constants'
+import { COMMITMENT_CONTRACT, CUSD_ADDRESS } from '@/utils/constants'
 import { commitmentABI } from '@/abi/commitment'
+import { cusdABI } from '@/abi/cusd'
 import { supabase } from '@/utils/supabase'
 
 export function useCreateCommitment() {
@@ -104,7 +105,22 @@ export function useCreateCommitment() {
 
       await ensureUserExists(address)
 
-      setStatusMessage('Creating commitment on-chain (Please sign in wallet)...')
+      setStatusMessage('Approving cUSD stake (Please confirm in wallet)...')
+      const approveHash = await writeContractAsync({
+        address: CUSD_ADDRESS,
+        abi: cusdABI,
+        functionName: 'approve',
+        args: [COMMITMENT_CONTRACT, stakeWei],
+      })
+      
+      setIsPending(false)
+      setIsConfirming(true)
+      setStatusMessage('Waiting for cUSD approval confirmation...')
+      await waitForTransactionReceipt(config, { hash: approveHash })
+
+      setIsPending(true)
+      setIsConfirming(false)
+      setStatusMessage('Creating commitment on-chain (Please confirm in wallet)...')
       const goalDistance = goalType === 'distance' ? BigInt(goalValue) : BigInt(0)
       const goalSteps = goalType === 'steps' ? BigInt(goalValue) : BigInt(0)
 
@@ -112,8 +128,7 @@ export function useCreateCommitment() {
         address: COMMITMENT_CONTRACT,
         abi: commitmentABI,
         functionName: 'createCommitment',
-        args: [goalDistance, goalSteps, BigInt(durationSeconds)],
-        value: stakeWei,
+        args: [goalDistance, goalSteps, BigInt(durationSeconds), stakeWei],
       })
 
       setIsPending(false)
