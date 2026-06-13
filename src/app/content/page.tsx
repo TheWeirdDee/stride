@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/utils/supabase'
-import { BookOpen, Clock, Activity, Search, Shield, ChevronRight, Zap, RefreshCw } from 'lucide-react'
+import { BookOpen, Clock, Activity, Search, Shield, ChevronRight, Zap, RefreshCw, Sun, Moon } from 'lucide-react'
 
 interface ContentItem {
   id: string
@@ -145,11 +145,11 @@ export default function ContentHubPage() {
   const getPhaseLabel = (phase: string) => {
     switch (phase) {
       case 'before':
-        return '☀️ Pre-workout'
+        return <span className="flex items-center gap-1"><Sun className="w-3 h-3" /> Pre-workout</span>
       case 'after':
-        return '🌙 Post-workout'
+        return <span className="flex items-center gap-1"><Moon className="w-3 h-3" /> Post-workout</span>
       default:
-        return '🕒 Anytime'
+        return <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Anytime</span>
     }
   }
 
