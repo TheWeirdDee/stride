@@ -35,6 +35,50 @@ function LandingPageContent() {
     }
   }, [searchParams, router])
 
+  useEffect(() => {
+    if (isOnboardingOpen) {
+      setTimeout(() => {
+        console.log("--- DIAGNOSTICS START ---");
+        const obOverlay = document.getElementById('onboarding-overlay');
+        if (!obOverlay) {
+          console.log("DIAGNOSTIC_ERR: Onboarding overlay element not found");
+          return;
+        }
+        const buttons = Array.from(obOverlay.querySelectorAll('button, a, [role="button"]'));
+        const getStartedBtn = buttons.find(el => 
+          (el.textContent || '').trim().toLowerCase().includes('get started')
+        );
+
+        if (!getStartedBtn) {
+          console.log("DIAGNOSTIC_ERR: Button 'Get started' not found inside onboarding");
+          return;
+        }
+
+        const rect = getStartedBtn.getBoundingClientRect();
+        const X = rect.left + rect.width / 2;
+        const Y = rect.top + rect.height / 2;
+        const elementAtPoint = document.elementFromPoint(X, Y);
+
+        console.log("DIAGNOSTIC_BUTTON_TAG:", getStartedBtn.tagName);
+        console.log("DIAGNOSTIC_BUTTON_CLASS:", getStartedBtn.className);
+        console.log("DIAGNOSTIC_BUTTON_HTML:", getStartedBtn.outerHTML);
+        console.log("DIAGNOSTIC_BUTTON_POINTER_EVENTS:", window.getComputedStyle(getStartedBtn).pointerEvents);
+        console.log("DIAGNOSTIC_BUTTON_RECT:", JSON.stringify(rect));
+        console.log("DIAGNOSTIC_CENTER_COORDS:", X, Y);
+
+        if (elementAtPoint) {
+          console.log("DIAGNOSTIC_POINT_TAG:", elementAtPoint.tagName);
+          console.log("DIAGNOSTIC_POINT_CLASS:", elementAtPoint.className);
+          console.log("DIAGNOSTIC_POINT_HTML:", elementAtPoint.outerHTML);
+          console.log("DIAGNOSTIC_POINT_POINTER_EVENTS:", window.getComputedStyle(elementAtPoint).pointerEvents);
+        } else {
+          console.log("DIAGNOSTIC_POINT_ERR: No element at point");
+        }
+        console.log("--- DIAGNOSTICS END ---");
+      }, 1500);
+    }
+  }, [isOnboardingOpen]);
+
   // Navigate between onboarding screens
   const go = (screen: string) => {
     if (screen === 'app:home') {
@@ -824,7 +868,7 @@ function LandingPageContent() {
 
       {/* Onboarding Flow */}
       {isOnboardingOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: '#0b0c0e', display: 'flex', flexDirection: 'column', height: '100dvh' }}>
+        <div id="onboarding-overlay" style={{ position: 'fixed', inset: 0, zIndex: 1000, background: '#0b0c0e', display: 'flex', flexDirection: 'column', height: '100dvh', pointerEvents: 'auto' }}>
           <style dangerouslySetInnerHTML={{ __html: `
             @keyframes ob-fade{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
             .ob-fade{animation:ob-fade .45s ease both;}
@@ -832,7 +876,7 @@ function LandingPageContent() {
             .ob-pop{animation:ob-pop .5s cubic-bezier(.2,.8,.3,1.2) both;}
             @keyframes ob-pulse{0%{box-shadow:0 0 0 0 rgba(205,251,70,.55);}70%{box-shadow:0 0 0 11px rgba(205,251,70,0);}100%{box-shadow:0 0 0 0 rgba(205,251,70,0);}}
             .ob-livedot{width:8px;height:8px;border-radius:50%;background:#cdfb46;animation:ob-pulse 1.8s infinite;display:inline-block;}
-            .ob-scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;}
+            .ob-scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;position:relative;z-index:1;}
             .ob-scroll::-webkit-scrollbar{display:none;}
           ` }} />
           <div style={{ flex: 1, width:'100%', maxWidth:'480px', margin: '0 auto', fontFamily:'"Hanken Grotesk",system-ui,sans-serif', WebkitFontSmoothing:'antialiased' as React.CSSProperties['WebkitFontSmoothing'], display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', position: 'relative' }}>
@@ -840,7 +884,7 @@ function LandingPageContent() {
           {/* ════ 1. SPLASH ════ */}
           {obScreen === 'splash' && (
             <div style={{ width:'100%',height:'100%',background:'radial-gradient(125% 90% at 75% 0%, #1d72c0 0%, #0a5aa2 45%, #073d70 100%)',color:'#fff',display:'flex',flexDirection:'column',position:'relative',overflow:'hidden' }}>
-              <div style={{ position:'absolute',inset:0,opacity:.12,backgroundImage:'linear-gradient(rgba(255,255,255,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.6) 1px,transparent 1px)',backgroundSize:'46px 46px',WebkitMaskImage:'linear-gradient(180deg,#000,transparent 65%)',maskImage:'linear-gradient(180deg,#000,transparent 65%)' }} />
+              <div style={{ position:'absolute',inset:0,opacity:.12,backgroundImage:'linear-gradient(rgba(255,255,255,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.6) 1px,transparent 1px)',backgroundSize:'46px 46px',WebkitMaskImage:'linear-gradient(180deg,#000,transparent 65%)',maskImage:'linear-gradient(180deg,#000,transparent 65%)',pointerEvents:'none' }} />
               <div style={{ height:16,flexShrink:0 }} />
               <div className="ob-scroll" style={{ flex:1 }}>
                 <div style={{ display:'flex',flexDirection:'column',minHeight:'100%',justifyContent:'space-between',padding:'16px 24px 24px',boxSizing:'border-box' }}>
