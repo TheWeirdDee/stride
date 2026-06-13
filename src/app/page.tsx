@@ -27,6 +27,19 @@ function LandingPageContent() {
   useEffect(() => { obNameRef.current = obName }, [obName])
   const [isSubmittingProfile, setIsSubmittingProfile] = useState(false)
 
+  // Guest (no-wallet) profile — persisted to localStorage
+  const [guestProfile, setGuestProfile] = useState<{ nickname: string; city: string; activity: 'walk' | 'run' } | null>(null)
+  const [guestNick, setGuestNick] = useState('')
+  const [guestCity, setGuestCity] = useState('')
+  const [guestActivity, setGuestActivity] = useState<'walk' | 'run'>('walk')
+
+  useEffect(() => {
+    try {
+      const raw = typeof window !== 'undefined' && localStorage.getItem('stride_guest_profile')
+      if (raw) setGuestProfile(JSON.parse(raw))
+    } catch {}
+  }, [])
+
   useEffect(() => {
     if (searchParams.get('onboard') === 'true') {
       setObScreen('splash')
@@ -84,7 +97,11 @@ function LandingPageContent() {
     if (screen === 'app:home') {
       connectAndSave()
     } else if (screen === 'app:explore') {
-      router.push('/community')
+      if (guestProfile) {
+        router.push('/community')
+      } else {
+        setObScreen('guest-profile')
+      }
     } else {
       setObScreen(screen)
     }
@@ -141,6 +158,15 @@ function LandingPageContent() {
       setIsOnboardingOpen(false)
       router.push('/commitment/new')
     }
+  }
+
+  const saveGuestProfile = () => {
+    if (!guestNick.trim()) return
+    const profile = { nickname: guestNick.trim(), city: guestCity.trim(), activity: guestActivity }
+    try { localStorage.setItem('stride_guest_profile', JSON.stringify(profile)) } catch {}
+    setGuestProfile(profile)
+    setIsOnboardingOpen(false)
+    router.push('/community')
   }
 
 
@@ -498,6 +524,8 @@ function LandingPageContent() {
       <a className="icon-btn" href="#" aria-label="Telegram"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M21.9 4.3 18.6 20c-.2 1-.9 1.3-1.8.8l-5-3.7-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.1-8.2c.4-.4-.1-.6-.6-.2L6 13.2l-4.9-1.5c-1-.3-1-1 .2-1.5l19.2-7.4c.9-.3 1.7.2 1.4 1.5Z"/></svg></a>
       {isConnected ? (
         <Link className="btn btn-light" href="/profile">View Profile</Link>
+      ) : guestProfile ? (
+        <button className="btn btn-light" onClick={() => router.push('/community')}>Continue exploring</button>
       ) : (
         <button className="btn btn-light" onClick={() => { setObScreen('splash'); setIsOnboardingOpen(true); }}>Get Started</button>
       )}
@@ -517,17 +545,41 @@ function LandingPageContent() {
     </div>
     <h1 className="hero-h1">Put Your Money <span className="lite">Where Your</span> Miles Are</h1>
     <p className="hero-sub">Stake a little. Move for real. Get your stake back plus a bonus the moment you finish.</p>
-    <form className="hero-cta" onSubmit={(e) => { e.preventDefault(); setObScreen('splash'); setIsOnboardingOpen(true); }}>
-      <input type="text" placeholder="Set your goal — e.g. 5 km today" aria-label="Goal" />
-      <button className="btn btn-lime" type="submit">Start a Commitment</button>
-    </form>
-    <button
-      className="hero-get-started"
-      onClick={() => { setObScreen('splash'); setIsOnboardingOpen(true); }}
-    >
-      Get started
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    </button>
+    {guestProfile ? (
+      <div style={{ display:'flex',flexDirection:'column',gap:10,marginTop:4 }}>
+        <div style={{ display:'inline-flex',alignItems:'center',gap:8,padding:'8px 14px',background:'rgba(205,251,70,.1)',border:'1px solid rgba(205,251,70,.25)',borderRadius:999,width:'fit-content' }}>
+          <span style={{ width:7,height:7,borderRadius:'50%',background:'#cdfb46',display:'inline-block',flexShrink:0 }} />
+          <span style={{ fontSize:13,fontWeight:600,color:'#cdfb46',fontFamily:'var(--mono)',letterSpacing:'.04em' }}>Welcome back, {guestProfile.nickname}</span>
+        </div>
+        <button
+          className="hero-get-started"
+          onClick={() => router.push('/community')}
+        >
+          Continue exploring
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+        <button
+          style={{ background:'none',border:'none',cursor:'pointer',fontSize:13,color:'var(--muted)',textDecoration:'underline',textAlign:'left',padding:0,fontFamily:'var(--sans)',marginTop:2 }}
+          onClick={() => { setObScreen('wallet'); setIsOnboardingOpen(true); }}
+        >
+          Connect a wallet to stake →
+        </button>
+      </div>
+    ) : (
+      <>
+        <form className="hero-cta" onSubmit={(e) => { e.preventDefault(); setObScreen('splash'); setIsOnboardingOpen(true); }}>
+          <input type="text" placeholder="Set your goal — e.g. 5 km today" aria-label="Goal" />
+          <button className="btn btn-lime" type="submit">Start a Commitment</button>
+        </form>
+        <button
+          className="hero-get-started"
+          onClick={() => { setObScreen('splash'); setIsOnboardingOpen(true); }}
+        >
+          Get started
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </>
+    )}
   </div>
 
   <aside className="hero-cards">
@@ -877,6 +929,9 @@ function LandingPageContent() {
             .ob-livedot{width:8px;height:8px;border-radius:50%;background:#cdfb46;animation:ob-pulse 1.8s infinite;display:inline-block;}
             .ob-scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;position:relative;z-index:1;}
             .ob-scroll::-webkit-scrollbar{display:none;}
+            .ob-input{width:100%;box-sizing:border-box;background:#16181b;border:1.5px solid rgba(255,255,255,.12);border-radius:16px;padding:14px 16px;color:#f3f5f3;font-size:16px;font-family:"Hanken Grotesk",system-ui,sans-serif;outline:none;transition:border-color .15s;}
+            .ob-input:focus{border-color:#cdfb46;}
+            .ob-input::placeholder{color:#454b52;}
           ` }} />
           <div style={{ flex: 1, width:'100%', maxWidth:'480px', margin: '0 auto', fontFamily:'"Hanken Grotesk",system-ui,sans-serif', WebkitFontSmoothing:'antialiased' as React.CSSProperties['WebkitFontSmoothing'], display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', position: 'relative' }}>
 
@@ -1038,6 +1093,120 @@ function LandingPageContent() {
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                     </button>
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ════ 3b. GUEST PROFILE ════ */}
+          {obScreen === 'guest-profile' && (
+            <div style={{ width:'100%',height:'100%',background:'#0b0c0e',color:'#f3f5f3',display:'flex',flexDirection:'column' }}>
+              <div style={{ height:16,flexShrink:0 }} />
+              <div style={{ display:'flex',alignItems:'center',padding:'6px 20px 4px' }}>
+                <button onClick={() => go('explore')} style={{ width:44,height:44,borderRadius:'50%',background:'#1d2024',border:'1px solid rgba(255,255,255,.09)',display:'grid',placeItems:'center',color:'#f3f5f3',cursor:'pointer' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 5l-7 7 7 7"/></svg>
+                </button>
+              </div>
+              <div className="ob-scroll" style={{ flex:1 }}>
+                <div style={{ padding:'16px 24px 48px',display:'flex',flexDirection:'column',gap:28 }}>
+
+                  <div>
+                    <div style={{ fontFamily:'"Space Mono",monospace',fontSize:10.5,letterSpacing:'.18em',textTransform:'uppercase',color:'#cdfb46',marginBottom:12 }}>One time only</div>
+                    <h1 style={{ fontFamily:'"Anton",sans-serif',fontWeight:400,textTransform:'uppercase',lineHeight:.92,fontSize:40,color:'#f3f5f3' }}>
+                      Just your<br/>name and<br/><span style={{ color:'#cdfb46' }}>we're done</span>
+                    </h1>
+                    <p style={{ marginTop:14,fontSize:15,color:'#9aa1a8',lineHeight:1.55 }}>
+                      We'll remember you so you never have to fill this in again.
+                    </p>
+                  </div>
+
+                  <div style={{ display:'flex',flexDirection:'column',gap:16 }}>
+                    <div>
+                      <label style={{ display:'block',fontSize:11,fontWeight:600,letterSpacing:'.12em',textTransform:'uppercase',color:'#6a7077',marginBottom:8 }}>
+                        What should we call you? <span style={{ color:'#e85555' }}>*</span>
+                      </label>
+                      <input
+                        className="ob-input"
+                        type="text"
+                        placeholder="e.g. Lagos Strider"
+                        value={guestNick}
+                        onChange={e => setGuestNick(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && saveGuestProfile()}
+                        autoFocus
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display:'block',fontSize:11,fontWeight:600,letterSpacing:'.12em',textTransform:'uppercase',color:'#6a7077',marginBottom:8 }}>
+                        Your city <span style={{ color:'#454b52',textTransform:'none',letterSpacing:'normal',fontWeight:400 }}>— optional</span>
+                      </label>
+                      <input
+                        className="ob-input"
+                        type="text"
+                        placeholder="e.g. Lagos"
+                        value={guestCity}
+                        onChange={e => setGuestCity(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && saveGuestProfile()}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display:'block',fontSize:11,fontWeight:600,letterSpacing:'.12em',textTransform:'uppercase',color:'#6a7077',marginBottom:10 }}>I prefer</label>
+                      <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:10 }}>
+                        {(['walk','run'] as const).map(a => (
+                          <button
+                            key={a}
+                            onClick={() => setGuestActivity(a)}
+                            style={{
+                              padding:'14px 12px',
+                              borderRadius:16,
+                              border: guestActivity === a ? '2px solid #cdfb46' : '1.5px solid rgba(255,255,255,.1)',
+                              background: guestActivity === a ? 'rgba(205,251,70,.08)' : '#16181b',
+                              color: guestActivity === a ? '#cdfb46' : '#9aa1a8',
+                              fontFamily:'"Hanken Grotesk",system-ui,sans-serif',
+                              fontWeight:700,
+                              fontSize:15,
+                              cursor:'pointer',
+                              transition:'all .15s',
+                              display:'flex',
+                              alignItems:'center',
+                              justifyContent:'center',
+                              gap:8,
+                            }}
+                          >
+                            {a === 'walk' ? (
+                              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="5" r="1.5"/><path d="M9 19l1-5-2-3 3-3 2 3h3"/><path d="M6 12l2-1"/><path d="M13.5 19l-1.5-4"/></svg>
+                            ) : (
+                              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="13" cy="4" r="1.5"/><path d="M7 20l3-5 2 2 2-6 3 4"/><path d="M5 9l4-1 2 3-3 2"/></svg>
+                            )}
+                            {a === 'walk' ? 'Walking' : 'Running'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={saveGuestProfile}
+                    disabled={!guestNick.trim()}
+                    style={{
+                      display:'inline-flex',alignItems:'center',justifyContent:'center',gap:9,
+                      fontFamily:'"Hanken Grotesk",system-ui,sans-serif',fontWeight:700,fontSize:16,
+                      border:'none',borderRadius:999,padding:'16px 22px',width:'100%',
+                      background: guestNick.trim() ? '#cdfb46' : 'rgba(205,251,70,.25)',
+                      color: guestNick.trim() ? '#1b2700' : 'rgba(27,39,0,.4)',
+                      cursor: guestNick.trim() ? 'pointer' : 'not-allowed',
+                      transition:'all .15s',
+                    }}
+                  >
+                    Start exploring
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                  </button>
+
+                  <p style={{ fontSize:12,color:'#454b52',textAlign:'center',marginTop:-16 }}>
+                    No wallet needed · Change anytime in settings
+                  </p>
+
                 </div>
               </div>
             </div>
