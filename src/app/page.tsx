@@ -27,6 +27,11 @@ function LandingPageContent() {
   useEffect(() => { obNameRef.current = obName }, [obName])
   const [isSubmittingProfile, setIsSubmittingProfile] = useState(false)
 
+  const [isMiniPay, setIsMiniPay] = useState(false)
+  useEffect(() => {
+    setIsMiniPay(!!(window as any).ethereum?.isMiniPay)
+  }, [])
+
   // Guest (no-wallet) profile — persisted to localStorage + Supabase
   const [guestProfile, setGuestProfile] = useState<{ id: string; nickname: string; email: string; city: string; activity: 'walk' | 'run' | 'both' } | null>(null)
   const [guestNick, setGuestNick] = useState('')
@@ -1236,83 +1241,125 @@ function LandingPageContent() {
           )}
 
           {/* ════ 4. WALLET ════ */}
-          {obScreen === 'wallet' && (
-            <div style={{ width:'100%',height:'100%',background:'#0b0c0e',color:'#f3f5f3',display:'flex',flexDirection:'column' }}>
-              <div style={{ height:16,flexShrink:0 }} />
-              <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 20px 4px' }}>
-                <button onClick={() => go('explore')} style={{ width:44,height:44,borderRadius:'50%',background:'#1d2024',border:'1px solid rgba(255,255,255,.09)',display:'grid',placeItems:'center',color:'#f3f5f3',cursor:'pointer' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 5l-7 7 7 7"/></svg>
-                </button>
-                <span />
-              </div>
-              <div className="ob-scroll" style={{ flex:1 }}>
-                <div style={{ display:'flex',flexDirection:'column',minHeight:'100%',justifyContent:'space-between',padding:'0 20px 38px',boxSizing:'border-box' }}>
-                  <div>
-                    <h1 style={{ fontFamily:'"Anton",sans-serif',fontWeight:400,textTransform:'uppercase',lineHeight:.9,letterSpacing:'.01em',fontSize:40,color:'#f3f5f3' }}>Connect<br/>your wallet</h1>
-                    <p style={{ marginTop:14,fontSize:16,lineHeight:1.55,color:'#9aa1a8' }}>Stakes settle in native CELO. Gas costs a fraction of a cent — no jargon, no card.</p>
-                    
-                    <div style={{ marginTop:24,background:'#cdfb46',color:'#1b2700',borderRadius:22,padding:20 }}>
-                      <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between' }}>
-                        <span style={{ fontFamily:'"Space Mono",monospace',fontSize:10.5,letterSpacing:'.14em',textTransform:'uppercase' }}>Detected on this device</span>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b2700" strokeWidth="2" strokeLinecap="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>
-                      </div>
-                      <div style={{ display:'flex',alignItems:'center',gap:13,margin:'16px 0 18px' }}>
-                        <div style={{ width:46,height:46,borderRadius:13,background:'#1b2700',color:'#cdfb46',display:'grid',placeItems:'center',flexShrink:0 }}>
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 9h18M16 13h2"/></svg>
-                        </div>
-                        <div>
-                          <b style={{ fontSize:19,fontWeight:800 }}>MiniPay</b>
-                          <div style={{ fontSize:13,opacity:.7 }}>One-tap connect · Opera Mini</div>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => {
-                          if (isConnected) {
-                            go('location');
-                            return;
-                          }
-                          setObConnecting(true);
-                          const c = connectors.find(c => c.id === 'injected') || connectors[0];
-                          if (c) {
-                            connect({ connector: c });
-                          }
-                          setTimeout(() => {
-                            setObConnecting(false);
-                            go('location');
-                          }, 1100);
-                        }}
-                        disabled={obConnecting}
-                        style={{ display:'inline-flex',alignItems:'center',justifyContent:'center',gap:9,fontFamily:'"Hanken Grotesk",system-ui,sans-serif',fontWeight:700,fontSize:16,borderRadius:999,padding:'16px 22px',width:'100%',background:'#1b2700',color:'#cdfb46',border:'none',cursor:'pointer' }}
-                      >
-                        {obConnecting ? 'Connecting...' : <>Connect MiniPay <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></>}
-                      </button>
-                    </div>
-                    
-                    <div style={{ display:'flex',alignItems:'center',gap:12,color:'#6a7077',fontFamily:'"Space Mono",monospace',fontSize:10.5,letterSpacing:'.16em',textTransform:'uppercase',margin:'22px 0 4px' }}>
-                      <span style={{ flex:1,height:1,background:'rgba(255,255,255,.09)',display:'block' }} />or use another<span style={{ flex:1,height:1,background:'rgba(255,255,255,.09)',display:'block' }} />
-                    </div>
-                    
-                    <div style={{ background:'#16181b',border:'1px solid rgba(255,255,255,.09)',borderRadius:22,padding:'0 18px' }}>
-                      {[['Valora','Celo wallet'],['WalletConnect','Scan a QR code']].map(([label,sub],idx) => (
-                        <div key={label} style={{ display:'flex',alignItems:'center',gap:14,padding:'14px 0',borderBottom:idx===0?'1px solid rgba(255,255,255,.09)':'none' }}>
-                          <div style={{ width:42,height:42,borderRadius:13,background:'#1d2024',display:'grid',placeItems:'center',color:'#9aa1a8',flexShrink:0 }}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 9h18M16 13h2"/></svg>
+          {obScreen === 'wallet' && (() => {
+            const injectedConnector = connectors.find(c => c.id === 'injected')
+            const wcConnector = connectors.find(c => c.id === 'walletConnect')
+
+            const handleConnect = (connector: typeof connectors[number] | undefined) => {
+              if (!connector) return
+              if (isConnected) { go('location'); return }
+              setObConnecting(true)
+              connect({ connector }, {
+                onSuccess: () => { setObConnecting(false); go('location') },
+                onError: () => { setObConnecting(false) },
+              })
+            }
+
+            const walletRows: { label: string; sub: string; onClick: (() => void) | null }[] = []
+            if (!isMiniPay && injectedConnector) {
+              walletRows.push({
+                label: 'Browser Wallet',
+                sub: 'MetaMask, Zerion, Rabby…',
+                onClick: () => handleConnect(injectedConnector),
+              })
+            }
+            walletRows.push({
+              label: 'Valora',
+              sub: wcConnector ? 'Celo wallet · via WalletConnect' : 'Needs WalletConnect project ID',
+              onClick: wcConnector ? () => handleConnect(wcConnector) : null,
+            })
+            walletRows.push({
+              label: 'WalletConnect',
+              sub: wcConnector ? 'Scan a QR code' : 'Add NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID to .env.local',
+              onClick: wcConnector ? () => handleConnect(wcConnector) : null,
+            })
+
+            return (
+              <div style={{ width:'100%',height:'100%',background:'#0b0c0e',color:'#f3f5f3',display:'flex',flexDirection:'column' }}>
+                <div style={{ height:16,flexShrink:0 }} />
+                <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 20px 4px' }}>
+                  <button onClick={() => go('explore')} style={{ width:44,height:44,borderRadius:'50%',background:'#1d2024',border:'1px solid rgba(255,255,255,.09)',display:'grid',placeItems:'center',color:'#f3f5f3',cursor:'pointer' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 5l-7 7 7 7"/></svg>
+                  </button>
+                  <span />
+                </div>
+                <div className="ob-scroll" style={{ flex:1 }}>
+                  <div style={{ display:'flex',flexDirection:'column',minHeight:'100%',justifyContent:'space-between',padding:'0 20px 38px',boxSizing:'border-box' }}>
+                    <div>
+                      <h1 style={{ fontFamily:'"Anton",sans-serif',fontWeight:400,textTransform:'uppercase',lineHeight:.9,letterSpacing:'.01em',fontSize:40,color:'#f3f5f3' }}>Connect<br/>your wallet</h1>
+                      <p style={{ marginTop:14,fontSize:16,lineHeight:1.55,color:'#9aa1a8' }}>Stakes settle in native CELO. Gas costs a fraction of a cent — no jargon, no card.</p>
+
+                      {isMiniPay && (
+                        <div style={{ marginTop:24,background:'#cdfb46',color:'#1b2700',borderRadius:22,padding:20 }}>
+                          <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between' }}>
+                            <span style={{ fontFamily:'"Space Mono",monospace',fontSize:10.5,letterSpacing:'.14em',textTransform:'uppercase' }}>Detected on this device</span>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b2700" strokeWidth="2" strokeLinecap="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>
                           </div>
-                          <div style={{ flex:1 }}><b style={{ display:'block' }}>{label}</b><span style={{ fontSize:12.5,color:'#9aa1a8' }}>{sub}</span></div>
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6a7077" strokeWidth="2" strokeLinecap="round"><path d="M9 5l7 7-7 7"/></svg>
+                          <div style={{ display:'flex',alignItems:'center',gap:13,margin:'16px 0 18px' }}>
+                            <div style={{ width:46,height:46,borderRadius:13,background:'#1b2700',color:'#cdfb46',display:'grid',placeItems:'center',flexShrink:0 }}>
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 9h18M16 13h2"/></svg>
+                            </div>
+                            <div>
+                              <b style={{ fontSize:19,fontWeight:800 }}>MiniPay</b>
+                              <div style={{ fontSize:13,opacity:.7 }}>One-tap connect · Opera Mini</div>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleConnect(injectedConnector)}
+                            disabled={obConnecting}
+                            style={{ display:'inline-flex',alignItems:'center',justifyContent:'center',gap:9,fontFamily:'"Hanken Grotesk",system-ui,sans-serif',fontWeight:700,fontSize:16,borderRadius:999,padding:'16px 22px',width:'100%',background:'#1b2700',color:'#cdfb46',border:'none',cursor:'pointer' }}
+                          >
+                            {obConnecting ? 'Connecting...' : <>Connect MiniPay <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></>}
+                          </button>
                         </div>
-                      ))}
+                      )}
+
+                      <div style={{ display:'flex',alignItems:'center',gap:12,color:'#6a7077',fontFamily:'"Space Mono",monospace',fontSize:10.5,letterSpacing:'.16em',textTransform:'uppercase',margin:`${isMiniPay ? 22 : 24}px 0 4px` }}>
+                        {isMiniPay && <span style={{ flex:1,height:1,background:'rgba(255,255,255,.09)',display:'block' }} />}
+                        {isMiniPay ? 'or use another' : 'Choose a wallet'}
+                        {isMiniPay && <span style={{ flex:1,height:1,background:'rgba(255,255,255,.09)',display:'block' }} />}
+                      </div>
+
+                      <div style={{ background:'#16181b',border:'1px solid rgba(255,255,255,.09)',borderRadius:22,padding:'0 18px' }}>
+                        {walletRows.map((row, idx) => (
+                          <button
+                            key={row.label}
+                            onClick={() => row.onClick?.()}
+                            disabled={!row.onClick || obConnecting}
+                            style={{
+                              display:'flex',alignItems:'center',gap:14,padding:'14px 0',width:'100%',
+                              borderBottom: idx < walletRows.length - 1 ? '1px solid rgba(255,255,255,.09)' : 'none',
+                              background:'transparent',border:'none',
+                              borderBottomColor: idx < walletRows.length - 1 ? 'rgba(255,255,255,.09)' : 'transparent',
+                              borderBottomWidth: idx < walletRows.length - 1 ? 1 : 0,
+                              borderBottomStyle: 'solid',
+                              cursor: row.onClick ? 'pointer' : 'not-allowed',
+                              opacity: row.onClick ? 1 : 0.4,
+                              textAlign:'left',
+                            }}
+                          >
+                            <div style={{ width:42,height:42,borderRadius:13,background:'#1d2024',display:'grid',placeItems:'center',color:'#9aa1a8',flexShrink:0 }}>
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 9h18M16 13h2"/></svg>
+                            </div>
+                            <div style={{ flex:1 }}>
+                              <b style={{ display:'block',color:'#f3f5f3' }}>{row.label}</b>
+                              <span style={{ fontSize:12.5,color:'#9aa1a8' }}>{row.sub}</span>
+                            </div>
+                            {row.onClick && <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6a7077" strokeWidth="2" strokeLinecap="round"><path d="M9 5l7 7-7 7"/></svg>}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div style={{ display:'flex',gap:9,marginTop:24,color:'#6a7077',fontSize:12,lineHeight:1.45 }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ flexShrink:0,marginTop:1 }}><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/></svg>
-                    <span>Stride never holds your funds. Stakes sit in an on-chain escrow you can audit.</span>
+
+                    <div style={{ display:'flex',gap:9,marginTop:24,color:'#6a7077',fontSize:12,lineHeight:1.45 }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ flexShrink:0,marginTop:1 }}><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/></svg>
+                      <span>Stride never holds your funds. Stakes sit in an on-chain escrow you can audit.</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )
+          })()}
 
           {/* ════ 5. LOCATION ════ */}
           {obScreen === 'location' && (
