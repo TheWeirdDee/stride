@@ -84,7 +84,6 @@ function LandingPageContent() {
     if (screen === 'app:home') {
       connectAndSave()
     } else if (screen === 'app:explore') {
-      setIsOnboardingOpen(false)
       router.push('/community')
     } else {
       setObScreen(screen)
