@@ -19,13 +19,24 @@ export function useCreateCommitment() {
   const [statusMessage, setStatusMessage] = useState<string>('Idle')
   const [error, setError] = useState<string | null>(null)
 
-  // Read native CELO balance
+  // Read native CELO balance (gas reference only)
   const { data: balanceData, refetch: refetchBalance } = useBalance({
     address: address,
     query: { enabled: !!address },
   })
 
   const balance = balanceData ? formatEther(balanceData.value) : '0.00'
+
+  // Read cUSD balance — this is what the contract actually stakes
+  const { data: cusdBalanceRaw, refetch: refetchCusdBalance } = useReadContract({
+    address: CUSD_ADDRESS,
+    abi: cusdABI,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+    query: { enabled: !!address },
+  })
+
+  const cusdBalance = cusdBalanceRaw != null ? formatEther(cusdBalanceRaw as bigint) : '0.00'
 
   // Read Active Commitment ID from Chain
   const { data: rawActiveId, refetch: refetchActiveCommitment } = useReadContract({
@@ -165,6 +176,7 @@ export function useCreateCommitment() {
       }
 
       await refetchBalance()
+      await refetchCusdBalance()
       await refetchActiveCommitment()
 
       setStatusMessage('Success!')
@@ -184,6 +196,7 @@ export function useCreateCommitment() {
 
   return {
     balance,
+    cusdBalance,
     hasActiveCommitment,
     activeCommitmentId: rawActiveId,
     refetchBalance,
