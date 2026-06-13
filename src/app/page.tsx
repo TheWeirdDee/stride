@@ -27,11 +27,13 @@ function LandingPageContent() {
   useEffect(() => { obNameRef.current = obName }, [obName])
   const [isSubmittingProfile, setIsSubmittingProfile] = useState(false)
 
-  // Guest (no-wallet) profile — persisted to localStorage
-  const [guestProfile, setGuestProfile] = useState<{ nickname: string; city: string; activity: 'walk' | 'run' } | null>(null)
+  // Guest (no-wallet) profile — persisted to localStorage + Supabase
+  const [guestProfile, setGuestProfile] = useState<{ id: string; nickname: string; email: string; city: string; activity: 'walk' | 'run' | 'both' } | null>(null)
   const [guestNick, setGuestNick] = useState('')
+  const [guestEmail, setGuestEmail] = useState('')
   const [guestCity, setGuestCity] = useState('')
-  const [guestActivity, setGuestActivity] = useState<'walk' | 'run'>('walk')
+  const [guestActivity, setGuestActivity] = useState<'walk' | 'run' | 'both'>('walk')
+  const [guestSaving, setGuestSaving] = useState(false)
 
   useEffect(() => {
     try {
@@ -160,11 +162,34 @@ function LandingPageContent() {
     }
   }
 
-  const saveGuestProfile = () => {
-    if (!guestNick.trim()) return
-    const profile = { nickname: guestNick.trim(), city: guestCity.trim(), activity: guestActivity }
+  const saveGuestProfile = async () => {
+    if (!guestNick.trim() || !guestEmail.trim() || !guestEmail.includes('@')) return
+    setGuestSaving(true)
+    const guestId = `guest_${typeof crypto !== 'undefined' ? crypto.randomUUID() : Math.random().toString(36).slice(2)}`
+    const profile = {
+      id: guestId,
+      nickname: guestNick.trim(),
+      email: guestEmail.trim().toLowerCase(),
+      city: guestCity.trim(),
+      activity: guestActivity,
+    }
     try { localStorage.setItem('stride_guest_profile', JSON.stringify(profile)) } catch {}
+    if (supabase) {
+      try {
+        await supabase.from('users').upsert({
+          wallet_address: guestId,
+          nickname: profile.nickname,
+          city: profile.city || 'Unknown',
+          fitness_level: 'beginner',
+          streak_current: 0,
+          streak_best: 0,
+          total_distance: 0,
+          total_earnings: 0,
+        }, { onConflict: 'wallet_address' })
+      } catch { /* non-fatal — localStorage is the fallback */ }
+    }
     setGuestProfile(profile)
+    setGuestSaving(false)
     setIsOnboardingOpen(false)
     router.push('/community')
   }
@@ -932,6 +957,9 @@ function LandingPageContent() {
             .ob-input{width:100%;box-sizing:border-box;background:#16181b;border:1.5px solid rgba(255,255,255,.12);border-radius:16px;padding:14px 16px;color:#f3f5f3;font-size:16px;font-family:"Hanken Grotesk",system-ui,sans-serif;outline:none;transition:border-color .15s;}
             .ob-input:focus{border-color:#cdfb46;}
             .ob-input::placeholder{color:#454b52;}
+            .ob-select{width:100%;box-sizing:border-box;background:#16181b;border:1.5px solid rgba(255,255,255,.12);border-radius:16px;padding:14px 16px;color:#f3f5f3;font-size:16px;font-family:"Hanken Grotesk",system-ui,sans-serif;outline:none;transition:border-color .15s;appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236a7077' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;}
+            .ob-select:focus{border-color:#cdfb46;}
+            .ob-select option{background:#1d2024;}
           ` }} />
           <div style={{ flex: 1, width:'100%', maxWidth:'480px', margin: '0 auto', fontFamily:'"Hanken Grotesk",system-ui,sans-serif', WebkitFontSmoothing:'antialiased' as React.CSSProperties['WebkitFontSmoothing'], display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', position: 'relative' }}>
 
@@ -1120,10 +1148,10 @@ function LandingPageContent() {
                     </p>
                   </div>
 
-                  <div style={{ display:'flex',flexDirection:'column',gap:16 }}>
+                  <div style={{ display:'flex',flexDirection:'column',gap:14 }}>
                     <div>
                       <label style={{ display:'block',fontSize:11,fontWeight:600,letterSpacing:'.12em',textTransform:'uppercase',color:'#6a7077',marginBottom:8 }}>
-                        What should we call you? <span style={{ color:'#e85555' }}>*</span>
+                        Name / Nickname <span style={{ color:'#e85555' }}>*</span>
                       </label>
                       <input
                         className="ob-input"
@@ -1131,14 +1159,27 @@ function LandingPageContent() {
                         placeholder="e.g. Lagos Strider"
                         value={guestNick}
                         onChange={e => setGuestNick(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && saveGuestProfile()}
                         autoFocus
                       />
                     </div>
 
                     <div>
                       <label style={{ display:'block',fontSize:11,fontWeight:600,letterSpacing:'.12em',textTransform:'uppercase',color:'#6a7077',marginBottom:8 }}>
-                        Your city <span style={{ color:'#454b52',textTransform:'none',letterSpacing:'normal',fontWeight:400 }}>— optional</span>
+                        Email <span style={{ color:'#e85555' }}>*</span>
+                      </label>
+                      <input
+                        className="ob-input"
+                        type="email"
+                        placeholder="you@email.com"
+                        value={guestEmail}
+                        onChange={e => setGuestEmail(e.target.value)}
+                      />
+                      <p style={{ fontSize:11,color:'#454b52',marginTop:6,lineHeight:1.4 }}>For updates, challenges and reward-pool drops. No spam.</p>
+                    </div>
+
+                    <div>
+                      <label style={{ display:'block',fontSize:11,fontWeight:600,letterSpacing:'.12em',textTransform:'uppercase',color:'#6a7077',marginBottom:8 }}>
+                        City <span style={{ color:'#454b52',textTransform:'none',letterSpacing:'normal',fontWeight:400 }}>— optional</span>
                       </label>
                       <input
                         className="ob-input"
@@ -1146,65 +1187,47 @@ function LandingPageContent() {
                         placeholder="e.g. Lagos"
                         value={guestCity}
                         onChange={e => setGuestCity(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && saveGuestProfile()}
                       />
                     </div>
 
                     <div>
-                      <label style={{ display:'block',fontSize:11,fontWeight:600,letterSpacing:'.12em',textTransform:'uppercase',color:'#6a7077',marginBottom:10 }}>I prefer</label>
-                      <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:10 }}>
-                        {(['walk','run'] as const).map(a => (
-                          <button
-                            key={a}
-                            onClick={() => setGuestActivity(a)}
-                            style={{
-                              padding:'14px 12px',
-                              borderRadius:16,
-                              border: guestActivity === a ? '2px solid #cdfb46' : '1.5px solid rgba(255,255,255,.1)',
-                              background: guestActivity === a ? 'rgba(205,251,70,.08)' : '#16181b',
-                              color: guestActivity === a ? '#cdfb46' : '#9aa1a8',
-                              fontFamily:'"Hanken Grotesk",system-ui,sans-serif',
-                              fontWeight:700,
-                              fontSize:15,
-                              cursor:'pointer',
-                              transition:'all .15s',
-                              display:'flex',
-                              alignItems:'center',
-                              justifyContent:'center',
-                              gap:8,
-                            }}
-                          >
-                            {a === 'walk' ? (
-                              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="5" r="1.5"/><path d="M9 19l1-5-2-3 3-3 2 3h3"/><path d="M6 12l2-1"/><path d="M13.5 19l-1.5-4"/></svg>
-                            ) : (
-                              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="13" cy="4" r="1.5"/><path d="M7 20l3-5 2 2 2-6 3 4"/><path d="M5 9l4-1 2 3-3 2"/></svg>
-                            )}
-                            {a === 'walk' ? 'Walking' : 'Running'}
-                          </button>
-                        ))}
-                      </div>
+                      <label style={{ display:'block',fontSize:11,fontWeight:600,letterSpacing:'.12em',textTransform:'uppercase',color:'#6a7077',marginBottom:8 }}>I prefer</label>
+                      <select
+                        className="ob-select"
+                        value={guestActivity}
+                        onChange={e => setGuestActivity(e.target.value as 'walk' | 'run' | 'both')}
+                      >
+                        <option value="walk">Walking</option>
+                        <option value="run">Running</option>
+                        <option value="both">Both — walking &amp; running</option>
+                      </select>
                     </div>
                   </div>
 
-                  <button
-                    onClick={saveGuestProfile}
-                    disabled={!guestNick.trim()}
-                    style={{
-                      display:'inline-flex',alignItems:'center',justifyContent:'center',gap:9,
-                      fontFamily:'"Hanken Grotesk",system-ui,sans-serif',fontWeight:700,fontSize:16,
-                      border:'none',borderRadius:999,padding:'16px 22px',width:'100%',
-                      background: guestNick.trim() ? '#cdfb46' : 'rgba(205,251,70,.25)',
-                      color: guestNick.trim() ? '#1b2700' : 'rgba(27,39,0,.4)',
-                      cursor: guestNick.trim() ? 'pointer' : 'not-allowed',
-                      transition:'all .15s',
-                    }}
-                  >
-                    Start exploring
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-                  </button>
+                  {(() => {
+                    const ready = guestNick.trim() && guestEmail.trim() && guestEmail.includes('@')
+                    return (
+                      <button
+                        onClick={saveGuestProfile}
+                        disabled={!ready || guestSaving}
+                        style={{
+                          display:'inline-flex',alignItems:'center',justifyContent:'center',gap:9,
+                          fontFamily:'"Hanken Grotesk",system-ui,sans-serif',fontWeight:700,fontSize:16,
+                          border:'none',borderRadius:999,padding:'16px 22px',width:'100%',
+                          background: ready ? '#cdfb46' : 'rgba(205,251,70,.2)',
+                          color: ready ? '#1b2700' : 'rgba(27,39,0,.35)',
+                          cursor: ready && !guestSaving ? 'pointer' : 'not-allowed',
+                          transition:'all .15s',
+                        }}
+                      >
+                        {guestSaving ? 'Saving...' : 'Start exploring'}
+                        {!guestSaving && <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>}
+                      </button>
+                    )
+                  })()}
 
-                  <p style={{ fontSize:12,color:'#454b52',textAlign:'center',marginTop:-16 }}>
-                    No wallet needed · Change anytime in settings
+                  <p style={{ fontSize:11,color:'#3d4349',textAlign:'center',marginTop:-16,lineHeight:1.5 }}>
+                    Saved to your profile · Change anytime in settings
                   </p>
 
                 </div>
