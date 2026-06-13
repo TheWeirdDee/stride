@@ -28,6 +28,7 @@ export default function NewCommitmentPage() {
   
   const {
     balance,
+    cusdBalance,
     hasActiveCommitment,
     activeCommitmentId,
     createCommitment,
@@ -68,20 +69,20 @@ export default function NewCommitmentPage() {
   const bonusEstimateMin = (stakeValue * 0.02).toFixed(4)
   const bonusEstimateMax = (stakeValue * 0.10).toFixed(4)
 
-  // Balance Check Warnings
-  const userBalanceFloat = parseFloat(balance)
-  const isBalanceInsufficient = userBalanceFloat < stakeValue
-  const isStakeHighPercent = stakeValue > 0 && userBalanceFloat > 0 && (stakeValue / userBalanceFloat) > 0.20
+  // Balance Check Warnings — use cUSD balance, not CELO (contract stakes cUSD)
+  const userCusdFloat = parseFloat(cusdBalance)
+  const isBalanceInsufficient = userCusdFloat < stakeValue
+  const isStakeHighPercent = stakeValue > 0 && userCusdFloat > 0 && (stakeValue / userCusdFloat) > 0.20
 
   const handleNext = () => {
     if (step === 3) {
       const val = parseFloat(finalStake)
       if (isNaN(val) || val < MIN_STAKE_CELO) {
-        setLocalError(`Stake must be at least ${MIN_STAKE_CELO} CELO`)
+        setLocalError(`Stake must be at least ${MIN_STAKE_CELO} cUSD`)
         return
       }
       if (isBalanceInsufficient) {
-        setLocalError('Insufficient CELO balance in your wallet.')
+        setLocalError('Insufficient cUSD balance. Top up your cUSD to stake.')
         return
       }
       setLocalError(null)
@@ -268,9 +269,9 @@ export default function NewCommitmentPage() {
 
       {/* Wallet Balance Info */}
       <div className="flex items-center justify-between py-2.5 px-4 rounded-xl bg-zinc-100/50 dark:bg-zinc-900/30 border border-zinc-150 dark:border-zinc-850 text-xs">
-        <span className="text-zinc-500 font-semibold">Your Wallet Balance:</span>
+        <span className="text-zinc-500 font-semibold">Your cUSD Balance:</span>
         <span className="font-mono font-bold text-zinc-800 dark:text-zinc-200">
-          ${parseFloat(balance).toFixed(4)} CELO
+          {parseFloat(cusdBalance).toFixed(4)} cUSD
         </span>
       </div>
 
@@ -318,7 +319,7 @@ export default function NewCommitmentPage() {
         <div className="flex gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-900/30 text-amber-800 dark:text-amber-400 text-xs">
           <Info className="h-4 w-4 shrink-0 mt-0.5" />
           <p>
-            Warning: Staking <b>${stakeValue.toFixed(2)} CELO</b> represents more than 20% of your total balance. Please exercise skin in the game responsibly.
+            Warning: Staking <b>{stakeValue.toFixed(2)} cUSD</b> is more than 20% of your cUSD balance. Make sure you&apos;re comfortable with this.
           </p>
         </div>
       )}
@@ -327,7 +328,7 @@ export default function NewCommitmentPage() {
         <div className="flex gap-2 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200/50 dark:border-rose-900/30 text-rose-800 dark:text-rose-400 text-xs">
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
           <p>
-            Insufficient funds. You need <b>${stakeValue.toFixed(2)} CELO</b> but only have <b>${userBalanceFloat.toFixed(2)} CELO</b>.
+            Not enough cUSD. You need <b>{stakeValue.toFixed(2)} cUSD</b> but only have <b>{userCusdFloat.toFixed(4)} cUSD</b>. Top up via MiniPay or Valora.
           </p>
         </div>
       )}
@@ -392,7 +393,7 @@ export default function NewCommitmentPage() {
           <div>
             <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Stake amount</span>
             <span className="block text-lg font-extrabold text-zinc-800 dark:text-zinc-200 mt-0.5">
-              ${parseFloat(finalStake).toFixed(2)} CELO
+              {parseFloat(finalStake).toFixed(2)} cUSD
             </span>
           </div>
           <span className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
@@ -420,7 +421,7 @@ export default function NewCommitmentPage() {
               <Award className="h-3 w-3" /> Reward estimate
             </span>
             <span className="block text-lg font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5 font-mono">
-              +{bonusEstimateMin} ~ {bonusEstimateMax} <span className="text-xs font-semibold text-zinc-400">CELO</span>
+              +{bonusEstimateMin} ~ {bonusEstimateMax} <span className="text-xs font-semibold text-zinc-400">cUSD</span>
             </span>
             <span className="block text-[9px] text-zinc-400 dark:text-zinc-500 mt-0.5">
               Stake returned + bonus paid from pool on completion.
