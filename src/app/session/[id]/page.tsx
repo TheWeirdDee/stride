@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { AlertTriangle } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAccount, useReadContract, useWriteContract, useConfig } from 'wagmi'
 import { formatUnits } from 'viem'
@@ -185,7 +186,7 @@ export default function SessionPage() {
   if (phase === 'error') {
     return (
       <div className="max-w-md mx-auto my-12 px-4 text-center">
-        <div className="text-4xl mb-4">⚠️</div>
+        <div className="mb-4 flex justify-center"><AlertTriangle className="w-10 h-10 text-amber-500" /></div>
         <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">Something went wrong</h2>
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">{errorMsg}</p>
         <button
