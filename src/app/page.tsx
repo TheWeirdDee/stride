@@ -443,7 +443,7 @@ function LandingPageContent() {
 
 <nav className="nav">
   <div className="nav-inner">
-    <a href="#top" className="logo">Stride<span className="chev">&gt;&gt;&gt;</span></a>
+    <Link href="/" className="logo">Stride<span className="chev">&gt;&gt;&gt;</span></Link>
     <div className="nav-menu">
       <a href="#how">How it works</a>
       <a href="#programs">Programs</a>
@@ -777,7 +777,7 @@ function LandingPageContent() {
   <div className="wrap">
     <div className="foot-top">
       <div className="foot-brand">
-        <a href="#top" className="logo">Stride<span className="chev">&gt;&gt;&gt;</span></a>
+        <Link href="/" className="logo">Stride<span className="chev">&gt;&gt;&gt;</span></Link>
         <p>The MiniPay-native way to put skin in the game on your movement. Stake, move, finish, earn — all on Celo.</p>
         <div className="foot-badges">
           <span className="badge"><span className="b-dot"></span>Built on Celo</span>
@@ -841,18 +841,18 @@ function LandingPageContent() {
           {obScreen === 'splash' && (
             <div style={{ width:'100%',height:'100%',background:'radial-gradient(125% 90% at 75% 0%, #1d72c0 0%, #0a5aa2 45%, #073d70 100%)',color:'#fff',display:'flex',flexDirection:'column',position:'relative',overflow:'hidden' }}>
               <div style={{ position:'absolute',inset:0,opacity:.12,backgroundImage:'linear-gradient(rgba(255,255,255,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.6) 1px,transparent 1px)',backgroundSize:'46px 46px',WebkitMaskImage:'linear-gradient(180deg,#000,transparent 65%)',maskImage:'linear-gradient(180deg,#000,transparent 65%)' }} />
-              <div style={{ height:64,flexShrink:0 }} />
+              <div style={{ height:16,flexShrink:0 }} />
               <div className="ob-scroll" style={{ flex:1 }}>
-                <div style={{ display:'flex',flexDirection:'column',minHeight:'100%',justifyContent:'space-between',padding:'24px 24px 38px',boxSizing:'border-box' }}>
-                  <div style={{ display:'flex',flexDirection:'column',alignItems:'flex-start',gap:16,marginTop:18 }}>
-                    <span style={{ display:'inline-flex',alignItems:'center',fontFamily:'"Hanken Grotesk",system-ui,sans-serif',fontWeight:800,fontSize:36,letterSpacing:'-.02em',color:'#fff' }}>
+                <div style={{ display:'flex',flexDirection:'column',minHeight:'100%',justifyContent:'space-between',padding:'16px 24px 24px',boxSizing:'border-box' }}>
+                  <div style={{ display:'flex',flexDirection:'column',alignItems:'flex-start',gap:12,marginTop:12 }}>
+                    <Link href="/" onClick={() => setIsOnboardingOpen(false)} style={{ display:'inline-flex',alignItems:'center',fontFamily:'"Hanken Grotesk",system-ui,sans-serif',fontWeight:800,fontSize:36,letterSpacing:'-.02em',color:'#fff',textDecoration:'none' }}>
                       Stride<span style={{ color:'#cdfb46',letterSpacing:'-.18em',marginLeft:2 }}>&gt;&gt;</span>
-                    </span>
+                    </Link>
                     <span style={{ display:'inline-flex',alignItems:'center',gap:6,fontSize:12,fontWeight:600,padding:'6px 11px',borderRadius:999,background:'rgba(205,251,70,.16)',color:'#cdfb46' }}>
                       <span style={{ width:6,height:6,borderRadius:'50%',background:'#cdfb46',display:'inline-block' }} />Built on Celo · MiniPay native
                     </span>
                   </div>
-                  <div style={{ paddingTop:40,marginTop:'auto',marginBottom:40 }}>
+                  <div style={{ paddingTop:16,marginTop:'auto',marginBottom:16 }}>
                     <h1 style={{ fontFamily:'"Anton",sans-serif',fontWeight:400,textTransform:'uppercase',lineHeight:1.0,letterSpacing:'.01em',fontSize:40 }}>
                       Put your money<br/>where your<br/><span style={{ color:'#cdfb46' }}>miles</span> are
                     </h1>
@@ -884,11 +884,11 @@ function LandingPageContent() {
             const next = () => obSlideIdx < OB_SLIDES.length - 1 ? setObSlideIdx(obSlideIdx + 1) : go('explore')
             return (
               <div style={{ width:'100%',height:'100%',background:'#0b0c0e',color:'#f3f5f3',display:'flex',flexDirection:'column' }}>
-                <div style={{ height:64,flexShrink:0 }} />
+                <div style={{ height:16,flexShrink:0 }} />
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 20px 0' }}>
-                  <span style={{ display:'inline-flex',alignItems:'center',fontFamily:'"Hanken Grotesk",system-ui,sans-serif',fontWeight:800,fontSize:20,letterSpacing:'-.02em' }}>
+                  <Link href="/" onClick={() => setIsOnboardingOpen(false)} style={{ display:'inline-flex',alignItems:'center',fontFamily:'"Hanken Grotesk",system-ui,sans-serif',fontWeight:800,fontSize:20,letterSpacing:'-.02em',color:'#fff',textDecoration:'none' }}>
                     Stride<span style={{ color:'#cdfb46',letterSpacing:'-.18em',marginLeft:2 }}>&gt;&gt;</span>
-                  </span>
+                  </Link>
                   <button onClick={() => go('explore')} style={{ background:'transparent',border:'none',color:'#9aa1a8',cursor:'pointer',fontFamily:'"Space Mono",monospace',fontSize:12,letterSpacing:'.1em' }}>SKIP</button>
                 </div>
                 <div className="ob-scroll" style={{ flex:1 }}>
@@ -938,7 +938,7 @@ function LandingPageContent() {
           {/* ════ 3. EXPLORE ════ */}
           {obScreen === 'explore' && (
             <div style={{ width:'100%',height:'100%',background:'#0b0c0e',color:'#f3f5f3',display:'flex',flexDirection:'column' }}>
-              <div style={{ height:64,flexShrink:0 }} />
+              <div style={{ height:16,flexShrink:0 }} />
               <div className="ob-scroll" style={{ flex:1 }}>
                 <div style={{ display:'flex',flexDirection:'column',minHeight:'100%',justifyContent:'space-between',padding:'8px 20px 38px',boxSizing:'border-box' }}>
                   <div>
@@ -1003,7 +1003,7 @@ function LandingPageContent() {
           {/* ════ 4. WALLET ════ */}
           {obScreen === 'wallet' && (
             <div style={{ width:'100%',height:'100%',background:'#0b0c0e',color:'#f3f5f3',display:'flex',flexDirection:'column' }}>
-              <div style={{ height:64,flexShrink:0 }} />
+              <div style={{ height:16,flexShrink:0 }} />
               <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 20px 4px' }}>
                 <button onClick={() => go('explore')} style={{ width:44,height:44,borderRadius:'50%',background:'#1d2024',border:'1px solid rgba(255,255,255,.09)',display:'grid',placeItems:'center',color:'#f3f5f3',cursor:'pointer' }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 5l-7 7 7 7"/></svg>
@@ -1082,7 +1082,7 @@ function LandingPageContent() {
           {/* ════ 5. LOCATION ════ */}
           {obScreen === 'location' && (
             <div style={{ width:'100%',height:'100%',background:'#0b0c0e',color:'#f3f5f3',display:'flex',flexDirection:'column' }}>
-              <div style={{ height:64,flexShrink:0 }} />
+              <div style={{ height:16,flexShrink:0 }} />
               <div className="ob-scroll" style={{ flex:1 }}>
                 <div style={{ display:'flex',flexDirection:'column',minHeight:'100%',justifyContent:'space-between',padding:'0 20px 38px',boxSizing:'border-box',alignItems:'center',textAlign:'center' }}>
                   <div style={{ display:'flex',flexDirection:'column',alignItems:'center',width:'100%' }}>
@@ -1130,7 +1130,7 @@ function LandingPageContent() {
             const STAKES = ['$0.01','$0.10','$0.25','$0.50']
             return (
               <div style={{ width:'100%',height:'100%',background:'#0b0c0e',color:'#f3f5f3',display:'flex',flexDirection:'column' }}>
-                <div style={{ height:64,flexShrink:0 }} />
+                <div style={{ height:16,flexShrink:0 }} />
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 20px 4px' }}>
                   <button onClick={() => go('location')} style={{ width:44,height:44,borderRadius:'50%',background:'#1d2024',border:'1px solid rgba(255,255,255,.09)',display:'grid',placeItems:'center',color:'#f3f5f3',cursor:'pointer' }}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 5l-7 7 7 7"/></svg>
@@ -1195,7 +1195,7 @@ function LandingPageContent() {
           {/* ════ 7. PROFILE SETUP ════ */}
           {obScreen === 'profile-setup' && (
             <div style={{ width:'100%',height:'100%',background:'#0b0c0e',color:'#f3f5f3',display:'flex',flexDirection:'column' }}>
-              <div style={{ height:64,flexShrink:0 }} />
+              <div style={{ height:16,flexShrink:0 }} />
               <div style={{ display:'flex',alignItems:'center',padding:'6px 20px 4px' }}>
                 <button onClick={() => go('goal')} style={{ width:44,height:44,borderRadius:'50%',background:'#1d2024',border:'1px solid rgba(255,255,255,.09)',display:'grid',placeItems:'center',color:'#f3f5f3',cursor:'pointer' }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 5l-7 7 7 7"/></svg>
@@ -1268,7 +1268,7 @@ function LandingPageContent() {
             const STAKES = ['$0.01','$0.10','$0.25','$0.50']
             return (
               <div style={{ width:'100%',height:'100%',background:'radial-gradient(120% 80% at 50% 0%, #16331a 0%, #0b0c0e 55%)',color:'#f3f5f3',display:'flex',flexDirection:'column' }}>
-                <div style={{ height:64,flexShrink:0 }} />
+                <div style={{ height:16,flexShrink:0 }} />
                 <div className="ob-scroll" style={{ flex:1 }}>
                   <div style={{ display:'flex',flexDirection:'column',minHeight:'100%',justifyContent:'space-between',padding:'0 20px 38px',boxSizing:'border-box',alignItems:'center',textAlign:'center' }}>
                     <div style={{ display:'flex',flexDirection:'column',alignItems:'center',width:'100%' }}>
