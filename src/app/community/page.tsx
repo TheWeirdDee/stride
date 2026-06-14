@@ -70,14 +70,12 @@ export default function CommunityFeedPage() {
     return () => clearInterval(interval)
   }, [])
 
-  // Draw simulated route heatmap on Canvas
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Draw background grid
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     ctx.strokeStyle = 'rgba(128,128,128,0.06)'
     ctx.lineWidth = 1
