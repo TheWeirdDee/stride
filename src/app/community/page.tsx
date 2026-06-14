@@ -183,10 +183,8 @@ export default function CommunityFeedPage() {
         </div>
       </div>
 
-      {/* Grid Layout: Leaderboard + Heatmap / Feed */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
-        {/* Left Side: Top Cities Leaderboard */}
         <div className="bg-white dark:bg-zinc-950 p-6 rounded-3xl border border-zinc-150 dark:border-zinc-850 shadow-sm flex flex-col">
           <div className="flex items-center gap-2 mb-6">
             <TrendingUp className="h-4 w-4 text-emerald-500" />
