@@ -45,7 +45,6 @@ export default function NewCommitmentPage() {
   const [stakeAmount, setStakeAmount] = useState<string>('0.10')
   const [durationHours, setDurationHours] = useState<number>(2) // default 2 hours
 
-  // UI state
   const [customStake, setCustomStake] = useState<string>('')
   const [isCustomStakeActive, setIsCustomStakeActive] = useState<boolean>(false)
   const [localError, setLocalError] = useState<string | null>(null)
@@ -69,7 +68,7 @@ export default function NewCommitmentPage() {
   const bonusEstimateMin = (stakeValue * 0.02).toFixed(4)
   const bonusEstimateMax = (stakeValue * 0.10).toFixed(4)
 
-  // Balance Check Warnings — use cUSD balance, not CELO (contract stakes cUSD)
+
   const userCusdFloat = parseFloat(cusdBalance)
   const isBalanceInsufficient = userCusdFloat < stakeValue
   const isStakeHighPercent = stakeValue > 0 && userCusdFloat > 0 && (stakeValue / userCusdFloat) > 0.20
