@@ -70,6 +70,15 @@ export function useCreateCommitment() {
         let localFitness = 'beginner'
 
         if (typeof window !== 'undefined') {
+          // Carry over the guest profile created during onboarding, if any.
+          try {
+            const raw = localStorage.getItem('stride_guest_profile')
+            if (raw) {
+              const g = JSON.parse(raw)
+              localNickname = g?.nickname || localNickname
+              localCity = g?.city || localCity
+            }
+          } catch {}
           localNickname = localStorage.getItem('stride_onboarding_nickname') || localNickname
           localCity = localStorage.getItem('stride_onboarding_city') || localCity
           localFitness = localStorage.getItem('stride_onboarding_fitness') || localFitness
