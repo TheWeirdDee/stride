@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAccount, useConnect, useDisconnect, useBalance } from 'wagmi'
 import { formatEther } from 'viem'
-import { Activity, Compass, BookOpen, User, Wallet, LogOut, Menu, X, ArrowRight } from 'lucide-react'
+import { Activity, Compass, BookOpen, User, Wallet, LogOut, Menu, X } from 'lucide-react'
 
 export default function Navbar() {
   const pathname = usePathname()
@@ -117,13 +117,13 @@ export default function Navbar() {
                 <span>Guest: <span className="font-bold text-zinc-900 dark:text-zinc-100">{nickname}</span></span>
               </Link>
             ) : (
-              <Link
-                href="/?onboard=true"
+              <button
+                onClick={handleConnect}
                 className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white px-4 py-2 text-sm font-semibold shadow-md shadow-emerald-500/10 hover:shadow-emerald-500/20 active:scale-95 transition-all duration-200"
               >
-                <span>Get Started</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
+                <Wallet className="h-4 w-4" />
+                <span>Connect Wallet</span>
+              </button>
             )}
 
             {/* Mobile Menu Button */}

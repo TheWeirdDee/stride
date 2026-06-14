@@ -9,7 +9,7 @@ interface LandingHeroProps {
   onConnectWallet: () => void
 }
 
-export default function LandingHero({ guestProfile, onGetStarted, onContinue, onConnectWallet }: LandingHeroProps) {
+export default function LandingHero({ onGetStarted }: LandingHeroProps) {
   return (
     <header className="hero" id="top">
       <div className="hero-grid-tex"></div>
@@ -22,41 +22,19 @@ export default function LandingHero({ guestProfile, onGetStarted, onContinue, on
         </div>
         <h1 className="hero-h1">Put Your Money <span className="lite">Where Your</span> Miles Are</h1>
         <p className="hero-sub">Stake a little. Move for real. Get your stake back plus a bonus the moment you finish.</p>
-        {guestProfile ? (
-          <div style={{ display:'flex',flexDirection:'column',gap:10,marginTop:4 }}>
-            <div style={{ display:'inline-flex',alignItems:'center',gap:8,padding:'8px 14px',background:'rgba(205,251,70,.1)',border:'1px solid rgba(205,251,70,.25)',borderRadius:999,width:'fit-content' }}>
-              <span style={{ width:7,height:7,borderRadius:'50%',background:'#cdfb46',display:'inline-block',flexShrink:0 }} />
-              <span style={{ fontSize:13,fontWeight:600,color:'#cdfb46',fontFamily:'var(--mono)',letterSpacing:'.04em' }}>Welcome back, {guestProfile.nickname}</span>
-            </div>
-            <button
-              className="hero-get-started"
-              onClick={onContinue}
-            >
-              Continue exploring
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-            </button>
-            <button
-              style={{ background:'none',border:'none',cursor:'pointer',fontSize:13,color:'var(--muted)',textDecoration:'underline',textAlign:'left',padding:0,fontFamily:'var(--sans)',marginTop:2 }}
-              onClick={onConnectWallet}
-            >
-              Connect a wallet to stake →
-            </button>
-          </div>
-        ) : (
-          <>
-            <form className="hero-cta" onSubmit={(e) => { e.preventDefault(); onGetStarted(); }}>
-              <input type="text" placeholder="Set your goal — e.g. 5 km today" aria-label="Goal" />
-              <button className="btn btn-lime" type="submit">Start a Commitment</button>
-            </form>
-            <button
-              className="hero-get-started"
-              onClick={onGetStarted}
-            >
-              Get started
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-            </button>
-          </>
-        )}
+        <>
+          <form className="hero-cta" onSubmit={(e) => { e.preventDefault(); onGetStarted(); }}>
+            <input type="text" placeholder="Set your goal — e.g. 5 km today" aria-label="Goal" />
+            <button className="btn btn-lime" type="submit">Start a Commitment</button>
+          </form>
+          <button
+            className="hero-get-started"
+            onClick={onGetStarted}
+          >
+            Get started
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </>
       </div>
 
       <aside className="hero-cards">

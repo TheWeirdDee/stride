@@ -10,7 +10,7 @@ interface LandingNavProps {
   onContinue: () => void
 }
 
-export default function LandingNav({ isConnected, guestProfile, onGetStarted, onContinue }: LandingNavProps) {
+export default function LandingNav({ isConnected, onGetStarted }: LandingNavProps) {
   return (
     <nav className="nav">
       <div className="nav-inner">
@@ -26,8 +26,6 @@ export default function LandingNav({ isConnected, guestProfile, onGetStarted, on
           <a className="icon-btn" href="#" aria-label="Telegram"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M21.9 4.3 18.6 20c-.2 1-.9 1.3-1.8.8l-5-3.7-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.1-8.2c.4-.4-.1-.6-.6-.2L6 13.2l-4.9-1.5c-1-.3-1-1 .2-1.5l19.2-7.4c.9-.3 1.7.2 1.4 1.5Z"/></svg></a>
           {isConnected ? (
             <Link className="btn btn-light" href="/profile">View Profile</Link>
-          ) : guestProfile ? (
-            <button className="btn btn-light" onClick={onContinue}>Continue exploring</button>
           ) : (
             <button className="btn btn-light" onClick={onGetStarted}>Get Started</button>
           )}
