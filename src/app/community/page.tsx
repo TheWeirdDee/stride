@@ -123,7 +123,6 @@ export default function CommunityFeedPage() {
       [150, 50], [210, 90], [260, 40], [320, 80], [380, 30]
     ], '#f59e0b')
 
-    // Heat spots
     const drawSpot = (x: number, y: number, r: number, color: string) => {
       const grad = ctx.createRadialGradient(x, y, 0, x, y, r)
       grad.addColorStop(0, color)
@@ -152,7 +151,6 @@ export default function CommunityFeedPage() {
         </p>
       </div>
 
-      {/* Stats counter band */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <div className="bg-white dark:bg-zinc-950 p-5 rounded-2xl border border-zinc-150 dark:border-zinc-850 shadow-sm flex items-center gap-4">
           <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
