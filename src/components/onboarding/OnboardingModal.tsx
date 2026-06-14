@@ -1,6 +1,7 @@
 // @ts-nocheck
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { GuestProfile } from '../landing/types'
 
@@ -81,6 +82,7 @@ export default function OnboardingModal({
   onConnect,
   onConnectAndSave,
 }: OnboardingModalProps) {
+  const [showWalletChooser, setShowWalletChooser] = useState(false)
   if (!isOpen) return null
 
   return (
@@ -380,18 +382,39 @@ export default function OnboardingModal({
             const injectedConnector = connectors.find(c => c.id === 'injected')
             const wcConnector = connectors.find(c => c.id === 'walletConnect')
 
+            // EIP-6963: every installed browser wallet (MetaMask, Zerion, …)
+            // is discovered as its own connector, separate from the generic
+            // `injected` and `walletConnect` connectors.
+            const browserWallets = connectors.filter(
+              c => c.id !== 'injected' && c.id !== 'walletConnect'
+            )
+
             const handleConnect = (connector: any) => {
               if (!connector) return
               if (isConnected) { onGo('location'); return }
               onConnect(connector)
             }
 
+            const openBrowserWallet = () => {
+              if (browserWallets.length > 1) {
+                // More than one wallet installed — let the user pick.
+                setShowWalletChooser(true)
+              } else if (browserWallets.length === 1) {
+                handleConnect(browserWallets[0])
+              } else {
+                // Nothing discovered — fall back to the generic injected provider.
+                handleConnect(injectedConnector)
+              }
+            }
+
             const walletRows: { label: string; sub: string; onClick: (() => void) | null }[] = []
-            if (!isMiniPay && injectedConnector) {
+            if (!isMiniPay && (injectedConnector || browserWallets.length > 0)) {
               walletRows.push({
                 label: 'Browser Wallet',
-                sub: 'MetaMask, Zerion, Rabby…',
-                onClick: () => handleConnect(injectedConnector),
+                sub: browserWallets.length > 1
+                  ? `${browserWallets.length} wallets detected — choose one`
+                  : 'MetaMask, Zerion…',
+                onClick: openBrowserWallet,
               })
             }
             walletRows.push({
@@ -406,7 +429,7 @@ export default function OnboardingModal({
             })
 
             return (
-              <div style={{ width:'100%',height:'100%',background:'#0b0c0e',color:'#f3f5f3',display:'flex',flexDirection:'column' }}>
+              <div style={{ width:'100%',height:'100%',background:'#0b0c0e',color:'#f3f5f3',display:'flex',flexDirection:'column',position:'relative' }}>
                 <div style={{ height:16,flexShrink:0 }} />
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 20px 4px' }}>
                   <button onClick={() => onGo('explore')} style={{ width:44,height:44,borderRadius:'50%',background:'#1d2024',border:'1px solid rgba(255,255,255,.09)',display:'grid',placeItems:'center',color:'#f3f5f3',cursor:'pointer' }}>
@@ -488,6 +511,44 @@ export default function OnboardingModal({
                     </div>
                   </div>
                 </div>
+
+                {/* ── Browser wallet chooser popup ── */}
+                {showWalletChooser && (
+                  <div
+                    onClick={() => setShowWalletChooser(false)}
+                    style={{ position:'absolute',inset:0,zIndex:20,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'flex-end',justifyContent:'center',backdropFilter:'blur(2px)' }}
+                  >
+                    <div
+                      onClick={e => e.stopPropagation()}
+                      style={{ width:'100%',maxWidth:480,background:'#16181b',borderTopLeftRadius:26,borderTopRightRadius:26,border:'1px solid rgba(255,255,255,.09)',borderBottom:'none',padding:'10px 20px 28px',boxShadow:'0 -20px 60px rgba(0,0,0,.5)' }}
+                    >
+                      <div style={{ width:40,height:4,borderRadius:999,background:'rgba(255,255,255,.18)',margin:'0 auto 18px' }} />
+                      <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:6 }}>
+                        <b style={{ fontSize:17,color:'#f3f5f3' }}>Choose a wallet</b>
+                        <button onClick={() => setShowWalletChooser(false)} style={{ background:'transparent',border:'none',color:'#9aa1a8',cursor:'pointer',fontSize:20,lineHeight:1,padding:4 }}>×</button>
+                      </div>
+                      <p style={{ fontSize:13,color:'#9aa1a8',margin:'0 0 16px' }}>Multiple wallets are installed in this browser. Pick the one you want to connect.</p>
+                      <div style={{ display:'flex',flexDirection:'column',gap:10 }}>
+                        {browserWallets.map((w: any) => (
+                          <button
+                            key={w.id}
+                            onClick={() => { setShowWalletChooser(false); handleConnect(w) }}
+                            disabled={obConnecting}
+                            style={{ display:'flex',alignItems:'center',gap:14,padding:'14px 16px',width:'100%',background:'#1d2024',border:'1px solid rgba(255,255,255,.09)',borderRadius:16,cursor:'pointer',textAlign:'left' }}
+                          >
+                            <div style={{ width:38,height:38,borderRadius:11,background:'#0b0c0e',display:'grid',placeItems:'center',overflow:'hidden',flexShrink:0 }}>
+                              {w.icon
+                                ? <img src={w.icon} alt={w.name} style={{ width:24,height:24,borderRadius:6 }} />
+                                : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9aa1a8" strokeWidth="2" strokeLinecap="round"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 9h18M16 13h2"/></svg>}
+                            </div>
+                            <b style={{ flex:1,color:'#f3f5f3',fontSize:15 }}>{w.name || 'Browser Wallet'}</b>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6a7077" strokeWidth="2" strokeLinecap="round"><path d="M9 5l7 7-7 7"/></svg>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )
           })()}

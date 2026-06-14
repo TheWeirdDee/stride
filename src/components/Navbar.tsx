@@ -12,11 +12,18 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [nickname, setNickname] = useState<string | null>(null)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedNickname = localStorage.getItem('stride_onboarding_nickname')
-       
-      setNickname(storedNickname)
-    }
+    if (typeof window === 'undefined') return
+    // Guest profile saved during onboarding lives under `stride_guest_profile`.
+    // Fall back to the legacy `stride_onboarding_nickname` key if present.
+    try {
+      const raw = localStorage.getItem('stride_guest_profile')
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        setNickname(parsed?.nickname || null)
+        return
+      }
+    } catch {}
+    setNickname(localStorage.getItem('stride_onboarding_nickname'))
   }, [pathname])
   const { address, isConnected } = useAccount()
   const { connect, connectors } = useConnect()
