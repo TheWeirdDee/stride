@@ -110,17 +110,15 @@ export default function CommunityFeedPage() {
       ctx.shadowBlur = 0 // reset
     }
 
-    // Route 1 (Green/Emerald)
+
     drawRoute([
       [50, 100], [120, 80], [180, 140], [220, 110], [300, 160]
     ], '#10b981')
 
-    // Route 2 (Cyan/Blue)
     drawRoute([
       [80, 220], [140, 180], [200, 240], [290, 190], [360, 230]
     ], '#06b6d4')
 
-    // Route 3 (Amber/Orange)
     drawRoute([
       [150, 50], [210, 90], [260, 40], [320, 80], [380, 30]
     ], '#f59e0b')
