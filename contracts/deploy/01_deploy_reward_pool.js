@@ -1,6 +1,3 @@
-// npx hardhat run deploy/01_deploy_reward_pool.js --network alfajores
-// npx hardhat run deploy/01_deploy_reward_pool.js --network celo
-
 require("dotenv").config();
 const hre = require("hardhat");
 const fs = require("fs");
