@@ -138,12 +138,10 @@ function LandingPageContent() {
           }
 
           setIsSubmittingProfile(false)
-          setIsOnboardingOpen(false)
           router.push('/commitment/new')
         } catch (err) {
           console.error(err)
           setIsSubmittingProfile(false)
-          setIsOnboardingOpen(false)
           router.push('/commitment/new')
         }
       }
@@ -159,13 +157,11 @@ function LandingPageContent() {
         connect({ connector })
       } else {
         setIsSubmittingProfile(false)
-        setIsOnboardingOpen(false)
         router.push('/commitment/new')
       }
     } catch (err) {
       console.error(err)
       setIsSubmittingProfile(false)
-      setIsOnboardingOpen(false)
       router.push('/commitment/new')
     }
   }
@@ -198,7 +194,9 @@ function LandingPageContent() {
     }
     setGuestProfile(profile)
     setGuestSaving(false)
-    setIsOnboardingOpen(false)
+    // Navigate while the overlay is still mounted so the landing page never
+    // flashes between closing the modal and the route changing. The onboarding
+    // page unmounts once navigation lands.
     router.push('/community')
   }
 
