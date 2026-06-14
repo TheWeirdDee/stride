@@ -213,7 +213,6 @@ export default function CommunityFeedPage() {
           </div>
         </div>
 
-        {/* Right Side: Map Canvas & Ticker */}
         <div className="flex flex-col gap-6">
           {/* Simulated Heatmap Canvas */}
           <div className="bg-white dark:bg-zinc-950 p-4 rounded-3xl border border-zinc-150 dark:border-zinc-850 shadow-sm flex flex-col relative overflow-hidden">
