@@ -5,6 +5,7 @@ import { useAccount, useConnect, useDisconnect, useBalance } from 'wagmi'
 import { formatEther } from 'viem'
 import { supabase } from '@/utils/supabase'
 import { useRouter } from 'next/navigation'
+import { GuestProfile } from '@/components/landing/types'
 import {
   User,
   MapPin,
@@ -18,7 +19,11 @@ import {
   RefreshCw,
   PlusCircle,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  Pencil,
+  Check,
+  X,
+  Mail
 } from 'lucide-react'
 
 interface CommitmentItem {
@@ -34,6 +39,8 @@ interface CommitmentItem {
 interface UserProfile {
   nickname: string
   city: string
+  email?: string
+  activity?: 'walk' | 'run' | 'both'
   fitness_level: 'beginner' | 'intermediate' | 'active'
   streak_current: number
   streak_best: number
@@ -49,9 +56,17 @@ export default function ProfilePage() {
 
   // Profile data & history
   const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [guest, setGuest] = useState<GuestProfile | null>(null)
   const [commitments, setCommitments] = useState<CommitmentItem[]>([])
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
+
+  // Inline edit state
+  const [isEditing, setIsEditing] = useState(false)
+  const [editNick, setEditNick] = useState('')
+  const [editCity, setEditCity] = useState('')
+  const [editActivity, setEditActivity] = useState<'walk' | 'run' | 'both'>('walk')
+  const [savingEdits, setSavingEdits] = useState(false)
 
   const { data: balanceData } = useBalance({
     address: address,
@@ -133,7 +148,30 @@ export default function ProfilePage() {
           setLoading(false)
         }
       } else {
-        // Disconnected — keep whatever profile state is already in memory
+        // Disconnected — load the local guest profile created during onboarding
+        try {
+          const raw = typeof window !== 'undefined' && localStorage.getItem('stride_guest_profile')
+          if (raw) {
+            const g = JSON.parse(raw) as GuestProfile
+            setGuest(g)
+            setProfile({
+              nickname: g.nickname || 'Anonymous Mover',
+              city: g.city || 'Unknown',
+              email: g.email,
+              activity: g.activity,
+              fitness_level: 'beginner',
+              streak_current: 0,
+              streak_best: 0,
+              total_distance: 0,
+              total_earnings: 0,
+            })
+          } else {
+            setGuest(null)
+            setProfile(null)
+          }
+        } catch {
+          setGuest(null)
+        }
         setLoading(false)
       }
     }
@@ -150,6 +188,51 @@ export default function ProfilePage() {
 
   const truncateAddress = (addr: string) => {
     return `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`
+  }
+
+  const startEditing = () => {
+    if (!profile) return
+    setEditNick(profile.nickname)
+    setEditCity(profile.city === 'Unknown' ? '' : profile.city)
+    setEditActivity(profile.activity || 'walk')
+    setIsEditing(true)
+  }
+
+  const saveProfileEdits = async () => {
+    if (!profile || !editNick.trim()) return
+    setSavingEdits(true)
+    const nextNick = editNick.trim()
+    const nextCity = editCity.trim()
+
+    try {
+      if (isConnected && address) {
+        // Connected — persist to Supabase against the wallet address
+        if (supabase) {
+          await supabase
+            .from('users')
+            .upsert({ wallet_address: address, nickname: nextNick, city: nextCity || 'Unknown' }, { onConflict: 'wallet_address' })
+        }
+      } else if (guest) {
+        // Guest — persist to localStorage (and best-effort to Supabase)
+        const updated: GuestProfile = { ...guest, nickname: nextNick, city: nextCity, activity: editActivity }
+        try { localStorage.setItem('stride_guest_profile', JSON.stringify(updated)) } catch {}
+        setGuest(updated)
+        if (supabase) {
+          try {
+            await supabase
+              .from('users')
+              .upsert({ wallet_address: guest.id, nickname: nextNick, city: nextCity || 'Unknown' }, { onConflict: 'wallet_address' })
+          } catch { /* non-fatal */ }
+        }
+      }
+
+      setProfile({ ...profile, nickname: nextNick, city: nextCity || 'Unknown', activity: editActivity })
+      setIsEditing(false)
+    } catch (err) {
+      console.error('Failed to save profile edits:', err)
+    } finally {
+      setSavingEdits(false)
+    }
   }
 
   const getStatusBadge = (status: string) => {
@@ -212,25 +295,95 @@ export default function ProfilePage() {
         
         {/* Profile Details Card */}
         <div className="md:col-span-2 bg-white dark:bg-zinc-950 p-6 sm:p-8 rounded-3xl border border-zinc-150 dark:border-zinc-850 shadow-sm flex flex-col gap-6">
-          <div className="flex justify-between items-start">
-            <div className="flex items-center gap-4">
-              <div className="h-16 w-16 rounded-2xl bg-gradient-to-tr from-emerald-400 to-cyan-500 text-white flex items-center justify-center text-2xl font-bold uppercase shadow-md shadow-emerald-500/10">
-                {profile?.nickname[0]}
+          {isEditing ? (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-4">
+                <div className="h-16 w-16 rounded-2xl bg-gradient-to-tr from-emerald-400 to-cyan-500 text-white flex items-center justify-center text-2xl font-bold uppercase shadow-md shadow-emerald-500/10 shrink-0">
+                  {(editNick || profile?.nickname || '?')[0]}
+                </div>
+                <div className="flex-1">
+                  <label className="block text-[10px] uppercase font-bold text-zinc-400 tracking-wider mb-1">Display name</label>
+                  <input
+                    value={editNick}
+                    onChange={(e) => setEditNick(e.target.value)}
+                    placeholder="Your name"
+                    className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-3 py-2 text-sm font-semibold text-zinc-800 dark:text-zinc-100 outline-none focus:border-emerald-500"
+                  />
+                </div>
               </div>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-zinc-800 dark:text-zinc-50">
-                  {profile?.nickname}
-                </h1>
-                <span className="inline-flex items-center gap-1 mt-1 text-xs text-zinc-400 font-bold uppercase tracking-wider">
-                  <MapPin className="h-3 w-3 text-emerald-500" /> {profile?.city || 'No City Set'}
-                </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] uppercase font-bold text-zinc-400 tracking-wider mb-1">City</label>
+                  <input
+                    value={editCity}
+                    onChange={(e) => setEditCity(e.target.value)}
+                    placeholder="e.g. Lagos"
+                    className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-3 py-2 text-sm font-semibold text-zinc-800 dark:text-zinc-100 outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase font-bold text-zinc-400 tracking-wider mb-1">I prefer</label>
+                  <select
+                    value={editActivity}
+                    onChange={(e) => setEditActivity(e.target.value as 'walk' | 'run' | 'both')}
+                    className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-3 py-2 text-sm font-semibold text-zinc-800 dark:text-zinc-100 outline-none focus:border-emerald-500"
+                  >
+                    <option value="walk">Walking</option>
+                    <option value="run">Running</option>
+                    <option value="both">Both</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={saveProfileEdits}
+                  disabled={!editNick.trim() || savingEdits}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl active:scale-95 transition-all"
+                >
+                  <Check className="h-3.5 w-3.5" /> {savingEdits ? 'Saving...' : 'Save'}
+                </button>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 font-bold text-xs rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900 active:scale-95 transition-all"
+                >
+                  <X className="h-3.5 w-3.5" /> Cancel
+                </button>
               </div>
             </div>
-            
-            <span className="text-[10px] uppercase font-extrabold tracking-wider px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-850">
-              {profile?.fitness_level}
-            </span>
-          </div>
+          ) : (
+            <div className="flex justify-between items-start">
+              <div className="flex items-center gap-4">
+                <div className="h-16 w-16 rounded-2xl bg-gradient-to-tr from-emerald-400 to-cyan-500 text-white flex items-center justify-center text-2xl font-bold uppercase shadow-md shadow-emerald-500/10">
+                  {profile?.nickname[0]}
+                </div>
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-zinc-800 dark:text-zinc-50">
+                    {profile?.nickname}
+                  </h1>
+                  <span className="inline-flex items-center gap-1 mt-1 text-xs text-zinc-400 font-bold uppercase tracking-wider">
+                    <MapPin className="h-3 w-3 text-emerald-500" /> {profile?.city || 'No City Set'}
+                  </span>
+                  {profile?.email && (
+                    <span className="flex items-center gap-1 mt-1 text-xs text-zinc-400 font-medium normal-case tracking-normal">
+                      <Mail className="h-3 w-3 text-emerald-500" /> {profile.email}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-col items-end gap-2">
+                <span className="text-[10px] uppercase font-extrabold tracking-wider px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-850">
+                  {profile?.activity ? profile.activity : profile?.fitness_level}
+                </span>
+                <button
+                  onClick={startEditing}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+                >
+                  <Pencil className="h-3 w-3" /> Edit
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-3 gap-4 pt-4 border-t border-zinc-100 dark:border-zinc-900 text-center">
             <div>
