@@ -348,7 +348,7 @@ export default function OnboardingModal({
                     const ready = guestNick.trim() && guestEmail.trim() && guestEmail.includes('@')
                     return (
                       <button
-                        onClick={saveGuestProfile}
+                        onClick={onSaveGuestProfile}
                         disabled={!ready || guestSaving}
                         style={{
                           display:'inline-flex',alignItems:'center',justifyContent:'center',gap:9,
