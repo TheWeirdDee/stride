@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAccount, useConnect } from 'wagmi'
 import { supabase } from '@/utils/supabase'
 import RouteCard from '@/components/RouteCard'
-import { ArrowLeft, Wallet, RefreshCw, Compass, Clock, Flame, Map as MapIcon } from 'lucide-react'
+import { ArrowLeft, Wallet, RefreshCw, Compass, Map as MapIcon } from 'lucide-react'
 
 interface RouteCoord {
   lat: number
@@ -124,111 +124,73 @@ export default function ProfileRoutesPage() {
   }, [sessions])
 
   const heatColor = (count: number) => {
-    if (count >= 3) return 'bg-emerald-600'
-    if (count === 2) return 'bg-emerald-500'
-    if (count === 1) return 'bg-emerald-400/70'
-    return 'bg-zinc-150 dark:bg-zinc-850'
+    if (count >= 3) return '#cdfb46'
+    if (count === 2) return 'rgba(205,251,70,0.75)'
+    if (count === 1) return 'rgba(205,251,70,0.45)'
+    return 'rgba(255,255,255,0.07)'
   }
 
   // ─── Render ───────────────────────────────────────────────
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <RefreshCw className="h-8 w-8 text-emerald-500 animate-spin mb-4" />
-        <p className="text-zinc-500 font-semibold">Loading your routes...</p>
+      <div className="sd-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+        <RefreshCw className="h-8 w-8" style={{ color: '#cdfb46', animation: 'spin 0.9s linear infinite', marginBottom: 16 }} />
+        <p style={{ color: 'var(--muted)' }}>Loading your routes…</p>
       </div>
     )
   }
 
   if (!isConnected) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center bg-white dark:bg-zinc-950 rounded-3xl border border-zinc-150 dark:border-zinc-850 max-w-md mx-auto my-12 shadow-sm">
-        <div className="h-14 w-14 rounded-2xl bg-zinc-100 dark:bg-zinc-900 text-zinc-400 flex items-center justify-center mb-6">
+      <div className="sd-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' }}>
+        <div style={{ width: 56, height: 56, borderRadius: 18, background: 'rgba(255,255,255,0.05)', display: 'grid', placeItems: 'center', color: '#cdfb46', marginBottom: 22 }}>
           <MapIcon className="h-7 w-7" />
         </div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 mb-2">
-          Your routes live with your wallet
-        </h1>
-        <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-6 max-w-xs">
-          Connect your wallet to see every route you&apos;ve completed, your activity heatmap, and total distance.
-        </p>
-        <button
-          onClick={handleConnect}
-          className="w-full py-3.5 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-bold transition-all text-sm active:scale-95 shadow-md"
-        >
-          <Wallet className="h-4 w-4 inline mr-1.5 -mt-0.5" /> Connect Wallet
-        </button>
+        <h1 className="sd-display" style={{ fontSize: 28 }}>Your routes<br />live with<br />your wallet</h1>
+        <p style={{ fontSize: 14, color: 'var(--muted)', margin: '14px 0 26px', maxWidth: 300 }}>Connect to see every route you&apos;ve completed, your activity heatmap, and total distance.</p>
+        <button onClick={handleConnect} className="sd-btn sd-btn-lime" style={{ maxWidth: 260 }}><Wallet className="h-4 w-4" /> Connect wallet</button>
       </div>
     )
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 animate-in fade-in duration-300">
-      {/* Header */}
-      <button
-        onClick={() => router.push('/profile')}
-        className="inline-flex items-center gap-1.5 text-xs font-bold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 mb-4 transition-colors"
-      >
+    <div className="sd-page">
+      <button onClick={() => router.push('/profile')} className="sd-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 0, color: 'var(--muted)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', marginBottom: 14 }}>
         <ArrowLeft className="h-3.5 w-3.5" /> Back to profile
       </button>
 
-      <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 mb-1">
-        Route History
-      </h1>
-      <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-8">
-        Every completed session, mapped.
-      </p>
+      <h1 className="sd-display" style={{ fontSize: 32 }}>Route<br />history</h1>
+      <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 10 }}>Every completed session, mapped.</p>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <div className="bg-white dark:bg-zinc-950 p-5 rounded-2xl border border-zinc-150 dark:border-zinc-850 shadow-sm">
-          <span className="flex items-center gap-1.5 text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
-            <Compass className="h-3.5 w-3.5 text-emerald-500" /> Sessions
-          </span>
-          <span className="block text-2xl font-extrabold font-mono text-zinc-800 dark:text-zinc-100 mt-1">{totals.count}</span>
-        </div>
-        <div className="bg-white dark:bg-zinc-950 p-5 rounded-2xl border border-zinc-150 dark:border-zinc-850 shadow-sm">
-          <span className="flex items-center gap-1.5 text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
-            <Flame className="h-3.5 w-3.5 text-amber-500" /> Distance
-          </span>
-          <span className="block text-2xl font-extrabold font-mono text-zinc-800 dark:text-zinc-100 mt-1">{totals.km}<small className="text-xs text-zinc-400 ml-1">km</small></span>
-        </div>
-        <div className="bg-white dark:bg-zinc-950 p-5 rounded-2xl border border-zinc-150 dark:border-zinc-850 shadow-sm">
-          <span className="flex items-center gap-1.5 text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
-            <Clock className="h-3.5 w-3.5 text-cyan-500" /> Time
-          </span>
-          <span className="block text-2xl font-extrabold font-mono text-zinc-800 dark:text-zinc-100 mt-1">{totals.hours}<small className="text-xs text-zinc-400 ml-1">h</small></span>
-        </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginTop: 22 }}>
+        {[[totals.count, 'Sessions', ''], [totals.km, 'Distance', 'km'], [totals.hours, 'Time', 'h']].map(([v, l, u]) => (
+          <div key={l as string} className="sd-card" style={{ padding: 15 }}>
+            <div className="sd-mono" style={{ fontSize: 9, letterSpacing: '0.12em', color: 'var(--muted-2)', textTransform: 'uppercase' }}>{l}</div>
+            <div className="sd-mono" style={{ fontWeight: 800, fontSize: 22, marginTop: 4 }}>{v}<small style={{ fontSize: 11, color: 'var(--muted-2)', marginLeft: 3 }}>{u}</small></div>
+          </div>
+        ))}
       </div>
 
-      {/* Activity heatmap */}
-      <div className="bg-white dark:bg-zinc-950 p-6 rounded-3xl border border-zinc-150 dark:border-zinc-850 shadow-sm mb-8">
-        <h2 className="text-sm font-bold text-zinc-800 dark:text-zinc-200 uppercase tracking-wider mb-4">
-          Last 12 weeks
-        </h2>
-        <div className="grid grid-flow-col grid-rows-7 gap-1 overflow-x-auto pb-1">
+      {/* Heatmap */}
+      <div className="sd-card" style={{ padding: 18, marginTop: 14 }}>
+        <h2 className="sd-section" style={{ fontSize: 12, marginBottom: 14 }}>Last 12 weeks</h2>
+        <div style={{ display: 'grid', gridAutoFlow: 'column', gridTemplateRows: 'repeat(7,1fr)', gap: 4, overflowX: 'auto', paddingBottom: 4 }}>
           {heatmap.map((cell) => (
-            <div
-              key={cell.date}
-              title={`${cell.date}: ${cell.count} session${cell.count === 1 ? '' : 's'}`}
-              className={`h-3 w-3 rounded-sm ${heatColor(cell.count)}`}
-            />
+            <div key={cell.date} title={`${cell.date}: ${cell.count} session${cell.count === 1 ? '' : 's'}`} style={{ height: 12, width: 12, borderRadius: 3, background: heatColor(cell.count) }} />
           ))}
         </div>
-        <div className="flex items-center gap-1.5 mt-4 text-[10px] text-zinc-400 font-semibold">
-          <span>Less</span>
-          <span className="h-3 w-3 rounded-sm bg-zinc-150 dark:bg-zinc-850" />
-          <span className="h-3 w-3 rounded-sm bg-emerald-400/70" />
-          <span className="h-3 w-3 rounded-sm bg-emerald-500" />
-          <span className="h-3 w-3 rounded-sm bg-emerald-600" />
-          <span>More</span>
+        <div className="sd-mono" style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 14, fontSize: 9, color: 'var(--muted-2)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          Less
+          {[0, 1, 2, 3].map((n) => <span key={n} style={{ height: 12, width: 12, borderRadius: 3, background: heatColor(n) }} />)}
+          More
         </div>
       </div>
 
       {/* Route cards */}
       {sessions.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 18 }}>
           {sessions.map((s) => {
             const km = (s.actual_distance || 0) / 1000
             const mins = Math.round((s.duration_secs || 0) / 60)
@@ -240,7 +202,7 @@ export default function ProfileRoutesPage() {
                 distanceKm={km}
                 durationMinutes={mins}
                 rewardCUSD={0}
-                date={new Date(s.started_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                date={new Date(s.started_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                 activityType={km >= 4 ? 'run' : 'walk'}
                 svgPath={coordsToSvgPath(s.routes?.[0]?.coordinates)}
                 imageUrl={s.routes?.[0]?.map_snapshot ?? undefined}
@@ -249,18 +211,11 @@ export default function ProfileRoutesPage() {
           })}
         </div>
       ) : (
-        <div className="text-center py-16 bg-white dark:bg-zinc-950 rounded-3xl border border-dashed border-zinc-200 dark:border-zinc-800">
-          <Compass className="h-10 w-10 text-zinc-300 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-zinc-800 dark:text-zinc-200">No routes yet</h3>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 mb-5">
-            Complete your first commitment and it&apos;ll show up here.
-          </p>
-          <button
-            onClick={() => router.push('/commitment/new')}
-            className="px-5 py-2.5 bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-sm"
-          >
-            Start a Commitment
-          </button>
+        <div className="sd-card" style={{ textAlign: 'center', padding: '40px 20px', marginTop: 18, borderStyle: 'dashed' }}>
+          <Compass className="h-10 w-10" style={{ color: 'var(--muted-3)', margin: '0 auto 12px' }} />
+          <h3 style={{ fontFamily: "'Archivo Expanded',sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase' }}>No routes yet</h3>
+          <p style={{ fontSize: 13, color: 'var(--muted)', margin: '6px 0 18px' }}>Complete your first commitment and it&apos;ll show up here.</p>
+          <button onClick={() => router.push('/commitment/new')} className="sd-btn sd-btn-lime" style={{ maxWidth: 240, margin: '0 auto' }}>Start a commitment</button>
         </div>
       )}
     </div>
