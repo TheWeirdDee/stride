@@ -3,13 +3,16 @@
 import { GuestProfile } from './types'
 
 interface LandingHeroProps {
+  isConnected: boolean
   guestProfile: GuestProfile | null
   onGetStarted: () => void
   onContinue: () => void
   onConnectWallet: () => void
+  onStartCommitment: () => void
 }
 
-export default function LandingHero({ onGetStarted }: LandingHeroProps) {
+export default function LandingHero({ isConnected, guestProfile, onGetStarted, onContinue, onStartCommitment }: LandingHeroProps) {
+  const hasAccount = isConnected || !!guestProfile
   return (
     <header className="hero" id="top">
       <div className="hero-grid-tex"></div>
@@ -23,15 +26,15 @@ export default function LandingHero({ onGetStarted }: LandingHeroProps) {
         <h1 className="hero-h1">Put Your Money <span className="lite">Where Your</span> Miles Are</h1>
         <p className="hero-sub">Stake a little. Move for real. Get your stake back plus a bonus the moment you finish.</p>
         <>
-          <form className="hero-cta" onSubmit={(e) => { e.preventDefault(); onGetStarted(); }}>
+          <form className="hero-cta" onSubmit={(e) => { e.preventDefault(); hasAccount ? onStartCommitment() : onGetStarted(); }}>
             <input type="text" placeholder="Set your goal — e.g. 5 km today" aria-label="Goal" />
             <button className="btn btn-lime" type="submit">Start a Commitment</button>
           </form>
           <button
             className="hero-get-started"
-            onClick={onGetStarted}
+            onClick={hasAccount ? onContinue : onGetStarted}
           >
-            Get started
+            {hasAccount ? 'Continue your Stride' : 'Get started'}
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
         </>
