@@ -12,13 +12,9 @@ import {
   Flame,
   Award,
   Wallet,
-  Activity,
   Compass,
-  History,
   LogOut,
   RefreshCw,
-  PlusCircle,
-  TrendingUp,
   AlertCircle,
   Pencil,
   Check,
@@ -235,330 +231,172 @@ export default function ProfilePage() {
     }
   }
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/30'
-      case 'forfeited':
-        return 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-900/30'
-      case 'active':
-        return 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-900/30 animate-pulse'
-      default:
-        return 'bg-zinc-100 text-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-900/30'
-    }
-  }
-
   // Loading Screen
   if (loading || syncing) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] w-full text-center">
-        <RefreshCw className="h-8 w-8 text-emerald-500 animate-spin mb-4" />
-        <p className="text-zinc-500 font-semibold">{syncing ? 'Syncing guest settings to Celo...' : 'Loading profile...'}</p>
+      <div className="sd-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+        <RefreshCw className="h-8 w-8" style={{ color: '#cdfb46', animation: 'spin 0.9s linear infinite', marginBottom: 16 }} />
+        <p style={{ color: 'var(--muted)' }}>{syncing ? 'Syncing to Celo…' : 'Loading profile…'}</p>
       </div>
     )
   }
 
-  // Wallet not connected — show soft connect prompt, never force restart
+  // Wallet not connected and no local profile — soft connect prompt
   if (!isConnected && !profile) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center bg-white dark:bg-zinc-950 rounded-3xl border border-zinc-150 dark:border-zinc-850 max-w-md mx-auto my-12 shadow-sm animate-in fade-in duration-300">
-        <div className="h-14 w-14 rounded-2xl bg-zinc-100 dark:bg-zinc-900 text-zinc-400 flex items-center justify-center mb-6">
+      <div className="sd-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' }}>
+        <div style={{ width: 56, height: 56, borderRadius: 18, background: 'rgba(255,255,255,0.05)', display: 'grid', placeItems: 'center', color: '#cdfb46', marginBottom: 22 }}>
           <User className="h-7 w-7" />
         </div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 mb-2">
-          Connect your wallet
-        </h1>
-        <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-6 max-w-xs leading-normal">
-          Your stats and history are linked to your wallet. Connect to see them, or set up a local profile.
-        </p>
-        <button
-          onClick={handleConnect}
-          className="w-full py-3.5 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-bold transition-all text-sm active:scale-95 shadow-md mb-3"
-        >
-          Connect Wallet
-        </button>
-        <button
-          onClick={() => router.push('/?onboard=true')}
-          className="w-full py-3.5 rounded-full bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold transition-all text-sm active:scale-95"
-        >
-          Set up local profile
-        </button>
+        <h1 className="sd-display" style={{ fontSize: 30 }}>Connect<br />your wallet</h1>
+        <p style={{ fontSize: 14, color: 'var(--muted)', margin: '14px 0 26px', maxWidth: 300 }}>Your stats and history live with your wallet. Connect, or set up a local profile.</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 280 }}>
+          <button onClick={handleConnect} className="sd-btn sd-btn-lime">Connect wallet</button>
+          <button onClick={() => router.push('/?onboard=true')} className="sd-btn sd-btn-ghost">Set up local profile</button>
+        </div>
       </div>
     )
+  }
+
+  const statusStyle = (status: string): React.CSSProperties => {
+    if (status === 'completed') return { background: 'rgba(205,251,70,0.12)', color: '#cdfb46', border: '1px solid rgba(205,251,70,0.25)' }
+    if (status === 'active') return { background: 'rgba(10,90,162,0.22)', color: '#7db4e6', border: '1px solid rgba(125,180,230,0.3)' }
+    if (status === 'forfeited') return { background: 'rgba(230,120,120,0.14)', color: '#e89090', border: '1px solid rgba(230,120,120,0.28)' }
+    return { background: 'rgba(255,255,255,0.05)', color: 'var(--muted)', border: '1px solid var(--line)' }
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 animate-in fade-in duration-300">
-      
-      {/* Upper Grid: Profile Details Card + Wallet & Stats Card */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        
-        {/* Profile Details Card */}
-        <div className="md:col-span-2 bg-white dark:bg-zinc-950 p-6 sm:p-8 rounded-3xl border border-zinc-150 dark:border-zinc-850 shadow-sm flex flex-col gap-6">
-          {isEditing ? (
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-4">
-                <div className="h-16 w-16 rounded-2xl bg-gradient-to-tr from-emerald-400 to-cyan-500 text-white flex items-center justify-center text-2xl font-bold uppercase shadow-md shadow-emerald-500/10 shrink-0">
-                  {(editNick || profile?.nickname || '?')[0]}
-                </div>
-                <div className="flex-1">
-                  <label className="block text-[10px] uppercase font-bold text-zinc-400 tracking-wider mb-1">Display name</label>
-                  <input
-                    value={editNick}
-                    onChange={(e) => setEditNick(e.target.value)}
-                    placeholder="Your name"
-                    className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-3 py-2 text-sm font-semibold text-zinc-800 dark:text-zinc-100 outline-none focus:border-emerald-500"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[10px] uppercase font-bold text-zinc-400 tracking-wider mb-1">City</label>
-                  <input
-                    value={editCity}
-                    onChange={(e) => setEditCity(e.target.value)}
-                    placeholder="e.g. Lagos"
-                    className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-3 py-2 text-sm font-semibold text-zinc-800 dark:text-zinc-100 outline-none focus:border-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] uppercase font-bold text-zinc-400 tracking-wider mb-1">I prefer</label>
-                  <select
-                    value={editActivity}
-                    onChange={(e) => setEditActivity(e.target.value as 'walk' | 'run' | 'both')}
-                    className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-3 py-2 text-sm font-semibold text-zinc-800 dark:text-zinc-100 outline-none focus:border-emerald-500"
-                  >
-                    <option value="walk">Walking</option>
-                    <option value="run">Running</option>
-                    <option value="both">Both</option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={saveProfileEdits}
-                  disabled={!editNick.trim() || savingEdits}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl active:scale-95 transition-all"
-                >
-                  <Check className="h-3.5 w-3.5" /> {savingEdits ? 'Saving...' : 'Save'}
-                </button>
-                <button
-                  onClick={() => setIsEditing(false)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 font-bold text-xs rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900 active:scale-95 transition-all"
-                >
-                  <X className="h-3.5 w-3.5" /> Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex justify-between items-start">
-              <div className="flex items-center gap-4">
-                <div className="h-16 w-16 rounded-2xl bg-gradient-to-tr from-emerald-400 to-cyan-500 text-white flex items-center justify-center text-2xl font-bold uppercase shadow-md shadow-emerald-500/10">
-                  {profile?.nickname[0]}
-                </div>
-                <div>
-                  <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-zinc-800 dark:text-zinc-50">
-                    {profile?.nickname}
-                  </h1>
-                  <span className="inline-flex items-center gap-1 mt-1 text-xs text-zinc-400 font-bold uppercase tracking-wider">
-                    <MapPin className="h-3 w-3 text-emerald-500" /> {profile?.city || 'No City Set'}
-                  </span>
-                  {profile?.email && (
-                    <span className="flex items-center gap-1 mt-1 text-xs text-zinc-400 font-medium normal-case tracking-normal">
-                      <Mail className="h-3 w-3 text-emerald-500" /> {profile.email}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-col items-end gap-2">
-                <span className="text-[10px] uppercase font-extrabold tracking-wider px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-850">
-                  {profile?.activity ? profile.activity : profile?.fitness_level}
-                </span>
-                <button
-                  onClick={startEditing}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
-                >
-                  <Pencil className="h-3 w-3" /> Edit
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-3 gap-4 pt-4 border-t border-zinc-100 dark:border-zinc-900 text-center">
-            <div>
-              <span className="block text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Current Streak</span>
-              <span className="block text-2xl font-extrabold text-zinc-800 dark:text-zinc-100 mt-1 font-mono flex items-center justify-center gap-1">
-                <Flame className="h-5 w-5 text-amber-500 fill-amber-500/10" /> {profile?.streak_current}
-              </span>
-            </div>
-            <div>
-              <span className="block text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Total Distance</span>
-              <span className="block text-2xl font-extrabold text-zinc-800 dark:text-zinc-100 mt-1 font-mono flex items-center justify-center gap-1">
-                <Compass className="h-5 w-5 text-emerald-500" /> {(profile ? profile.total_distance / 1000 : 0).toFixed(1)} <small className="text-xs text-zinc-400">KM</small>
-              </span>
-            </div>
-            <div>
-              <span className="block text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Total Earnings</span>
-              <span className="block text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1 font-mono flex items-center justify-center gap-1">
-                <Award className="h-5 w-5" /> ${profile?.total_earnings.toFixed(2)}
-              </span>
+    <div className="sd-page">
+      {/* Identity */}
+      {isEditing ? (
+        <div className="sd-card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: '#cdfb46', color: '#06080a', display: 'grid', placeItems: 'center', fontSize: 24, fontWeight: 800, textTransform: 'uppercase', flexShrink: 0, fontFamily: "'Archivo Expanded',sans-serif" }}>{(editNick || profile?.nickname || '?')[0]}</div>
+            <div style={{ flex: 1 }}>
+              <label className="sd-mono" style={{ display: 'block', fontSize: 9, letterSpacing: '0.14em', color: 'var(--muted-2)', textTransform: 'uppercase', marginBottom: 6 }}>Display name</label>
+              <input value={editNick} onChange={(e) => setEditNick(e.target.value)} placeholder="Your name" className="sd-input" />
             </div>
           </div>
-        </div>
-
-        {/* Wallet & Sync Card */}
-        <div className="bg-white dark:bg-zinc-950 p-6 rounded-3xl border border-zinc-150 dark:border-zinc-850 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-              <Wallet className="h-4 w-4" /> Account Status
-            </span>
-            {isConnected ? (
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            ) : (
-              <span className="h-2 w-2 rounded-full bg-amber-400"></span>
-            )}
+          <div>
+            <label className="sd-mono" style={{ display: 'block', fontSize: 9, letterSpacing: '0.14em', color: 'var(--muted-2)', textTransform: 'uppercase', marginBottom: 6 }}>City</label>
+            <input value={editCity} onChange={(e) => setEditCity(e.target.value)} placeholder="e.g. Lagos" className="sd-input" />
           </div>
-
-          {isConnected && address ? (
-            <div className="flex flex-col gap-4">
-              <div>
-                <span className="block text-[10px] text-zinc-400 uppercase font-bold tracking-wider">Wallet Address</span>
-                <span className="block text-sm font-mono font-bold text-zinc-800 dark:text-zinc-250 mt-1">
-                  {truncateAddress(address)}
-                </span>
-              </div>
-              <div>
-                <span className="block text-[10px] text-zinc-400 uppercase font-bold tracking-wider">CELO Balance</span>
-                <span className="block text-xl font-mono font-extrabold text-zinc-800 dark:text-zinc-50 mt-1">
-                  {balance} <small className="text-xs font-normal text-zinc-400">CELO</small>
-                </span>
-              </div>
-              <button
-                onClick={() => disconnect()}
-                className="w-full mt-2 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-850 text-xs font-bold text-rose-500 hover:bg-rose-50/50 dark:hover:bg-rose-950/20 flex items-center justify-center gap-1.5 transition-colors"
-              >
-                <LogOut className="h-3.5 w-3.5" /> Disconnect Wallet
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-4">
-              <div className="flex gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-900/30 text-amber-800 dark:text-amber-400 text-xs">
-                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                <p className="leading-normal font-semibold">
-                  You are exploring as a guest. Connect your wallet to save data on-chain and earn CELO rewards.
-                </p>
-              </div>
-              <button
-                onClick={handleConnect}
-                className="w-full py-3 rounded-xl bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 font-bold text-xs flex items-center justify-center gap-1.5 hover:opacity-90 active:scale-[0.98] transition-all"
-              >
-                <Wallet className="h-4 w-4" /> Connect Wallet
-              </button>
-            </div>
-          )}
+          <div>
+            <label className="sd-mono" style={{ display: 'block', fontSize: 9, letterSpacing: '0.14em', color: 'var(--muted-2)', textTransform: 'uppercase', marginBottom: 6 }}>I prefer</label>
+            <select value={editActivity} onChange={(e) => setEditActivity(e.target.value as 'walk' | 'run' | 'both')} className="sd-select">
+              <option value="walk">Walking</option>
+              <option value="run">Running</option>
+              <option value="both">Both</option>
+            </select>
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={saveProfileEdits} disabled={!editNick.trim() || savingEdits} className="sd-btn sd-btn-lime" style={{ fontSize: 13, padding: 13 }}><Check className="h-4 w-4" /> {savingEdits ? 'Saving…' : 'Save'}</button>
+            <button onClick={() => setIsEditing(false)} className="sd-btn sd-btn-ghost" style={{ fontSize: 13, padding: 13 }}><X className="h-4 w-4" /> Cancel</button>
+          </div>
         </div>
+      ) : (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 60, height: 60, borderRadius: 18, background: '#cdfb46', color: '#06080a', display: 'grid', placeItems: 'center', fontSize: 26, fontWeight: 800, textTransform: 'uppercase', fontFamily: "'Archivo Expanded',sans-serif" }}>{profile?.nickname[0]}</div>
+            <div>
+              <h1 className="sd-display" style={{ fontSize: 24 }}>{profile?.nickname}</h1>
+              <span className="sd-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4, fontSize: 10, color: 'var(--muted-2)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                <MapPin className="h-3 w-3" style={{ color: '#cdfb46' }} /> {profile?.city || 'No city set'}
+              </span>
+              {profile?.email && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, fontSize: 11, color: 'var(--muted-2)' }}><Mail className="h-3 w-3" style={{ color: '#cdfb46' }} /> {profile.email}</span>
+              )}
+            </div>
+          </div>
+          <button onClick={startEditing} className="sd-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--line)', borderRadius: 10, padding: '7px 10px', color: '#cdfb46', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}><Pencil className="h-3 w-3" /> Edit</button>
+        </div>
+      )}
 
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginTop: 18 }}>
+        {[
+          [<Flame key="f" className="h-4 w-4" style={{ color: '#fbbf24' }} />, profile?.streak_current ?? 0, 'Streak', '#f4f6f3'],
+          [<Compass key="c" className="h-4 w-4" style={{ color: '#cdfb46' }} />, (profile ? profile.total_distance / 1000 : 0).toFixed(1), 'Km total', '#f4f6f3'],
+          [<Award key="a" className="h-4 w-4" style={{ color: '#cdfb46' }} />, `$${profile?.total_earnings.toFixed(2) ?? '0.00'}`, 'Earned', '#cdfb46'],
+        ].map(([icon, v, l, color], i) => (
+          <div key={i} className="sd-card" style={{ padding: 15 }}>
+            {icon as React.ReactNode}
+            <div className="sd-mono" style={{ fontWeight: 800, fontSize: 22, marginTop: 6, color: color as string }}>{v as React.ReactNode}</div>
+            <div className="sd-mono" style={{ fontSize: 9, letterSpacing: '0.12em', color: 'var(--muted-2)', textTransform: 'uppercase', marginTop: 2 }}>{l as React.ReactNode}</div>
+          </div>
+        ))}
       </div>
 
-      {/* Lower Block: Commitment History */}
-      <div className="bg-white dark:bg-zinc-950 p-6 sm:p-8 rounded-3xl border border-zinc-150 dark:border-zinc-850 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-base font-bold text-zinc-800 dark:text-zinc-200 uppercase tracking-wider flex items-center gap-2">
-            <History className="h-4 w-4 text-emerald-500" />
-            Your Commitment History
-          </h2>
-          {isConnected && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => router.push('/profile/routes')}
-                className="inline-flex items-center gap-1.5 px-4 py-2 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold text-xs rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900 active:scale-95 transition-all"
-              >
-                <MapPin className="h-3.5 w-3.5" /> View Routes
-              </button>
-              <button
-                onClick={() => router.push('/commitment/new')}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-sm hover:shadow active:scale-95 transition-all"
-              >
-                <PlusCircle className="h-3.5 w-3.5" /> New Commitment
-              </button>
-            </div>
-          )}
+      {/* Account status */}
+      <div className="sd-card" style={{ padding: 18, marginTop: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <span className="sd-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10, letterSpacing: '0.12em', color: 'var(--muted-2)', textTransform: 'uppercase' }}><Wallet className="h-4 w-4" /> Account</span>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: isConnected ? '#cdfb46' : '#fbbf24' }} />
         </div>
-
-        {isConnected ? (
-          commitments.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {commitments.map((c) => (
-                <div
-                  key={c.id}
-                  className="p-5 rounded-2xl border border-zinc-150 dark:border-zinc-850 flex flex-col gap-3 relative overflow-hidden"
-                >
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-mono font-bold text-zinc-800 dark:text-zinc-300">
-                      Stake: ${c.stake_amount.toFixed(2)} CELO
-                    </span>
-                    <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${getStatusBadge(c.status)}`}>
-                      {c.status}
-                    </span>
-                  </div>
-
-                  <div>
-                    <span className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Goal details</span>
-                    <span className="block text-base font-extrabold text-zinc-850 dark:text-zinc-100 mt-0.5">
-                      {c.goal_type === 'distance' ? `${(c.goal_value / 1000).toFixed(1)} KM` : `${c.goal_value.toLocaleString()} Steps`}
-                    </span>
-                  </div>
-
-                  <div className="mt-2 pt-3 border-t border-zinc-100 dark:border-zinc-900 flex justify-between items-center text-xs text-zinc-400 dark:text-zinc-500">
-                    <span>
-                      {new Date(c.created_at).toLocaleDateString(undefined, {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric'
-                      })}
-                    </span>
-                    {c.status === 'completed' && c.bonus_earned > 0 && (
-                      <span className="text-emerald-500 font-bold font-mono">
-                        +${c.bonus_earned.toFixed(4)} reward
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
+        {isConnected && address ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+              <span className="sd-mono" style={{ fontSize: 10, color: 'var(--muted-2)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Address</span>
+              <span className="sd-mono" style={{ fontWeight: 700, fontSize: 13 }}>{truncateAddress(address)}</span>
             </div>
-          ) : (
-            <div className="text-center py-12 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl p-6">
-              <Compass className="h-8 w-8 text-zinc-300 mx-auto mb-3" />
-              <h3 className="text-sm font-bold text-zinc-700 dark:text-zinc-350">No commitments found</h3>
-              <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1 mb-4">
-                You haven&apos;t staked CELO on a workout yet.
-              </p>
-              <button
-                onClick={() => router.push('/commitment/new')}
-                className="px-4 py-2 bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 rounded-xl text-xs font-bold"
-              >
-                Start Your First Commitment
-              </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+              <span className="sd-mono" style={{ fontSize: 10, color: 'var(--muted-2)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Balance</span>
+              <span className="sd-mono" style={{ fontWeight: 800, fontSize: 16 }}>{balance} <small style={{ color: 'var(--muted-2)', fontWeight: 400 }}>CELO</small></span>
             </div>
-          )
+            <button onClick={() => disconnect()} className="sd-mono" style={{ width: '100%', padding: 11, borderRadius: 12, background: 'transparent', border: '1px solid var(--line)', color: '#fb7185', fontWeight: 700, fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer' }}><LogOut className="h-3.5 w-3.5" /> Disconnect</button>
+          </div>
         ) : (
-          <div className="text-center py-12 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl p-6">
-            <Wallet className="h-8 w-8 text-zinc-300 mx-auto mb-3" />
-            <h3 className="text-sm font-bold text-zinc-700 dark:text-zinc-350">Wallet Not Connected</h3>
-            <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1 mb-4">
-              Connecting a wallet allows you to see transaction history and active on-chain stakes.
-            </p>
-            <button
-              onClick={handleConnect}
-              className="px-5 py-2.5 bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-sm"
-            >
-              Connect Wallet
-            </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', gap: 8, padding: 12, borderRadius: 12, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', color: '#fbbf24', fontSize: 12 }}>
+              <AlertCircle className="h-4 w-4 shrink-0" style={{ marginTop: 1 }} /> Exploring as a guest. Connect to save on-chain and earn rewards.
+            </div>
+            <button onClick={handleConnect} className="sd-btn sd-btn-lime" style={{ fontSize: 13, padding: 13 }}><Wallet className="h-4 w-4" /> Connect wallet</button>
           </div>
         )}
       </div>
 
+      {/* History */}
+      <div className="sd-section-row" style={{ marginTop: 28 }}>
+        <h2 className="sd-section">History</h2>
+        {isConnected && (
+          <button onClick={() => router.push('/profile/routes')} className="sd-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'none', border: 0, color: '#cdfb46', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 700 }}><MapPin className="h-3.5 w-3.5" /> Routes</button>
+        )}
+      </div>
+
+      {isConnected ? (
+        commitments.length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {commitments.map((c) => (
+              <div key={c.id} className="sd-card" style={{ padding: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontFamily: "'Archivo Expanded',sans-serif", fontWeight: 800, fontSize: 16, textTransform: 'uppercase' }}>{c.goal_type === 'distance' ? `${(c.goal_value / 1000).toFixed(1)} km` : `${c.goal_value.toLocaleString()} steps`}</span>
+                  <span className="sd-mono" style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '4px 9px', borderRadius: 999, ...statusStyle(c.status) }}>{c.status}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--line)' }}>
+                  <span className="sd-mono" style={{ fontSize: 11, color: 'var(--muted-2)' }}>{new Date(c.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · ${c.stake_amount.toFixed(2)}</span>
+                  {c.status === 'completed' && c.bonus_earned > 0 && (
+                    <span className="sd-mono" style={{ fontWeight: 800, fontSize: 12, color: '#cdfb46' }}>+${c.bonus_earned.toFixed(4)}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="sd-card" style={{ textAlign: 'center', padding: '36px 20px', borderStyle: 'dashed' }}>
+            <Compass className="h-8 w-8" style={{ color: 'var(--muted-3)', margin: '0 auto 12px' }} />
+            <h3 style={{ fontFamily: "'Archivo Expanded',sans-serif", fontWeight: 700, fontSize: 15, textTransform: 'uppercase' }}>No commitments yet</h3>
+            <p style={{ fontSize: 12, color: 'var(--muted)', margin: '6px 0 16px' }}>You haven&apos;t staked on a workout yet.</p>
+            <button onClick={() => router.push('/commitment/new')} className="sd-btn sd-btn-lime" style={{ maxWidth: 240, margin: '0 auto' }}>Start your first</button>
+          </div>
+        )
+      ) : (
+        <div className="sd-card" style={{ textAlign: 'center', padding: '36px 20px', borderStyle: 'dashed' }}>
+          <Wallet className="h-8 w-8" style={{ color: 'var(--muted-3)', margin: '0 auto 12px' }} />
+          <h3 style={{ fontFamily: "'Archivo Expanded',sans-serif", fontWeight: 700, fontSize: 15, textTransform: 'uppercase' }}>Wallet not connected</h3>
+          <p style={{ fontSize: 12, color: 'var(--muted)', margin: '6px 0 16px' }}>Connect to see your on-chain history.</p>
+          <button onClick={handleConnect} className="sd-btn sd-btn-lime" style={{ maxWidth: 240, margin: '0 auto' }}>Connect wallet</button>
+        </div>
+      )}
     </div>
   )
 }
