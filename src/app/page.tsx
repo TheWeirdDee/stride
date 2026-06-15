@@ -4,10 +4,6 @@ import React, { useState, useEffect, useRef, Suspense } from 'react'
 import { useAccount, useConnect } from 'wagmi'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/utils/supabase'
-import LandingStyles from '@/components/landing/LandingStyles'
-import LandingNav from '@/components/landing/LandingNav'
-import LandingHero from '@/components/landing/LandingHero'
-import LandingMarketing from '@/components/landing/LandingMarketing'
 import OnboardingModal from '@/components/onboarding/OnboardingModal'
 import { GuestProfile } from '@/components/landing/types'
 
@@ -205,27 +201,100 @@ function LandingPageContent() {
     setIsOnboardingOpen(true)
   }
 
+  const hasAccount = isConnected || !!guestProfile
+
   return (
     <>
-      <div className="landing-page-container">
-        <LandingStyles />
-        <LandingNav
-          isConnected={isConnected}
-          guestProfile={guestProfile}
-          onGetStarted={() => openOnboarding('splash')}
-          onContinue={() => router.push('/explore')}
-        />
-        <LandingHero
-          isConnected={isConnected}
-          guestProfile={guestProfile}
-          onGetStarted={() => openOnboarding('splash')}
-          onContinue={() => router.push('/explore')}
-          onConnectWallet={() => openOnboarding('wallet')}
-          onStartCommitment={() => router.push('/commitment/new')}
-        />
-        <LandingMarketing
-          onGetStarted={() => openOnboarding('splash')}
-        />
+      <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+        {/* Top bar */}
+        <header className="sd-topbar">
+          <span className="sd-logo">
+            <span className="sd-logo-mark">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#06080a" strokeWidth="3" strokeLinecap="round"><path d="M5 17l5-10 4 7 5-9" /></svg>
+            </span>
+            <span className="sd-logo-word">STRIDE</span>
+          </span>
+          {hasAccount ? (
+            <button onClick={() => router.push('/explore')} className="sd-wallet-btn is-on">Open app</button>
+          ) : (
+            <button onClick={() => openOnboarding('splash')} className="sd-wallet-btn">Get started</button>
+          )}
+        </header>
+
+        <div className="sd-page" style={{ paddingBottom: 40 }}>
+          {/* Hero */}
+          <div className="sd-rise-1">
+            <div className="sd-eyebrow">Stake on yourself</div>
+            <h1 className="sd-display" style={{ fontSize: 50, marginTop: 14 }}>
+              Put money<br />where your<br /><span style={{ color: '#cdfb46' }}>miles are.</span>
+            </h1>
+            <p style={{ margin: '18px 0 0', fontSize: 15, lineHeight: 1.5, color: 'var(--muted)', maxWidth: 320 }}>
+              Stake a little cUSD on a walking or running goal. Finish and reclaim your stake plus a bonus. Miss it and you forfeit. Real skin in the game.
+            </p>
+            <button onClick={hasAccount ? () => router.push('/commitment/new') : () => openOnboarding('splash')} className="sd-btn sd-btn-lime" style={{ marginTop: 22 }}>
+              {hasAccount ? 'Start a commitment' : 'Get started'} <span style={{ fontSize: 17 }}>→</span>
+            </button>
+            <button onClick={hasAccount ? () => router.push('/explore') : () => openOnboarding('explore')} className="sd-btn sd-btn-ghost" style={{ marginTop: 11 }}>
+              {hasAccount ? 'Open the app' : 'Just explore first'}
+            </button>
+          </div>
+
+          {/* How it works */}
+          <div className="sd-rise-2" style={{ paddingTop: 36 }}>
+            <div className="sd-section-row">
+              <h2 className="sd-section">How it works</h2>
+              <span className="sd-meta">4 STEPS</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 11 }}>
+              {[
+                ['01', 'Commit', 'Set a goal and stake cUSD to lock it in.'],
+                ['02', 'Move', 'Track your walk or run with live GPS.'],
+                ['03', 'Verify', 'Your route is checked on-chain automatically.'],
+                ['04', 'Earn', 'Hit the goal, reclaim your stake plus rewards.'],
+              ].map(([n, t, d]) => (
+                <div key={n} className="sd-card" style={{ padding: 15, borderRadius: 18 }}>
+                  <div className="sd-mono" style={{ fontWeight: 800, fontSize: 13, color: '#cdfb46' }}>{n}</div>
+                  <div style={{ fontFamily: "'Archivo Expanded',sans-serif", fontWeight: 700, fontSize: 16, marginTop: 8, textTransform: 'uppercase' }}>{t}</div>
+                  <div style={{ fontSize: 12, lineHeight: 1.4, color: 'var(--muted)', marginTop: 5 }}>{d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Stake model */}
+          <div className="sd-rise-3" style={{ paddingTop: 36 }}>
+            <div className="sd-card-lime sd-card-glow" style={{ padding: 22 }}>
+              <div className="sd-eyebrow" style={{ position: 'relative', letterSpacing: '0.2em' }}>The stake model</div>
+              <h3 className="sd-display" style={{ position: 'relative', fontSize: 22, margin: '10px 0 0', lineHeight: 1.05 }}>Lose it or<br />level up.</h3>
+              <p style={{ position: 'relative', fontSize: 13, lineHeight: 1.5, color: 'rgba(244,246,243,0.6)', margin: '12px 0 0', maxWidth: 280 }}>
+                Your stake sits in escrow on Celo. Complete the goal in the window and it returns with a reward from the pool. No completion, no refund.
+              </p>
+              <div style={{ position: 'relative', display: 'flex', gap: 10, marginTop: 16, alignItems: 'center' }}>
+                <div style={{ flex: 1, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 13, padding: '11px 13px' }}>
+                  <div className="sd-mono" style={{ fontSize: 9, letterSpacing: '0.14em', color: 'var(--muted-2)', textTransform: 'uppercase' }}>You stake</div>
+                  <div className="sd-mono" style={{ fontWeight: 800, fontSize: 18, marginTop: 3 }}>$0.25</div>
+                </div>
+                <div style={{ color: 'var(--muted-2)', fontSize: 18 }}>→</div>
+                <div style={{ flex: 1, background: 'rgba(205,251,70,0.12)', border: '1px solid rgba(205,251,70,0.25)', borderRadius: 13, padding: '11px 13px' }}>
+                  <div className="sd-mono" style={{ fontSize: 9, letterSpacing: '0.14em', color: '#cdfb46', textTransform: 'uppercase' }}>You earn</div>
+                  <div className="sd-mono" style={{ fontWeight: 800, fontSize: 18, marginTop: 3, color: '#cdfb46' }}>$0.30</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Final CTA */}
+          <div className="sd-rise-4" style={{ paddingTop: 36 }}>
+            <div className="sd-card" style={{ padding: 24, textAlign: 'center' }}>
+              <span className="sd-pill"><span className="sd-dot" />Built on Celo · MiniPay native</span>
+              <h2 className="sd-display" style={{ fontSize: 26, marginTop: 16 }}>Ready to<br />move?</h2>
+              <p style={{ fontSize: 13, color: 'var(--muted)', margin: '12px 0 18px' }}>You only need a wallet at the moment you lock a real stake.</p>
+              <button onClick={hasAccount ? () => router.push('/explore') : () => openOnboarding('splash')} className="sd-btn sd-btn-lime">
+                {hasAccount ? 'Open the app' : 'Get started'} <span style={{ fontSize: 17 }}>→</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <OnboardingModal
