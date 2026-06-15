@@ -11,8 +11,11 @@ interface RouteCardProps {
   rewardCUSD: number
   date: string
   activityType: 'walk' | 'run'
-   
+
   svgPath: string
+  // Optional real map snapshot (routes.map_snapshot). When present it is shown
+  // instead of the abstract SVG path.
+  imageUrl?: string
 }
 
 export default function RouteCard({
@@ -25,6 +28,7 @@ export default function RouteCard({
   date,
   activityType,
   svgPath,
+  imageUrl,
 }: RouteCardProps) {
   // Calculate average pace (min/km)
   const pace = distanceKm > 0 ? (durationMinutes / distanceKm).toFixed(1) : '0.0'
@@ -33,9 +37,15 @@ export default function RouteCard({
     <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-zinc-200/80 dark:border-zinc-800/85 bg-white dark:bg-zinc-950 p-4 shadow-sm hover:shadow-md hover:border-emerald-500/40 dark:hover:border-emerald-400/40 transition-all duration-300 hover:-translate-y-1">
       {/* Route Map Visual Placeholder */}
       <div className="relative h-36 w-full overflow-hidden rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-850 flex items-center justify-center">
+        {imageUrl ? (
+          /* Real generated route snapshot */
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={imageUrl} alt={`Route in ${city}`} className="absolute inset-0 h-full w-full object-cover" />
+        ) : (
+          <>
         {/* Dotted Grid Background */}
         <div className="absolute inset-0 bg-[radial-gradient(#e4e4e7_1px,transparent_1px)] dark:bg-[radial-gradient(#27272a_1px,transparent_1px)] [background-size:16px_16px] opacity-60"></div>
-        
+
         {/* Draw abstract SVG path of route */}
         <svg className="w-4/5 h-4/5 z-10" viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path
@@ -62,6 +72,8 @@ export default function RouteCard({
             </linearGradient>
           </defs>
         </svg>
+          </>
+        )}
 
         {/* Badges Overlay */}
         <div className="absolute top-2 left-2 flex items-center gap-1.5 rounded-full bg-white/95 dark:bg-zinc-900/95 px-2 py-0.5 text-[10px] font-semibold text-zinc-600 dark:text-zinc-350 shadow-sm border border-zinc-100 dark:border-zinc-800">

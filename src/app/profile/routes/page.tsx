@@ -18,7 +18,7 @@ interface SessionRow {
   ended_at: string | null
   actual_distance: number | null // meters
   duration_secs: number | null
-  routes?: { coordinates: RouteCoord[] | null }[] | null
+  routes?: { coordinates: RouteCoord[] | null; map_snapshot: string | null }[] | null
 }
 
 // Project a GPS path into RouteCard's 200x120 viewBox (start ~bottom-left,
@@ -71,7 +71,7 @@ export default function ProfileRoutesPage() {
         if (!supabase) throw new Error('Supabase unavailable')
         const { data: sess } = await supabase
           .from('sessions')
-          .select('id, started_at, ended_at, actual_distance, duration_secs, routes(coordinates)')
+          .select('id, started_at, ended_at, actual_distance, duration_secs, routes(coordinates, map_snapshot)')
           .eq('wallet_address', address)
           .order('started_at', { ascending: false })
 
@@ -243,6 +243,7 @@ export default function ProfileRoutesPage() {
                 date={new Date(s.started_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                 activityType={km >= 4 ? 'run' : 'walk'}
                 svgPath={coordsToSvgPath(s.routes?.[0]?.coordinates)}
+                imageUrl={s.routes?.[0]?.map_snapshot ?? undefined}
               />
             )
           })}

@@ -10,6 +10,7 @@ import { commitmentABI } from '@/abi/commitment'
 import { COMMITMENT_CONTRACT, BACKEND_URL } from '@/utils/constants'
 import { useGPSTracker } from '@/hooks/useGPSTracker'
 import { supabase } from '@/utils/supabase'
+import { generateRouteCard } from '@/utils/generateRouteCard'
 
 type Phase = 'loading' | 'idle' | 'tracking' | 'paused' | 'verifying' | 'submitting' | 'complete' | 'error'
 
@@ -224,11 +225,42 @@ export default function SessionPage() {
           if (sessionErr) {
             console.error('Failed to write session row:', sessionErr)
           } else if (sessionRow) {
+            // Generate a shareable route-card PNG and upload it to Storage so
+            // routes.map_snapshot holds a real image URL (best-effort).
+            let mapSnapshot: string | null = null
+            try {
+              const km = distanceMetersFinal / 1000
+              const paceMinPerKm = km > 0 ? durationSecs / 60 / km : 0
+              const paceWhole = Math.floor(paceMinPerKm)
+              const paceSecs = Math.round((paceMinPerKm - paceWhole) * 60)
+              const blob = await generateRouteCard(
+                backendCoords.map((c) => ({ lat: c.lat, lng: c.lng })),
+                {
+                  distance: `${km.toFixed(2)} km`,
+                  duration: fmt(durationSecs),
+                  pace: `${paceWhole}:${String(paceSecs).padStart(2, '0')} min/km`,
+                  date: new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+                }
+              )
+              const path = `${address}/${sessionRow.id}.png`
+              const { error: uploadErr } = await supabase.storage
+                .from('route-cards')
+                .upload(path, blob, { contentType: 'image/png', upsert: true })
+              if (uploadErr) {
+                console.error('Route card upload failed:', uploadErr)
+              } else {
+                mapSnapshot = supabase.storage.from('route-cards').getPublicUrl(path).data.publicUrl
+              }
+            } catch (cardErr) {
+              console.error('Route card generation failed:', cardErr)
+            }
+
             const { error: routeErr } = await supabase
               .from('routes')
               .insert({
                 session_id: sessionRow.id,
                 coordinates: backendCoords, // [{ lat, lng, timestamp }]
+                map_snapshot: mapSnapshot,
               })
             if (routeErr) console.error('Failed to write route row:', routeErr)
           }
