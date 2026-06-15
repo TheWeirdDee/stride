@@ -9,6 +9,7 @@ import { waitForTransactionReceipt } from 'wagmi/actions'
 import { commitmentABI } from '@/abi/commitment'
 import { COMMITMENT_CONTRACT, BACKEND_URL } from '@/utils/constants'
 import { useGPSTracker } from '@/hooks/useGPSTracker'
+import { supabase } from '@/utils/supabase'
 
 type Phase = 'loading' | 'idle' | 'tracking' | 'paused' | 'verifying' | 'submitting' | 'complete' | 'error'
 
@@ -46,6 +47,7 @@ export default function SessionPage() {
   const pauseCountRef = useRef(0)
   const totalPauseMsRef = useRef(0)
   const pauseStartRef = useRef<number | null>(null)
+  const sessionStartRef = useRef<number | null>(null)
 
   const gps = useGPSTracker()
 
@@ -73,6 +75,7 @@ export default function SessionPage() {
   const goalMet = isDistanceGoal ? distanceMeters >= goalMeters : false // steps unsupported without sensor
 
   const handleStart = useCallback(() => {
+    sessionStartRef.current = Date.now()
     gps.startTracking()
     setPhase('tracking')
   }, [gps])
@@ -165,13 +168,76 @@ export default function SessionPage() {
       setStatusMsg('Waiting for confirmation...')
       await waitForTransactionReceipt(config, { hash })
       setTxHash(hash)
+
+      // ─── Persist the completed session so it shows in Route History ───
+      // The on-chain completion already succeeded above, so every DB write here
+      // is best-effort and non-fatal — a Supabase hiccup must not block the
+      // user's "Complete" screen or their on-chain payout.
+      try {
+        if (supabase && address) {
+          const durationSecs = gps.elapsedTime
+          const distanceMetersFinal = proof.actualDistance
+          const startedAtMs = sessionStartRef.current ?? Date.now() - durationSecs * 1000
+          const avgPace = distanceMetersFinal > 0
+            ? (durationSecs / 60) / (distanceMetersFinal / 1000) // min/km
+            : 0
+
+          // sessions.commitment_id is the Supabase row UUID, not the chain id —
+          // look it up via the chain id stored at creation time.
+          const { data: commitmentRow } = await supabase
+            .from('commitments')
+            .select('id')
+            .eq('commitment_id_chain', commitmentId)
+            .maybeSingle()
+
+          const { data: sessionRow, error: sessionErr } = await supabase
+            .from('sessions')
+            .insert({
+              commitment_id: commitmentRow?.id ?? null,
+              wallet_address: address,
+              started_at: new Date(startedAtMs).toISOString(),
+              ended_at: new Date().toISOString(),
+              actual_distance: distanceMetersFinal,
+              actual_steps: proof.actualSteps,
+              duration_secs: durationSecs,
+              avg_pace: Number(avgPace.toFixed(2)),
+            })
+            .select('id')
+            .single()
+
+          if (sessionErr) {
+            console.error('Failed to write session row:', sessionErr)
+          } else if (sessionRow) {
+            const { error: routeErr } = await supabase
+              .from('routes')
+              .insert({
+                session_id: sessionRow.id,
+                coordinates: backendCoords, // [{ lat, lng, timestamp }]
+              })
+            if (routeErr) console.error('Failed to write route row:', routeErr)
+          }
+
+          // Flip the commitment out of "active" so the profile history reads
+          // correctly and a new commitment can be created.
+          if (commitmentRow?.id) {
+            const { error: updErr } = await supabase
+              .from('commitments')
+              .update({ status: 'completed', completed_at: new Date().toISOString() })
+              .eq('id', commitmentRow.id)
+            if (updErr) console.error('Failed to mark commitment completed:', updErr)
+          }
+        }
+      } catch (dbErr) {
+        console.error('Session persistence error:', dbErr)
+      }
+
       setPhase('complete')
     } catch (err: unknown) {
       setPhase('error')
       const msg = (err as { shortMessage?: string })?.shortMessage || (err instanceof Error ? err.message : 'Transaction failed')
       setErrorMsg(msg)
     }
-  }, [gps, commitmentId, isDistanceGoal, goalMeters, writeContractAsync, config])
+  }, [gps, commitmentId, isDistanceGoal, goalMeters, writeContractAsync, config, address])
 
   // ─── Render ───────────────────────────────────────────────
 
