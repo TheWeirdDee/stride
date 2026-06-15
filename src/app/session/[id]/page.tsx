@@ -349,209 +349,179 @@ export default function SessionPage() {
   }, [gps, commitmentId, isDistanceGoal, goalMeters, writeContractAsync, config, address])
 
   // ─── Render ───────────────────────────────────────────────
+  const screen = (children: React.ReactNode) => (
+    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', padding: '28px 20px 36px' }}>{children}</div>
+  )
 
   if (phase === 'loading') {
-    return (
-      <div className="flex items-center justify-center min-h-[70vh]">
-        <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+    return screen(
+      <div style={{ flex: 1, display: 'grid', placeItems: 'center' }}>
+        <div style={{ width: 38, height: 38, border: '4px solid #cdfb46', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.9s linear infinite' }} />
       </div>
     )
   }
 
   if (phase === 'error') {
-    return (
-      <div className="max-w-md mx-auto my-12 px-4 text-center">
-        <div className="mb-4 flex justify-center"><AlertTriangle className="w-10 h-10 text-amber-500" /></div>
-        <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">Something went wrong</h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">{errorMsg}</p>
-        <button
-          onClick={() => router.push('/')}
-          className="px-6 py-3 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-bold text-sm"
-        >
-          Go Home
-        </button>
+    return screen(
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+        <AlertTriangle className="w-10 h-10" style={{ color: '#fbbf24', marginBottom: 16 }} />
+        <h2 className="sd-display" style={{ fontSize: 24 }}>Something<br />went wrong</h2>
+        <p style={{ fontSize: 14, color: 'var(--muted)', margin: '14px 0 26px', maxWidth: 300 }}>{errorMsg}</p>
+        <button onClick={() => router.push('/explore')} className="sd-btn sd-btn-ghost" style={{ maxWidth: 260 }}>Back to explore</button>
       </div>
     )
   }
 
   if (phase === 'complete') {
-    return (
-      <div className="max-w-md mx-auto my-12 px-4 text-center animate-in fade-in duration-300">
-        <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-6">
-          <svg className="w-10 h-10 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
+    const km = distanceMeters / 1000
+    const paceMin = km > 0.05 ? gps.elapsedTime / 60 / km : 0
+    const paceStr = paceMin > 0 ? `${Math.floor(paceMin)}:${String(Math.round((paceMin % 1) * 60)).padStart(2, '0')}` : '—:—'
+    return screen(
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+        <div style={{ width: 96, height: 96, borderRadius: 30, background: '#cdfb46', display: 'grid', placeItems: 'center', marginBottom: 24, boxShadow: '0 24px 50px -16px rgba(205,251,70,0.5)' }}>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#06080a" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
         </div>
-        <h2 className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 mb-2">Commitment Complete!</h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-1">Your stake has been returned plus any bonus rewards.</p>
+        <div className="sd-eyebrow">Goal smashed</div>
+        <h2 className="sd-display" style={{ fontSize: 34, marginTop: 10 }}>Commitment<br />complete</h2>
+        <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 12 }}>Your stake is back, plus a bonus from the pool.</p>
+
+        <div className="sd-card" style={{ display: 'flex', width: '100%', maxWidth: 320, marginTop: 24, padding: '18px 0' }}>
+          {[[km.toFixed(2), 'KM'], [fmt(gps.elapsedTime), 'TIME'], [paceStr, 'PACE']].map(([v, l], i) => (
+            <div key={l} style={{ flex: 1, textAlign: 'center', borderLeft: i ? '1px solid var(--line)' : 'none' }}>
+              <div className="sd-mono" style={{ fontWeight: 800, fontSize: 20 }}>{v}</div>
+              <div className="sd-mono" style={{ fontSize: 9, letterSpacing: '0.14em', color: 'var(--muted-2)', marginTop: 3 }}>{l}</div>
+            </div>
+          ))}
+        </div>
+
         {txHash && (
-          <p className="text-xs font-mono text-zinc-400 dark:text-zinc-500 mt-2 break-all">
-            tx: {txHash.slice(0, 10)}…{txHash.slice(-8)}
-          </p>
+          <p className="sd-mono" style={{ fontSize: 10, color: 'var(--muted-3)', marginTop: 14, wordBreak: 'break-all' }}>tx: {txHash.slice(0, 10)}…{txHash.slice(-8)}</p>
         )}
-        <button
-          onClick={() => router.push('/')}
-          className="mt-8 px-8 py-3.5 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-extrabold shadow-md"
-        >
-          Back to Stride
-        </button>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 320, marginTop: 26 }}>
+          <button onClick={() => router.push('/profile/routes')} className="sd-btn sd-btn-lime">View route history</button>
+          <button onClick={() => router.push('/explore')} className="sd-btn sd-btn-ghost">Back to explore</button>
+        </div>
       </div>
     )
   }
 
   if (phase === 'verifying' || phase === 'submitting') {
-    return (
-      <div className="max-w-md mx-auto my-12 px-4 text-center animate-in fade-in duration-300">
-        <div className="relative w-20 h-20 mx-auto mb-6">
-          <span className="absolute inset-0 rounded-full bg-emerald-400 opacity-20 animate-ping" />
-          <div className="absolute inset-2 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+    return screen(
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+        <div style={{ position: 'relative', width: 80, height: 80, display: 'grid', placeItems: 'center', marginBottom: 24 }}>
+          <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#cdfb46', opacity: 0.18, animation: 'ring 1.8s ease-out infinite' }} />
+          <div style={{ width: 44, height: 44, border: '4px solid #cdfb46', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.9s linear infinite' }} />
         </div>
-        <h2 className="text-xl font-extrabold text-zinc-900 dark:text-zinc-100 mb-2">
-          {phase === 'verifying' ? 'Verifying Session' : 'Submitting On-Chain'}
-        </h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">{statusMsg}</p>
+        <h2 className="sd-display" style={{ fontSize: 24 }}>{phase === 'verifying' ? 'Verifying session' : 'Submitting on-chain'}</h2>
+        <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 12 }}>{statusMsg}</p>
       </div>
     )
   }
 
   // ─── Idle (pre-start) ─────────────────────────────────────
   if (phase === 'idle') {
-    return (
-      <div className="max-w-md mx-auto my-10 px-4 animate-in fade-in duration-300">
-        <div className="bg-white dark:bg-zinc-950 rounded-3xl border border-zinc-150 dark:border-zinc-850 p-6 shadow-md">
-          <h1 className="text-lg font-extrabold text-zinc-900 dark:text-zinc-100 mb-1">Active Commitment</h1>
-          <p className="text-xs text-zinc-400 dark:text-zinc-500 font-mono mb-6 break-all">{commitmentId?.slice(0, 18)}…</p>
+    return screen(
+      <>
+        <div className="sd-eyebrow">Ready when you are</div>
+        <h1 className="sd-display" style={{ fontSize: 34, marginTop: 10 }}>Active<br />commitment</h1>
+        <p className="sd-mono" style={{ fontSize: 11, color: 'var(--muted-3)', marginTop: 8, wordBreak: 'break-all' }}>{commitmentId?.slice(0, 22)}…</p>
 
-          {commitment && (
-            <div className="space-y-3 mb-8">
-              <div className="flex justify-between items-center py-3 border-b border-zinc-100 dark:border-zinc-900">
-                <span className="text-sm text-zinc-500">Goal</span>
-                <span className="font-bold text-zinc-900 dark:text-zinc-100">
-                  {isDistanceGoal
-                    ? `${(Number(commitment.distanceGoal) / 1000).toFixed(1)} km`
-                    : `${Number(commitment.stepGoal).toLocaleString()} steps`}
-                </span>
+        {commitment && (
+          <div className="sd-card" style={{ marginTop: 22, padding: '4px 18px' }}>
+            {[
+              ['Goal', isDistanceGoal ? `${(Number(commitment.distanceGoal) / 1000).toFixed(1)} km` : `${Number(commitment.stepGoal).toLocaleString()} steps`, false],
+              ['Staked', `${parseFloat(formatUnits(commitment.stakeAmount, 18)).toFixed(2)} cUSD`, true],
+              ['Time left', fmtDeadline(commitment.deadline), false],
+            ].map(([k, v, lime], i) => (
+              <div key={k as string} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 0', borderBottom: i < 2 ? '1px solid var(--line)' : 'none' }}>
+                <span style={{ fontSize: 13, color: 'var(--muted)' }}>{k}</span>
+                <span className="sd-mono" style={{ fontWeight: 800, fontSize: 15, color: lime ? '#cdfb46' : (k === 'Time left' && isExpired ? '#fb7185' : '#f4f6f3') }}>{v}</span>
               </div>
-              <div className="flex justify-between items-center py-3 border-b border-zinc-100 dark:border-zinc-900">
-                <span className="text-sm text-zinc-500">Staked</span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                  {parseFloat(formatUnits(commitment.stakeAmount, 18)).toFixed(2)} cUSD
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-3">
-                <span className="text-sm text-zinc-500">Time left</span>
-                <span className={`font-bold ${isExpired ? 'text-rose-500' : 'text-zinc-900 dark:text-zinc-100'}`}>
-                  {fmtDeadline(commitment.deadline)}
-                </span>
-              </div>
-            </div>
-          )}
+            ))}
+          </div>
+        )}
 
-          {isExpired ? (
-            <div className="text-center">
-              <p className="text-sm text-rose-500 font-semibold mb-4">This commitment has expired. You can forfeit it to reclaim any remaining pool eligibility.</p>
-              <button onClick={() => router.push('/')} className="w-full py-3.5 rounded-full border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 font-bold text-sm">
-                Go Home
-              </button>
-            </div>
-          ) : (
-            <>
-              {gps.error && (
-                <p className="text-xs text-rose-500 mb-3">{gps.error}</p>
-              )}
-              <button
-                onClick={handleStart}
-                className="w-full py-4 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-extrabold text-base shadow-md hover:shadow-lg active:scale-[0.98] transition-all"
-              >
-                Start Session
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+        <div style={{ flex: 1 }} />
+
+        {isExpired ? (
+          <>
+            <p style={{ fontSize: 13, color: '#fb7185', fontWeight: 600, marginBottom: 14, textAlign: 'center' }}>This commitment has expired.</p>
+            <button onClick={() => router.push('/explore')} className="sd-btn sd-btn-ghost">Back to explore</button>
+          </>
+        ) : (
+          <>
+            {gps.error && <p style={{ fontSize: 12, color: '#fb7185', marginBottom: 10 }}>{gps.error}</p>}
+            <button onClick={handleStart} className="sd-btn sd-btn-lime">Start session</button>
+          </>
+        )}
+      </>
     )
   }
 
   // ─── Tracking / Paused ────────────────────────────────────
   const isTracking = phase === 'tracking' || phase === 'paused'
+  const kmNow = distanceMeters / 1000
+  const paceMinNow = kmNow > 0.05 ? gps.elapsedTime / 60 / kmNow : 0
+  const paceNow = paceMinNow > 0 ? `${Math.floor(paceMinNow)}:${String(Math.round((paceMinNow % 1) * 60)).padStart(2, '0')}` : '—:—'
 
-  return (
-    <div className="max-w-md mx-auto my-6 px-4 animate-in fade-in duration-200">
-      {/* Live Stats */}
-      <div className="bg-white dark:bg-zinc-950 rounded-3xl border border-zinc-150 dark:border-zinc-850 p-6 shadow-md mb-4">
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <p className="text-xs uppercase font-bold text-zinc-400 tracking-wider">Distance</p>
-            <p className="text-4xl font-extrabold font-mono text-zinc-900 dark:text-zinc-100 mt-1">
-              {(distanceMeters / 1000).toFixed(2)}
-              <span className="text-lg font-semibold text-zinc-400 ml-1">km</span>
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs uppercase font-bold text-zinc-400 tracking-wider">Time</p>
-            <p className="text-3xl font-bold font-mono text-zinc-700 dark:text-zinc-300 mt-1">{fmt(gps.elapsedTime)}</p>
-          </div>
+  return screen(
+    <>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
+        <span style={{ width: 9, height: 9, borderRadius: '50%', background: phase === 'tracking' ? '#cdfb46' : 'var(--muted-2)', animation: phase === 'tracking' ? 'pulseDot 1.6s ease-in-out infinite' : 'none' }} />
+        <span className="sd-mono" style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: phase === 'tracking' ? '#cdfb46' : 'var(--muted)' }}>
+          {phase === 'tracking' ? `Live · ${gps.path.length} GPS points` : 'Paused'}
+        </span>
+      </div>
+
+      {/* Big distance */}
+      <div style={{ textAlign: 'center', marginTop: 12 }}>
+        <div className="sd-mono" style={{ fontSize: 9, letterSpacing: '0.2em', color: 'var(--muted-2)', textTransform: 'uppercase' }}>Distance</div>
+        <div className="sd-mono" style={{ fontWeight: 800, fontSize: 84, lineHeight: 0.92, letterSpacing: '-0.03em', marginTop: 6 }}>{kmNow.toFixed(2)}</div>
+        <div style={{ fontFamily: "'Archivo Expanded',sans-serif", fontWeight: 700, fontSize: 16, color: '#cdfb46', marginTop: 2 }}>KILOMETRES</div>
+      </div>
+
+      {/* Progress */}
+      <div style={{ marginTop: 28 }}>
+        <div className="sd-mono" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--muted-2)', marginBottom: 6 }}>
+          <span>{distanceMeters}m</span>
+          <span>GOAL {goalMeters}m</span>
         </div>
-
-        {/* Progress bar */}
-        <div className="mb-4">
-          <div className="flex justify-between text-xs font-semibold text-zinc-400 mb-1.5">
-            <span>{distanceMeters}m</span>
-            <span>Goal: {goalMeters}m</span>
-          </div>
-          <div className="h-2 bg-zinc-100 dark:bg-zinc-900 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full transition-all duration-500"
-              style={{ width: `${progressPct}%` }}
-            />
-          </div>
-        </div>
-
-        {/* GPS status */}
-        <div className="flex items-center gap-1.5 text-xs text-zinc-400">
-          <span className={`w-2 h-2 rounded-full ${phase === 'tracking' ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-400'}`} />
-          {phase === 'tracking' ? `GPS active · ${gps.path.length} points` : 'Paused'}
-          {gps.error && <span className="text-rose-400 ml-2">{gps.error}</span>}
+        <div style={{ height: 8, borderRadius: 999, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${progressPct}%`, background: '#cdfb46', borderRadius: 999, transition: 'width 0.5s ease', boxShadow: '0 0 12px rgba(205,251,70,0.6)' }} />
         </div>
       </div>
 
+      {/* Time + pace */}
+      <div className="sd-card" style={{ display: 'flex', marginTop: 22, padding: '18px 0' }}>
+        {[[fmt(gps.elapsedTime), 'TIME'], [paceNow, 'PACE /KM']].map(([v, l], i) => (
+          <div key={l} style={{ flex: 1, textAlign: 'center', borderLeft: i ? '1px solid var(--line)' : 'none' }}>
+            <div className="sd-mono" style={{ fontWeight: 800, fontSize: 26 }}>{v}</div>
+            <div className="sd-mono" style={{ fontSize: 9, letterSpacing: '0.14em', color: 'var(--muted-2)', marginTop: 4 }}>{l}</div>
+          </div>
+        ))}
+      </div>
+
+      {gps.error && <p style={{ fontSize: 12, color: '#fb7185', marginTop: 12, textAlign: 'center' }}>{gps.error}</p>}
+
+      <div style={{ flex: 1 }} />
+
       {/* Controls */}
-      <div className="space-y-3">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {phase === 'tracking' ? (
-          <button
-            onClick={handlePause}
-            disabled={pauseCountRef.current >= 2}
-            className="w-full py-4 rounded-full border-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-300 font-extrabold text-base disabled:opacity-40 active:scale-[0.98] transition-all"
-          >
+          <button onClick={handlePause} disabled={pauseCountRef.current >= 2} className="sd-btn sd-btn-ghost">
             Pause {pauseCountRef.current >= 2 ? '(limit reached)' : ''}
           </button>
         ) : (
-          <button
-            onClick={handleResume}
-            className="w-full py-4 rounded-full border-2 border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-extrabold text-base active:scale-[0.98] transition-all"
-          >
-            Resume
-          </button>
+          <button onClick={handleResume} className="sd-btn" style={{ background: 'rgba(205,251,70,0.12)', color: '#cdfb46', border: '1px solid rgba(205,251,70,0.4)' }}>Resume</button>
         )}
-
-        <button
-          onClick={handleFinish}
-          disabled={!isTracking}
-          className={`w-full py-4 rounded-full font-extrabold text-base active:scale-[0.98] transition-all ${
-            goalMet
-              ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-md shadow-emerald-500/20'
-              : 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900'
-          }`}
-        >
-          {goalMet ? 'Finish & Claim Reward' : 'End Session'}
+        <button onClick={handleFinish} disabled={!isTracking} className={`sd-btn ${goalMet ? 'sd-btn-lime' : ''}`} style={goalMet ? undefined : { background: '#f4f6f3', color: '#06080a' }}>
+          {goalMet ? 'Finish & claim reward' : 'End session'}
         </button>
-
         {!goalMet && isTracking && (
-          <p className="text-center text-xs text-zinc-400 font-semibold">
-            {goalMeters - distanceMeters}m remaining to meet goal
-          </p>
+          <p className="sd-mono" style={{ textAlign: 'center', fontSize: 11, color: 'var(--muted-2)' }}>{goalMeters - distanceMeters}m remaining to goal</p>
         )}
       </div>
-    </div>
+    </>
   )
 }
