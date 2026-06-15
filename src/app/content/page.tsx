@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/utils/supabase'
-import { BookOpen, Clock, Activity, Search, Shield, ChevronRight, Zap, RefreshCw, Sun, Moon } from 'lucide-react'
+import { BookOpen, Clock, Search, ChevronRight, RefreshCw, Sun, Moon } from 'lucide-react'
 
 interface ContentItem {
   id: string
@@ -131,165 +131,71 @@ export default function ContentHubPage() {
     return matchesSearch && matchesTab && matchesActivity
   })
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'warmup':
-        return 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-900/30'
-      case 'cooldown':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-200 dark:border-blue-900/30'
-      default:
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-400 border border-purple-200 dark:border-purple-900/30'
-    }
+  const typeColor = (type: string) => {
+    if (type === 'warmup') return '#fbbf24'
+    if (type === 'cooldown') return '#7db4e6'
+    return '#cdfb46'
   }
-
-  const getPhaseLabel = (phase: string) => {
-    switch (phase) {
-      case 'before':
-        return <span className="flex items-center gap-1"><Sun className="w-3 h-3" /> Pre-workout</span>
-      case 'after':
-        return <span className="flex items-center gap-1"><Moon className="w-3 h-3" /> Post-workout</span>
-      default:
-        return <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Anytime</span>
-    }
+  const phaseLabel = (phase: string) => {
+    if (phase === 'before') return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Sun className="w-3 h-3" /> Pre</span>
+    if (phase === 'after') return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Moon className="w-3 h-3" /> Post</span>
+    return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Clock className="w-3 h-3" /> Anytime</span>
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 animate-in fade-in duration-300">
-      {/* Header */}
-      <div className="flex flex-col gap-2 mb-8">
-        <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Fitness Guide Library
-        </h1>
-        <p className="text-zinc-500 dark:text-zinc-400 text-sm">
-          Prep your body, recover properly, and learn breathing mechanics. No wallet connection required.
-        </p>
+    <div className="sd-page">
+      <div className="sd-eyebrow">No wallet needed</div>
+      <h1 className="sd-display" style={{ fontSize: 34, marginTop: 12 }}>Movement<br />library</h1>
+      <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 12 }}>Prep, recover and breathe better. Free, works offline.</p>
+
+      {/* Search */}
+      <div style={{ position: 'relative', marginTop: 20 }}>
+        <Search className="h-4 w-4" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted-2)' }} />
+        <input type="text" placeholder="Search guides…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="sd-input" style={{ paddingLeft: 40 }} />
       </div>
 
-      {/* Search & Filter Controls */}
-      <div className="flex flex-col md:flex-row gap-4 mb-8">
-        <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-zinc-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search guides (e.g. warmup, breathing)..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="block w-full pl-9 pr-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10"
-          />
-        </div>
-
-        {/* Activity Toggle */}
-        <div className="flex gap-1.5 p-1 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800">
-          {[
-            { label: 'All', value: 'all' },
-            { label: 'Walk', value: 'walk' },
-            { label: 'Run', value: 'run' }
-          ].map((act) => (
-            <button
-              key={act.value}
-              onClick={() => setActiveActivity(act.value as 'all' | 'walk' | 'run')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeActivity === act.value
-                  ? 'bg-white dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
-                  : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
-              }`}
-            >
-              {act.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="border-b border-zinc-200 dark:border-zinc-800 mb-6 flex gap-6 text-sm font-semibold overflow-x-auto whitespace-nowrap">
-        {[
-          { id: 'all', label: 'All Content' },
-          { id: 'warmup', label: 'Warmups' },
-          { id: 'cooldown', label: 'Cooldowns' },
-          { id: 'guide', label: 'Pro Guides' }
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as 'all' | 'warmup' | 'cooldown' | 'guide')}
-            className={`pb-3 border-b-2 transition-all ${
-              activeTab === tab.id
-                ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
-                : 'border-transparent text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
-            }`}
-          >
-            {tab.label}
-          </button>
+      {/* Type tabs */}
+      <div style={{ display: 'flex', gap: 8, marginTop: 14, overflowX: 'auto' }}>
+        {[{ id: 'all', label: 'All' }, { id: 'warmup', label: 'Warmups' }, { id: 'cooldown', label: 'Cooldowns' }, { id: 'guide', label: 'Guides' }].map((tab) => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id as 'all' | 'warmup' | 'cooldown' | 'guide')} className="sd-mono" style={{
+            padding: '8px 14px', borderRadius: 999, fontWeight: 700, fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', whiteSpace: 'nowrap',
+            background: activeTab === tab.id ? '#cdfb46' : 'rgba(255,255,255,0.04)',
+            color: activeTab === tab.id ? '#06080a' : 'var(--muted)',
+            border: activeTab === tab.id ? '1px solid #cdfb46' : '1px solid var(--line)',
+          }}>{tab.label}</button>
         ))}
       </div>
 
-      {/* Guides Grid */}
+      {/* List */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <RefreshCw className="h-8 w-8 text-emerald-500 animate-spin mb-4" />
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 font-semibold">Loading workouts library...</p>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 0' }}>
+          <RefreshCw className="h-8 w-8" style={{ color: '#cdfb46', animation: 'spin 0.9s linear infinite', marginBottom: 14 }} />
+          <p style={{ color: 'var(--muted)' }}>Loading library…</p>
         </div>
       ) : filteredGuides.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginTop: 18 }}>
           {filteredGuides.map((guide) => (
-            <Link
-              key={guide.id}
-              href={`/content/${guide.id}`}
-              className="group bg-white dark:bg-zinc-950 p-5 rounded-2xl border border-zinc-150/80 dark:border-zinc-850 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-300 flex flex-col gap-4 relative overflow-hidden"
-            >
-              <div className="flex justify-between items-start gap-2">
-                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${getTypeColor(guide.type)}`}>
-                  {guide.type}
-                </span>
-                <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500">
-                  {getPhaseLabel(guide.phase)}
-                </span>
+            <Link key={guide.id} href={`/content/${guide.id}`} className="sd-card" style={{ padding: 18, textDecoration: 'none', color: 'inherit', display: 'block' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <span className="sd-mono" style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: typeColor(guide.type) }}>{guide.type}</span>
+                <span className="sd-mono" style={{ fontSize: 10, color: 'var(--muted-2)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{phaseLabel(guide.phase)}</span>
               </div>
-
-              <div>
-                <h3 className="font-extrabold text-lg group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors tracking-tight text-zinc-800 dark:text-zinc-200">
-                  {guide.title}
-                </h3>
-                <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1.5 line-clamp-2 leading-relaxed">
-                  {guide.body.replace(/\d+\.\s*/g, '')}
-                </p>
-              </div>
-
-              <div className="mt-auto pt-3 border-t border-zinc-100 dark:border-zinc-900 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
-                <div className="flex items-center gap-4">
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5 text-zinc-400" />
-                    <b>{guide.duration}</b> min
-                  </span>
-                  <span className="flex items-center gap-1 uppercase font-bold tracking-wider text-[10px]">
-                    <Activity className="h-3.5 w-3.5 text-zinc-400" />
-                    {guide.activity}
-                  </span>
-                </div>
-                <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5 font-bold group-hover:translate-x-1 transition-transform">
-                  Read <ChevronRight className="h-3.5 w-3.5" />
-                </span>
+              <h3 style={{ fontFamily: "'Archivo Expanded',sans-serif", fontWeight: 700, fontSize: 18, textTransform: 'uppercase', letterSpacing: '0.01em' }}>{guide.title}</h3>
+              <p style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 6, lineHeight: 1.5, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{guide.body.replace(/\d+\.\s*/g, '')}</p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--line)' }}>
+                <span className="sd-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--muted)' }}><Clock className="h-3.5 w-3.5" /> {guide.duration} min · {guide.activity}</span>
+                <span className="sd-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 11, fontWeight: 700, color: '#cdfb46' }}>Read <ChevronRight className="h-3.5 w-3.5" /></span>
               </div>
             </Link>
           ))}
         </div>
       ) : (
-        <div className="text-center py-16 bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-150 dark:border-zinc-850 p-6">
-          <BookOpen className="h-10 w-10 text-zinc-400 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-zinc-800 dark:text-zinc-200">No guides found</h3>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            Try adjusting your search keywords or tab filters.
-          </p>
+        <div className="sd-card" style={{ textAlign: 'center', padding: '40px 20px', marginTop: 18, borderStyle: 'dashed' }}>
+          <BookOpen className="h-10 w-10" style={{ color: 'var(--muted-3)', margin: '0 auto 12px' }} />
+          <h3 style={{ fontFamily: "'Archivo Expanded',sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase' }}>No guides found</h3>
+          <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 6 }}>Try different keywords or filters.</p>
         </div>
       )}
-
-      {/* Footnote badge */}
-      <div className="mt-8 flex justify-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800 text-[10px] text-zinc-500 uppercase tracking-wider font-bold">
-          <Shield className="h-3.5 w-3.5 text-emerald-500" /> Offline-Ready Local Storage Cache Enabled
-        </div>
-      </div>
     </div>
   )
 }
