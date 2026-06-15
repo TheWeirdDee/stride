@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAccount, useConnect, useDisconnect, useBalance } from 'wagmi'
 import { formatEther } from 'viem'
-import { Activity, Compass, BookOpen, User, Wallet, LogOut, Menu, X } from 'lucide-react'
+import { Activity, Compass, BookOpen, User, Wallet, LogOut, Menu, X, Zap } from 'lucide-react'
 
 export default function Navbar() {
   const pathname = usePathname()
@@ -37,8 +37,8 @@ export default function Navbar() {
   const balance = balanceData ? parseFloat(formatEther(balanceData.value)).toFixed(4) : '0.0000'
 
   const navLinks = [
-    { name: 'Explore', href: '/', icon: Compass },
-    { name: 'Community', href: '/community', icon: Activity },
+    { name: 'Dashboard', href: '/community', icon: Compass },
+    { name: 'Start', href: '/commitment/new', icon: Zap },
     { name: 'Guides', href: '/content', icon: BookOpen },
     { name: 'Profile', href: '/profile', icon: User },
   ]
@@ -120,8 +120,8 @@ export default function Navbar() {
                 href="/profile"
                 className="flex items-center gap-2 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 p-1.5 pl-3 pr-3 shadow-inner text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer"
               >
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
-                <span>Guest: <span className="font-bold text-zinc-900 dark:text-zinc-100">{nickname}</span></span>
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                <span className="font-bold text-zinc-900 dark:text-zinc-100">{nickname}</span>
               </Link>
             ) : (
               <button
