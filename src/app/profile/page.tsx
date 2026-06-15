@@ -469,12 +469,20 @@ export default function ProfilePage() {
             Your Commitment History
           </h2>
           {isConnected && (
-            <button
-              onClick={() => router.push('/commitment/new')}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-sm hover:shadow active:scale-95 transition-all"
-            >
-              <PlusCircle className="h-3.5 w-3.5" /> New Commitment
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => router.push('/profile/routes')}
+                className="inline-flex items-center gap-1.5 px-4 py-2 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold text-xs rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900 active:scale-95 transition-all"
+              >
+                <MapPin className="h-3.5 w-3.5" /> View Routes
+              </button>
+              <button
+                onClick={() => router.push('/commitment/new')}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-sm hover:shadow active:scale-95 transition-all"
+              >
+                <PlusCircle className="h-3.5 w-3.5" /> New Commitment
+              </button>
+            </div>
           )}
         </div>
 
