@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAccount, useReadContract, useWriteContract, useConfig } from 'wagmi'
-import { formatUnits } from 'viem'
+import { formatUnits, parseEventLogs } from 'viem'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { commitmentABI } from '@/abi/commitment'
 import { COMMITMENT_CONTRACT, BACKEND_URL } from '@/utils/constants'
@@ -166,8 +166,24 @@ export default function SessionPage() {
       })
 
       setStatusMsg('Waiting for confirmation...')
-      await waitForTransactionReceipt(config, { hash })
+      const receipt = await waitForTransactionReceipt(config, { hash })
       setTxHash(hash)
+
+      // Pull the real bonus paid out from the CommitmentCompleted event.
+      let bonusAmount = 0
+      try {
+        const events = parseEventLogs({
+          abi: commitmentABI,
+          eventName: 'CommitmentCompleted',
+          logs: receipt.logs,
+        })
+        const match = events.find(
+          (e) => e.args.commitmentId?.toLowerCase() === commitmentId.toLowerCase()
+        ) ?? events[0]
+        if (match) bonusAmount = parseFloat(formatUnits(match.args.bonusEarned, 18))
+      } catch (e) {
+        console.error('Could not parse bonus from receipt:', e)
+      }
 
       // ─── Persist the completed session so it shows in Route History ───
       // The on-chain completion already succeeded above, so every DB write here
@@ -225,6 +241,67 @@ export default function SessionPage() {
               .update({ status: 'completed', completed_at: new Date().toISOString() })
               .eq('id', commitmentRow.id)
             if (updErr) console.error('Failed to mark commitment completed:', updErr)
+          }
+
+          // ─── Write 4: user aggregates + streak ───
+          // Non-fatal on its own so a streak miscalc never blocks completion.
+          try {
+            const { data: userRow } = await supabase
+              .from('users')
+              .select('streak_current, streak_best, total_distance, total_earnings')
+              .eq('wallet_address', address)
+              .maybeSingle()
+
+            if (userRow) {
+              const existingDistance = Number(userRow.total_distance) || 0
+              const existingEarnings = Number(userRow.total_earnings) || 0
+              const existingStreak = Number(userRow.streak_current) || 0
+              const existingBest = Number(userRow.streak_best) || 0
+
+              // Most recent completion *before* this one (exclude the commitment
+              // we just marked completed) to decide if the streak continues.
+              let prevQuery = supabase
+                .from('commitments')
+                .select('completed_at')
+                .eq('wallet_address', address)
+                .eq('status', 'completed')
+                .not('completed_at', 'is', null)
+              if (commitmentRow?.id) prevQuery = prevQuery.neq('id', commitmentRow.id)
+              const { data: prevRows } = await prevQuery
+                .order('completed_at', { ascending: false })
+                .limit(1)
+              const prevCompletedAt: string | null = prevRows?.[0]?.completed_at ?? null
+
+              // Compare by local calendar day so timezone + near-midnight cases
+              // resolve to "today / yesterday / 2+ days ago" correctly.
+              const startOfLocalDay = (d: Date) =>
+                new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+              let newStreak: number
+              if (!prevCompletedAt) {
+                newStreak = 1 // first ever completion
+              } else {
+                const diffDays = Math.round(
+                  (startOfLocalDay(new Date()) - startOfLocalDay(new Date(prevCompletedAt))) /
+                    86_400_000
+                )
+                if (diffDays <= 0) newStreak = Math.max(existingStreak, 1) // already counted today
+                else if (diffDays === 1) newStreak = existingStreak + 1 // yesterday → continue
+                else newStreak = 1 // 2+ day gap → reset
+              }
+
+              const { error: userErr } = await supabase
+                .from('users')
+                .update({
+                  total_distance: existingDistance + proof.actualDistance,
+                  total_earnings: existingEarnings + bonusAmount,
+                  streak_current: newStreak,
+                  streak_best: Math.max(existingBest, newStreak),
+                })
+                .eq('wallet_address', address)
+              if (userErr) console.error('Failed to update user aggregates:', userErr)
+            }
+          } catch (aggErr) {
+            console.error('User aggregate/streak update error:', aggErr)
           }
         }
       } catch (dbErr) {
