@@ -70,8 +70,11 @@ export default function NewCommitmentPage() {
 
 
   const userCusdFloat = parseFloat(cusdBalance)
-  const isBalanceInsufficient = userCusdFloat < stakeValue
-  const isStakeHighPercent = stakeValue > 0 && userCusdFloat > 0 && (stakeValue / userCusdFloat) > 0.20
+  // Only evaluate balance once a wallet is actually connected — otherwise the
+  // balance reads 0 and we'd wrongly flag "insufficient funds" for a guest who
+  // simply hasn't connected yet (they connect at the final confirm step).
+  const isBalanceInsufficient = isConnected && userCusdFloat < stakeValue
+  const isStakeHighPercent = isConnected && stakeValue > 0 && userCusdFloat > 0 && (stakeValue / userCusdFloat) > 0.20
 
   const handleNext = () => {
     if (step === 3) {
@@ -269,10 +272,26 @@ export default function NewCommitmentPage() {
       {/* Wallet Balance Info */}
       <div className="flex items-center justify-between py-2.5 px-4 rounded-xl bg-zinc-100/50 dark:bg-zinc-900/30 border border-zinc-150 dark:border-zinc-850 text-xs">
         <span className="text-zinc-500 font-semibold">Your cUSD Balance:</span>
-        <span className="font-mono font-bold text-zinc-800 dark:text-zinc-200">
-          {parseFloat(cusdBalance).toFixed(4)} cUSD
-        </span>
+        {isConnected ? (
+          <span className="font-mono font-bold text-zinc-800 dark:text-zinc-200">
+            {parseFloat(cusdBalance).toFixed(4)} cUSD
+          </span>
+        ) : (
+          <span className="font-semibold text-zinc-400 dark:text-zinc-500">
+            Wallet not connected
+          </span>
+        )}
       </div>
+
+      {/* Not-connected notice — balance can't be checked until a wallet is linked */}
+      {!isConnected && (
+        <div className="flex gap-2 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200/60 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 text-xs">
+          <Info className="h-4 w-4 shrink-0 mt-0.5 text-emerald-500" />
+          <p>
+            Pick your stake now — you&apos;ll connect your wallet to confirm and lock funds on the final step.
+          </p>
+        </div>
+      )}
 
       {/* Stake Quick Picks */}
       <div className="grid grid-cols-5 gap-1.5">
