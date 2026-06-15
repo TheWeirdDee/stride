@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/utils/supabase'
-import { ArrowLeft, Clock, Activity, Shield, Check, Heart, Trophy, Zap, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Clock, Check, Trophy, ChevronRight } from 'lucide-react'
 
 interface ContentItem {
   id: string
@@ -139,26 +139,24 @@ export default function ContentDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] w-full text-center">
-        <div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full mb-4 mx-auto"></div>
-        <p className="text-zinc-500 font-semibold">Loading guide details...</p>
+      <div className="sd-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+        <div style={{ width: 36, height: 36, border: '4px solid #cdfb46', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.9s linear infinite', marginBottom: 16 }} />
+        <p style={{ color: 'var(--muted)' }}>Loading guide…</p>
       </div>
     )
   }
 
   if (!guide) {
     return (
-      <div className="max-w-md mx-auto my-12 text-center p-8 bg-white dark:bg-zinc-950 border rounded-2xl">
-        <h3 className="text-lg font-bold">Guide Not Found</h3>
-        <p className="text-zinc-400 text-xs mt-2">The guide path might be incorrect or deleted.</p>
-        <button onClick={() => router.push('/content')} className="mt-4 px-4 py-2 bg-zinc-900 text-white rounded-xl text-xs font-bold">
-          Back to Library
-        </button>
+      <div className="sd-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' }}>
+        <h3 className="sd-display" style={{ fontSize: 22 }}>Guide not found</h3>
+        <p style={{ color: 'var(--muted)', fontSize: 13, margin: '10px 0 22px' }}>This guide may have moved or been removed.</p>
+        <button onClick={() => router.push('/content')} className="sd-btn sd-btn-ghost" style={{ maxWidth: 220 }}>Back to library</button>
       </div>
     )
   }
 
-  const steps = guide.body.split('\n').filter(line => line.trim())
+  const steps = guide.body.split('\n').filter((line) => line.trim())
 
   const handleStepToggle = (index: number) => {
     setCompletedSteps((prev) => {
@@ -169,116 +167,52 @@ export default function ContentDetailPage() {
   }
 
   const isAllCompleted = completedSteps.length > 0 && completedSteps.every(Boolean)
-
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case 'warmup':
-        return 'Warmup Routine'
-      case 'cooldown':
-        return 'Cooldown Stretch'
-      default:
-        return 'Training Guide'
-    }
-  }
+  const typeLabel = guide.type === 'warmup' ? 'Warmup routine' : guide.type === 'cooldown' ? 'Cooldown stretch' : 'Training guide'
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8 animate-in fade-in duration-300">
-      
-      <Link
-        href="/content"
-        className="inline-flex items-center gap-1.5 text-xs font-bold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors mb-6 uppercase tracking-wider"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back to Library
+    <div className="sd-page">
+      <Link href="/content" className="sd-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--muted)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', textDecoration: 'none', marginBottom: 16 }}>
+        <ArrowLeft className="h-4 w-4" /> Back to library
       </Link>
 
-      {/* Guide Card Header */}
-      <div className="bg-white dark:bg-zinc-950 border border-zinc-150/80 dark:border-zinc-850 p-6 sm:p-8 rounded-3xl shadow-sm mb-6">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <span className="text-[10px] uppercase font-extrabold px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
-            {getTypeLabel(guide.type)}
-          </span>
-          <div className="flex items-center gap-3 text-xs font-semibold text-zinc-400 dark:text-zinc-500">
-            <span className="flex items-center gap-1">
-              <Clock className="h-3.5 w-3.5" /> {guide.duration} mins
-            </span>
-            <span className="uppercase tracking-wide">
-              • {guide.activity}
-            </span>
-          </div>
+      {/* Header */}
+      <div className="sd-card-lime sd-card-glow" style={{ padding: 22 }}>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <span className="sd-mono" style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#cdfb46' }}>{typeLabel}</span>
+          <span className="sd-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--muted)' }}><Clock className="h-3.5 w-3.5" /> {guide.duration} min · {guide.activity}</span>
         </div>
-
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-800 dark:text-zinc-50">
-          {guide.title}
-        </h1>
+        <h1 className="sd-display" style={{ position: 'relative', fontSize: 28 }}>{guide.title}</h1>
       </div>
 
-      {/* Instructions Title */}
-      <div className="flex items-center justify-between mb-4 px-1">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-400">
-          Step-by-step checklist
-        </h2>
-        <span className="text-xs text-zinc-400 font-bold">
-          {completedSteps.filter(Boolean).length} of {steps.length} done
-        </span>
+      {/* Checklist */}
+      <div className="sd-section-row" style={{ marginTop: 24 }}>
+        <h2 className="sd-section" style={{ fontSize: 12 }}>Checklist</h2>
+        <span className="sd-meta">{completedSteps.filter(Boolean).length} / {steps.length} done</span>
       </div>
 
-      {/* Steps List */}
-      <div className="flex flex-col gap-3">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {steps.map((stepStr, idx) => {
-          // Remove number prefix for cleaner displays
           const displayStr = stepStr.replace(/^\d+\.\s*/, '')
           const isDone = completedSteps[idx]
-
           return (
-            <button
-              key={idx}
-              onClick={() => handleStepToggle(idx)}
-              className={`flex items-start text-left gap-4 p-4 rounded-2xl border transition-all duration-200 ${
-                isDone
-                  ? 'bg-emerald-500/5 border-emerald-500/40 text-zinc-800 dark:text-zinc-350'
-                  : 'bg-white dark:bg-zinc-950 border-zinc-150/80 dark:border-zinc-850 text-zinc-700 dark:text-zinc-300 hover:border-zinc-300'
-              }`}
-            >
-              <span
-                className={`h-5 w-5 rounded-full shrink-0 flex items-center justify-center border text-[10px] font-bold mt-0.5 transition-all ${
-                  isDone
-                    ? 'bg-emerald-500 border-emerald-500 text-white'
-                    : 'border-zinc-300 text-zinc-400 bg-transparent'
-                }`}
-              >
+            <button key={idx} onClick={() => handleStepToggle(idx)} className="sd-card" style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: 16, textAlign: 'left', cursor: 'pointer', border: isDone ? '1px solid rgba(205,251,70,0.4)' : undefined, background: isDone ? 'rgba(205,251,70,0.06)' : undefined }}>
+              <span className="sd-mono" style={{ height: 22, width: 22, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, marginTop: 1, background: isDone ? '#cdfb46' : 'transparent', color: isDone ? '#06080a' : 'var(--muted-2)', border: isDone ? 'none' : '1px solid var(--line-strong)' }}>
                 {isDone ? <Check className="h-3 w-3" /> : idx + 1}
               </span>
-              <p className="text-sm leading-relaxed font-semibold">
-                {displayStr}
-              </p>
+              <p style={{ fontSize: 14, lineHeight: 1.5, color: isDone ? 'var(--muted)' : 'var(--ink)' }}>{displayStr}</p>
             </button>
           )
         })}
       </div>
 
-      {/* Completion Notification Card */}
       {isAllCompleted && (
-        <div className="mt-6 p-5 rounded-2xl bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/30 text-center animate-in zoom-in-95 duration-200">
-          <Trophy className="h-8 w-8 text-emerald-500 mx-auto mb-2.5 animate-bounce" />
-          <h3 className="font-extrabold text-base text-zinc-800 dark:text-zinc-200">Routine Completed!</h3>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-sm mx-auto leading-normal">
-            Great job prepping your body. You are ready to lock in your skin-in-the-game commitment on Stride!
-          </p>
-          <Link
-            href="/commitment/new"
-            className="inline-flex items-center gap-1.5 mt-4 px-5 py-2.5 bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 text-xs font-extrabold rounded-full hover:opacity-90 active:scale-95 transition-all shadow-md"
-          >
-            Start a Commitment <ChevronRight className="h-3.5 w-3.5" />
-          </Link>
+        <div className="sd-card-lime sd-card-glow" style={{ padding: 22, marginTop: 18, textAlign: 'center' }}>
+          <Trophy className="h-8 w-8" style={{ color: '#cdfb46', margin: '0 auto 10px', animation: 'floaty 2s ease-in-out infinite' }} />
+          <h3 className="sd-display" style={{ position: 'relative', fontSize: 18 }}>Routine done</h3>
+          <p style={{ position: 'relative', fontSize: 13, color: 'var(--muted)', margin: '8px auto 16px', maxWidth: 300 }}>Body prepped. Time to lock in a commitment.</p>
+          <Link href="/commitment/new" className="sd-btn sd-btn-lime" style={{ position: 'relative', maxWidth: 260, margin: '0 auto', textDecoration: 'none' }}>Start a commitment <ChevronRight className="h-4 w-4" /></Link>
         </div>
       )}
-
-      {/* Offline indicators */}
-      <div className="mt-8 flex justify-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800 text-[10px] text-zinc-500 uppercase tracking-wider font-bold">
-          <Shield className="h-3.5 w-3.5 text-emerald-500" /> Offline access enabled
-        </div>
-      </div>
     </div>
   )
 }
