@@ -1,7 +1,5 @@
 'use client'
 
-import { MapPin, Trophy, Calendar, Clock, Navigation } from 'lucide-react'
-
 interface RouteCardProps {
   id: string
   userName?: string
@@ -11,16 +9,12 @@ interface RouteCardProps {
   rewardCUSD: number
   date: string
   activityType: 'walk' | 'run'
-
   svgPath: string
-  // Optional real map snapshot (routes.map_snapshot). When present it is shown
-  // instead of the abstract SVG path.
+  // Optional real map snapshot (routes.map_snapshot) shown instead of the SVG.
   imageUrl?: string
 }
 
 export default function RouteCard({
-  id,
-  userName = 'Anonymous Mover',
   city,
   distanceKm,
   durationMinutes,
@@ -30,100 +24,62 @@ export default function RouteCard({
   svgPath,
   imageUrl,
 }: RouteCardProps) {
-  // Calculate average pace (min/km)
-  const pace = distanceKm > 0 ? (durationMinutes / distanceKm).toFixed(1) : '0.0'
+  const timeStr = `${Math.floor(durationMinutes)}:${String(Math.round((durationMinutes % 1) * 60)).padStart(2, '0')}`
 
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-zinc-200/80 dark:border-zinc-800/85 bg-white dark:bg-zinc-950 p-4 shadow-sm hover:shadow-md hover:border-emerald-500/40 dark:hover:border-emerald-400/40 transition-all duration-300 hover:-translate-y-1">
-      {/* Route Map Visual Placeholder */}
-      <div className="relative h-36 w-full overflow-hidden rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-850 flex items-center justify-center">
+    <div className="sd-card" style={{ overflow: 'hidden' }}>
+      {/* Map / route visual */}
+      <div
+        style={{
+          position: 'relative',
+          height: 118,
+          background: 'radial-gradient(120% 120% at 30% 20%, rgba(10,42,72,0.4), transparent 60%), #0b0e10',
+          overflow: 'hidden',
+        }}
+      >
         {imageUrl ? (
-          /* Real generated route snapshot */
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt={`Route in ${city}`} className="absolute inset-0 h-full w-full object-cover" />
+          <img src={imageUrl} alt={`Route in ${city}`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
           <>
-        {/* Dotted Grid Background */}
-        <div className="absolute inset-0 bg-[radial-gradient(#e4e4e7_1px,transparent_1px)] dark:bg-[radial-gradient(#27272a_1px,transparent_1px)] [background-size:16px_16px] opacity-60"></div>
-
-        {/* Draw abstract SVG path of route */}
-        <svg className="w-4/5 h-4/5 z-10" viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path
-            d={svgPath}
-            stroke="url(#routeGradient)"
-            strokeWidth="4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="animate-[dash_3s_ease-in-out_infinite]"
-            style={{
-              strokeDasharray: 300,
-              strokeDashoffset: 0,
-            }}
-          />
-          {/* Start and End nodes */}
-          <circle cx="20" cy="100" r="5" fill="#10b981" stroke="white" strokeWidth="2" />
-          <circle cx="180" cy="20" r="5" fill="#3b82f6" stroke="white" strokeWidth="2" />
-          
-          <defs>
-            <linearGradient id="routeGradient" x1="0%" y1="100%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#34d399" />
-              <stop offset="50%" stopColor="#10b981" />
-              <stop offset="100%" stopColor="#06b6d4" />
-            </linearGradient>
-          </defs>
-        </svg>
+            <div className="sd-grid" style={{ position: 'absolute', inset: 0 }} />
+            <svg viewBox="0 0 200 100" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+              <path d={svgPath} fill="none" stroke="#cdfb46" strokeWidth="2.6" strokeLinecap="round" className="sd-route-stroke" />
+            </svg>
           </>
         )}
-
-        {/* Badges Overlay */}
-        <div className="absolute top-2 left-2 flex items-center gap-1.5 rounded-full bg-white/95 dark:bg-zinc-900/95 px-2 py-0.5 text-[10px] font-semibold text-zinc-600 dark:text-zinc-350 shadow-sm border border-zinc-100 dark:border-zinc-800">
-          <MapPin className="h-3 w-3 text-emerald-500" />
-          <span>{city}</span>
+        <div
+          className="sd-mono"
+          style={{ position: 'absolute', top: 10, left: 12, fontWeight: 700, fontSize: 10, letterSpacing: '0.12em', color: 'rgba(244,246,243,0.6)', textTransform: 'uppercase' }}
+        >
+          {city}
         </div>
-
-        <div className="absolute top-2 right-2 flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase border border-emerald-500/20">
+        <div
+          className="sd-mono"
+          style={{ position: 'absolute', top: 10, right: 12, fontWeight: 700, fontSize: 9, letterSpacing: '0.1em', color: '#cdfb46', textTransform: 'uppercase', background: 'rgba(6,8,10,0.5)', backdropFilter: 'blur(4px)', padding: '3px 7px', borderRadius: 20 }}
+        >
           {activityType}
         </div>
       </div>
 
-      {/* Info details */}
-      <div className="mt-4 flex-1 flex flex-col justify-between">
-        <div>
-          <div className="flex items-center justify-between text-[11px] text-zinc-400 dark:text-zinc-500">
-            <span className="font-semibold">{userName}</span>
-            <div className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              <span>{date}</span>
-            </div>
+      {/* Stats */}
+      <div style={{ padding: '13px 14px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+          <div className="sd-mono" style={{ fontWeight: 800, fontSize: 26, lineHeight: 1, color: '#f4f6f3' }}>
+            {distanceKm.toFixed(2)}
+            <span style={{ fontSize: 12, color: 'rgba(244,246,243,0.45)', marginLeft: 3 }}>km</span>
           </div>
-
-          {/* Core Stats Row */}
-          <div className="mt-3 grid grid-cols-3 gap-2 py-2.5 px-3 rounded-xl bg-zinc-50/50 dark:bg-zinc-900/30 border border-zinc-100/50 dark:border-zinc-800/30 text-center">
-            <div>
-              <p className="text-[10px] uppercase font-bold text-zinc-400 dark:text-zinc-500 tracking-wider">Distance</p>
-              <p className="text-sm font-extrabold text-zinc-800 dark:text-zinc-200 font-mono mt-0.5">{distanceKm.toFixed(2)}<span className="text-[10px] font-medium ml-0.5">km</span></p>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase font-bold text-zinc-400 dark:text-zinc-500 tracking-wider">Duration</p>
-              <p className="text-sm font-extrabold text-zinc-800 dark:text-zinc-200 font-mono mt-0.5">{durationMinutes}<span className="text-[10px] font-medium ml-0.5">m</span></p>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase font-bold text-zinc-400 dark:text-zinc-500 tracking-wider">Pace</p>
-              <p className="text-sm font-extrabold text-zinc-800 dark:text-zinc-200 font-mono mt-0.5">{pace}<span className="text-[9px] font-medium ml-0.5">/km</span></p>
-            </div>
+          <div style={{ textAlign: 'right' }}>
+            <div className="sd-mono" style={{ fontSize: 10, color: 'rgba(244,246,243,0.4)', letterSpacing: '0.08em' }}>TIME</div>
+            <div className="sd-mono" style={{ fontWeight: 700, fontSize: 14, color: 'rgba(244,246,243,0.85)' }}>{timeStr}</div>
           </div>
         </div>
 
-        {/* Payout Block */}
-        <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-900 flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-            <Trophy className="h-4 w-4" />
-            <span className="text-xs font-bold uppercase tracking-wider">Earned</span>
-          </div>
-          <div className="flex items-baseline gap-0.5 text-zinc-900 dark:text-zinc-50 font-bold font-mono">
-            <span className="text-emerald-500 font-extrabold text-base">+{rewardCUSD.toFixed(4)}</span>
-            <span className="text-[9px] font-medium text-zinc-500 ml-0.5">CELO</span>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 11, paddingTop: 11, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+          <span className="sd-mono" style={{ fontSize: 10, color: 'rgba(244,246,243,0.4)', letterSpacing: '0.05em' }}>{date}</span>
+          {rewardCUSD > 0 && (
+            <span className="sd-mono" style={{ fontSize: 13, fontWeight: 800, color: '#cdfb46' }}>+${rewardCUSD.toFixed(2)}</span>
+          )}
         </div>
       </div>
     </div>
