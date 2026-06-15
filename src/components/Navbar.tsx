@@ -37,8 +37,9 @@ export default function Navbar() {
   const balance = balanceData ? parseFloat(formatEther(balanceData.value)).toFixed(4) : '0.0000'
 
   const navLinks = [
-    { name: 'Dashboard', href: '/community', icon: Compass },
+    { name: 'Explore', href: '/explore', icon: Compass },
     { name: 'Start', href: '/commitment/new', icon: Zap },
+    { name: 'Community', href: '/community', icon: Activity },
     { name: 'Guides', href: '/content', icon: BookOpen },
     { name: 'Profile', href: '/profile', icon: User },
   ]
