@@ -144,7 +144,7 @@ export default function CommunityFeedPage() {
       {/* Title */}
       <div className="flex flex-col gap-2 mb-8">
         <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Community Dashboard
+          Community Pulse
         </h1>
         <p className="text-zinc-500 dark:text-zinc-400 text-sm">
           Keep in stride with active communities and dynamic completions across active cities.
