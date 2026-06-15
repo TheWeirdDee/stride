@@ -216,10 +216,12 @@ function LandingPageContent() {
           onContinue={() => router.push('/community')}
         />
         <LandingHero
+          isConnected={isConnected}
           guestProfile={guestProfile}
           onGetStarted={() => openOnboarding('splash')}
           onContinue={() => router.push('/community')}
           onConnectWallet={() => openOnboarding('wallet')}
+          onStartCommitment={() => router.push('/commitment/new')}
         />
         <LandingMarketing
           onGetStarted={() => openOnboarding('splash')}
