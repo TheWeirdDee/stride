@@ -109,7 +109,7 @@ function LandingPageContent() {
       connectAndSave()
     } else if (screen === 'app:explore') {
       if (guestProfile) {
-        router.push('/community')
+        router.push('/explore')
       } else {
         setObScreen('guest-profile')
       }
@@ -197,7 +197,7 @@ function LandingPageContent() {
     // Navigate while the overlay is still mounted so the landing page never
     // flashes between closing the modal and the route changing. The onboarding
     // page unmounts once navigation lands.
-    router.push('/community')
+    router.push('/explore')
   }
 
   const openOnboarding = (screen = 'splash') => {
@@ -213,13 +213,13 @@ function LandingPageContent() {
           isConnected={isConnected}
           guestProfile={guestProfile}
           onGetStarted={() => openOnboarding('splash')}
-          onContinue={() => router.push('/community')}
+          onContinue={() => router.push('/explore')}
         />
         <LandingHero
           isConnected={isConnected}
           guestProfile={guestProfile}
           onGetStarted={() => openOnboarding('splash')}
-          onContinue={() => router.push('/community')}
+          onContinue={() => router.push('/explore')}
           onConnectWallet={() => openOnboarding('wallet')}
           onStartCommitment={() => router.push('/commitment/new')}
         />
