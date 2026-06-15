@@ -1,27 +1,340 @@
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Hanken+Grotesk:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Expanded:wght@500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700;800&display=swap');
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────────────────────────
+   STRIDE DESIGN SYSTEM
+   Dark / lime aesthetic ported from the Claude Design handoff.
+   Mobile-first: the app renders as a centered phone-width column.
+   ───────────────────────────────────────────────────────────── */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #06080a;
+  --surface: #0a0c0d;
+  --ink: #f4f6f3;
+  --lime: #cdfb46;
+  --lime-ink: #06080a;
+  --blue: #7db4e6;
+  --muted: rgba(244, 246, 243, 0.55);
+  --muted-2: rgba(244, 246, 243, 0.4);
+  --muted-3: rgba(244, 246, 243, 0.3);
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.12);
+  --card-grad: linear-gradient(165deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015));
+  --tabbar-h: 80px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; min-height: 100%; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(130% 90% at 50% -20%, rgba(18, 46, 32, 0.62), transparent 55%),
+    radial-gradient(90% 60% at 50% 125%, rgba(205, 251, 70, 0.06), transparent 60%),
+    radial-gradient(150% 120% at 82% 8%, rgba(10, 42, 72, 0.22), transparent 55%),
+    var(--bg);
+  background-attachment: fixed;
+  color: var(--ink);
+  font-family: 'Archivo', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
+
+::-webkit-scrollbar { width: 0; height: 0; display: none; }
+* { scrollbar-width: none; }
+
+/* ── Mobile-first app shell ─────────────────────────────────── */
+.sd-shell {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.sd-page {
+  flex: 1;
+  padding: 18px 20px calc(var(--tabbar-h) + 28px);
+  animation: rise 0.5s ease both;
+}
+.sd-page-flush { /* full-bleed pages (session) manage their own padding */
+  flex: 1;
+}
+
+/* ── Typography ─────────────────────────────────────────────── */
+.sd-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lime);
+}
+.sd-display {
+  font-family: 'Archivo Expanded', sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  line-height: 0.9;
+  letter-spacing: -0.01em;
+  margin: 0;
+  color: var(--ink);
+}
+.sd-section {
+  font-family: 'Archivo Expanded', sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin: 0;
+  color: rgba(244, 246, 243, 0.92);
+}
+.sd-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--muted-3);
+  text-transform: uppercase;
+}
+.sd-mono { font-family: 'JetBrains Mono', monospace; }
+.sd-muted { color: var(--muted); }
+
+.sd-section-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+/* ── Cards ──────────────────────────────────────────────────── */
+.sd-card {
+  background: var(--card-grad);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 16px 36px -24px rgba(0, 0, 0, 0.9);
+}
+.sd-card-lime {
+  position: relative;
+  background: linear-gradient(160deg, rgba(205, 251, 70, 0.1), rgba(255, 255, 255, 0.015));
+  border: 1px solid rgba(205, 251, 70, 0.2);
+  border-radius: 22px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+.sd-card-glow::after {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 150px; height: 150px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(205, 251, 70, 0.25), transparent 70%);
+  filter: blur(12px);
+  pointer-events: none;
+}
+
+/* ── Buttons ────────────────────────────────────────────────── */
+.sd-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: 'Archivo Expanded', sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 16px;
+  border-radius: 16px;
+  border: 0;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  width: 100%;
+}
+.sd-btn:active { transform: scale(0.97); }
+.sd-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.sd-btn-lime {
+  background: var(--lime);
+  color: var(--lime-ink);
+  box-shadow: 0 14px 34px -12px rgba(205, 251, 70, 0.6);
+}
+.sd-btn-ghost {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+}
+.sd-btn-dark {
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+/* ── Pills / chips ──────────────────────────────────────────── */
+.sd-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: rgba(205, 251, 70, 0.14);
+  color: var(--lime);
+}
+.sd-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--lime);
+  display: inline-block;
+}
+
+/* ── Inputs ─────────────────────────────────────────────────── */
+.sd-input, .sd-select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid var(--line-strong);
+  border-radius: 14px;
+  padding: 14px 16px;
+  color: var(--ink);
+  font-size: 16px;
+  font-family: 'Archivo', system-ui, sans-serif;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.sd-input:focus, .sd-select:focus { border-color: var(--lime); }
+.sd-input::placeholder { color: var(--muted-3); }
+
+/* ── Map / route grid background ────────────────────────────── */
+.sd-grid {
+  background-image:
+    repeating-linear-gradient(0deg, transparent 0 21px, rgba(255, 255, 255, 0.045) 21px 22px),
+    repeating-linear-gradient(90deg, transparent 0 21px, rgba(255, 255, 255, 0.045) 21px 22px);
+}
+.sd-route-stroke {
+  filter: drop-shadow(0 0 5px rgba(205, 251, 70, 0.85));
+  stroke-dasharray: 7 9;
+  animation: flow 6s linear infinite;
+}
+
+/* ── Bottom tab bar ─────────────────────────────────────────── */
+.sd-tabbar {
+  position: fixed;
+  bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  height: var(--tabbar-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 14px 16px;
+  background: linear-gradient(0deg, rgba(8, 10, 11, 0.98), rgba(8, 10, 11, 0.55));
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  z-index: 60;
+}
+.sd-tab {
+  background: none;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 4px;
+  color: var(--muted-2);
+  transition: color 0.2s;
+  text-decoration: none;
+}
+.sd-tab.is-active { color: var(--lime); }
+.sd-fab {
+  width: 52px; height: 52px;
+  border-radius: 18px;
+  background: var(--lime);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: -18px;
+  box-shadow: 0 12px 30px -8px rgba(205, 251, 70, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  transition: transform 0.15s;
+}
+.sd-fab:active { transform: scale(0.92); }
+
+/* ── Top bar ────────────────────────────────────────────────── */
+.sd-topbar {
+  height: 56px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: linear-gradient(180deg, rgba(6, 8, 10, 0.92), rgba(6, 8, 10, 0.4));
+  backdrop-filter: blur(12px);
+}
+.sd-logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+  color: var(--ink);
+}
+.sd-logo-mark {
+  width: 26px; height: 26px;
+  border-radius: 8px;
+  background: var(--lime);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 18px rgba(205, 251, 70, 0.45);
+}
+.sd-logo-word {
+  font-family: 'Archivo Expanded', sans-serif;
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: 0.04em;
+}
+.sd-wallet-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  padding: 8px 13px;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+}
+.sd-wallet-btn.is-on {
+  background: rgba(205, 251, 70, 0.12);
+  border-color: rgba(205, 251, 70, 0.3);
+  color: var(--lime);
+}
+
+/* ── Keyframes ──────────────────────────────────────────────── */
+@keyframes flow { to { stroke-dashoffset: -340; } }
+@keyframes pulseDot { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.7); opacity: 0.35; } }
+@keyframes ring { 0% { transform: scale(0.5); opacity: 0.55; } 100% { transform: scale(2.7); opacity: 0; } }
+@keyframes tickerIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes flame { 0%, 100% { transform: scale(1) rotate(-3deg); } 50% { transform: scale(1.08) rotate(3deg); } }
+@keyframes shimmer { to { background-position: 200% 0; } }
+@keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes glowPulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.95; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes heatPulse { 0%, 100% { opacity: 0.55; transform: scale(1); } 50% { opacity: 0.9; transform: scale(1.08); } }
+
+.sd-rise-1 { animation: rise 0.5s ease both; }
+.sd-rise-2 { animation: rise 0.6s ease both; }
+.sd-rise-3 { animation: rise 0.7s ease both; }
+.sd-rise-4 { animation: rise 0.8s ease both; }
