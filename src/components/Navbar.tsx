@@ -1,174 +1,116 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useAccount, useConnect, useDisconnect, useBalance } from 'wagmi'
-import { formatEther } from 'viem'
-import { Activity, Compass, BookOpen, User, Wallet, LogOut, Menu, X, Zap } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { useAccount, useConnect, useDisconnect } from 'wagmi'
 
 export default function Navbar() {
   const pathname = usePathname()
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [nickname, setNickname] = useState<string | null>(null)
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    // Guest profile saved during onboarding lives under `stride_guest_profile`.
-    // Fall back to the legacy `stride_onboarding_nickname` key if present.
-    try {
-      const raw = localStorage.getItem('stride_guest_profile')
-      if (raw) {
-        const parsed = JSON.parse(raw)
-        setNickname(parsed?.nickname || null)
-        return
-      }
-    } catch {}
-    setNickname(localStorage.getItem('stride_onboarding_nickname'))
-  }, [pathname])
+  const router = useRouter()
   const { address, isConnected } = useAccount()
   const { connect, connectors } = useConnect()
   const { disconnect } = useDisconnect()
 
-  const { data: balanceData } = useBalance({
-    address: address,
-    query: { enabled: !!address },
-  })
+  // Immersive / standalone routes manage their own chrome.
+  const hideChrome =
+    pathname === '/' || pathname.startsWith('/session')
+  if (hideChrome) return null
 
-  const balance = balanceData ? parseFloat(formatEther(balanceData.value)).toFixed(4) : '0.0000'
+  const handleWallet = () => {
+    if (isConnected) {
+      disconnect()
+      return
+    }
+    const injected = connectors.find((c) => c.id === 'injected') || connectors[0]
+    if (injected) connect({ connector: injected })
+  }
 
-  const navLinks = [
-    { name: 'Explore', href: '/explore', icon: Compass },
-    { name: 'Start', href: '/commitment/new', icon: Zap },
-    { name: 'Community', href: '/community', icon: Activity },
-    { name: 'Guides', href: '/content', icon: BookOpen },
-    { name: 'Profile', href: '/profile', icon: User },
+  const walletLabel = isConnected && address
+    ? `${address.slice(0, 6)}…${address.slice(-4)}`
+    : 'Connect'
+
+  const isActive = (href: string) =>
+    href === '/explore' ? pathname === '/explore' : pathname.startsWith(href)
+
+  const tabs = [
+    {
+      href: '/explore',
+      label: 'Explore',
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="9" /><path d="M15.5 8.5l-2.2 5L8.5 15.5l2.2-5z" fill="currentColor" stroke="none" /></svg>
+      ),
+    },
+    {
+      href: '/community',
+      label: 'Community',
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="8.5" cy="9" r="2.6" /><circle cx="16" cy="10" r="2.2" /><path d="M3.5 19c0-2.6 2.2-4.2 5-4.2s5 1.6 5 4.2M13.5 18c.2-2 1.7-3.2 3.8-3.2 2 0 3.4 1.2 3.7 3" /></svg>
+      ),
+    },
+    {
+      href: '/content',
+      label: 'Guides',
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M5 5.5A1.5 1.5 0 016.5 4H18v15H6.5A1.5 1.5 0 005 20.5z" /><path d="M5 17.5A1.5 1.5 0 016.5 16H18" /></svg>
+      ),
+    },
+    {
+      href: '/profile',
+      label: 'Profile',
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="8.5" r="3.4" /><path d="M5.5 19.5c0-3.4 2.9-5.5 6.5-5.5s6.5 2.1 6.5 5.5" /></svg>
+      ),
+    },
   ]
 
-  const handleConnect = () => {
-    // Find injected connector (Metamask / MiniPay / etc)
-    const injectedConnector = connectors.find(c => c.id === 'injected') || connectors[0]
-    if (injectedConnector) {
-      connect({ connector: injectedConnector })
-    }
-  }
-
-  const truncateAddress = (addr: string) => {
-    return `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`
-  }
-
-  if (pathname === '/') return null
-
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-zinc-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-black/80 backdrop-blur-md">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between gap-4">
-          {/* Logo */}
-          <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2 group">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-400 via-emerald-500 to-cyan-500 text-white shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-all duration-300">
-                <Activity className="h-5 w-5" />
-              </span>
-              <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-emerald-600 to-cyan-600 dark:from-emerald-400 dark:to-cyan-400 bg-clip-text text-transparent">
-                Stride
-              </span>
-            </Link>
+    <>
+      {/* Top bar */}
+      <header className="sd-topbar">
+        <Link href="/explore" className="sd-logo">
+          <span className="sd-logo-mark">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#06080a" strokeWidth="3" strokeLinecap="round"><path d="M5 17l5-10 4 7 5-9" /></svg>
+          </span>
+          <span className="sd-logo-word">STRIDE</span>
+        </Link>
+        <button onClick={handleWallet} className={`sd-wallet-btn ${isConnected ? 'is-on' : ''}`}>
+          <span
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: '50%',
+              background: isConnected ? '#cdfb46' : 'rgba(244,246,243,0.4)',
+              boxShadow: isConnected ? '0 0 8px #cdfb46' : 'none',
+            }}
+          />
+          {walletLabel}
+        </button>
+      </header>
 
-            {/* Desktop Navigation Links */}
-            <nav className="hidden md:flex items-center gap-1">
-              {navLinks.map((link) => {
-                const Icon = link.icon
-                const isActive = pathname === link.href
-                return (
-                  <Link
-                    key={link.name}
-                    href={link.href}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      isActive
-                        ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20'
-                        : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-900/50'
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {link.name}
-                  </Link>
-                )
-              })}
-            </nav>
-          </div>
-
-          {/* Wallet Actions / Connect Button */}
-          <div className="flex items-center gap-3">
-            {isConnected && address ? (
-              <div className="flex items-center gap-2 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 p-1 pl-3 shadow-inner">
-                {/* Balance display */}
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span className="font-mono">${balance}</span>
-                  <span className="text-zinc-400 dark:text-zinc-500 font-normal">CELO</span>
-                </div>
-                {/* Account button / dropdown */}
-                <button
-                  onClick={() => disconnect()}
-                  className="flex items-center gap-1.5 rounded-full bg-white dark:bg-zinc-800 px-3 py-1 text-xs font-medium text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700/80 transition-colors shadow-sm"
-                  title="Disconnect Wallet"
-                >
-                  <span className="font-mono">{truncateAddress(address)}</span>
-                  <LogOut className="h-3.5 w-3.5 text-zinc-400 hover:text-rose-500 transition-colors" />
-                </button>
-              </div>
-            ) : nickname ? (
-              <Link
-                href="/profile"
-                className="flex items-center gap-2 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 p-1.5 pl-3 pr-3 shadow-inner text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer"
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
-                <span className="font-bold text-zinc-900 dark:text-zinc-100">{nickname}</span>
-              </Link>
-            ) : (
-              <button
-                onClick={handleConnect}
-                className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white px-4 py-2 text-sm font-semibold shadow-md shadow-emerald-500/10 hover:shadow-emerald-500/20 active:scale-95 transition-all duration-200"
-              >
-                <Wallet className="h-4 w-4" />
-                <span>Connect Wallet</span>
-              </button>
-            )}
-
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex md:hidden h-10 w-10 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors"
-            >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Drawer Menu */}
-      {mobileMenuOpen && (
-        <div className="md:hidden border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black/95 px-4 py-3 space-y-1 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
-          {navLinks.map((link) => {
-            const Icon = link.icon
-            const isActive = pathname === link.href
-            return (
-              <Link
-                key={link.name}
-                href={link.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-3 py-3 rounded-lg text-base font-semibold transition-all duration-200 ${
-                  isActive
-                    ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20'
-                    : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-900/50'
-                }`}
-              >
-                <Icon className="h-5 w-5" />
-                {link.name}
-              </Link>
-            )
-          })}
-        </div>
-      )}
-    </header>
+      {/* Bottom tab bar */}
+      <nav className="sd-tabbar">
+        <Link href="/explore" className={`sd-tab ${isActive('/explore') ? 'is-active' : ''}`}>
+          {tabs[0].icon}
+          {tabs[0].label}
+        </Link>
+        <Link href="/community" className={`sd-tab ${isActive('/community') ? 'is-active' : ''}`}>
+          {tabs[1].icon}
+          {tabs[1].label}
+        </Link>
+        <button onClick={() => router.push('/commitment/new')} className="sd-tab" aria-label="New commitment">
+          <span className="sd-fab">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#06080a" strokeWidth="3" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+          </span>
+        </button>
+        <Link href="/content" className={`sd-tab ${isActive('/content') ? 'is-active' : ''}`}>
+          {tabs[2].icon}
+          {tabs[2].label}
+        </Link>
+        <Link href="/profile" className={`sd-tab ${isActive('/profile') ? 'is-active' : ''}`}>
+          {tabs[3].icon}
+          {tabs[3].label}
+        </Link>
+      </nav>
+    </>
   )
 }
