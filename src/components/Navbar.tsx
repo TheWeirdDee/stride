@@ -55,13 +55,17 @@ export default function Navbar() {
       ),
     },
     {
-      href: '/profile',
-      label: 'Profile',
+      href: '/tools',
+      label: 'Tools',
       icon: (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="8.5" r="3.4" /><path d="M5.5 19.5c0-3.4 2.9-5.5 6.5-5.5s6.5 2.1 6.5 5.5" /></svg>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 7h10M4 12h16M4 17h7" /><circle cx="17" cy="7" r="2" /><circle cx="14" cy="17" r="2" /></svg>
       ),
     },
   ]
+
+  const profileIcon = (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="8.5" r="3.4" /><path d="M5.5 19.5c0-3.4 2.9-5.5 6.5-5.5s6.5 2.1 6.5 5.5" /></svg>
+  )
 
   return (
     <>
@@ -73,18 +77,37 @@ export default function Navbar() {
           </span>
           <span className="sd-logo-word">STRIDE</span>
         </Link>
-        <button onClick={handleWallet} className={`sd-wallet-btn ${isConnected ? 'is-on' : ''}`}>
-          <span
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button onClick={handleWallet} className={`sd-wallet-btn ${isConnected ? 'is-on' : ''}`}>
+            <span
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                background: isConnected ? '#cdfb46' : 'rgba(244,246,243,0.4)',
+                boxShadow: isConnected ? '0 0 8px #cdfb46' : 'none',
+              }}
+            />
+            {walletLabel}
+          </button>
+          <Link
+            href="/profile"
+            aria-label="Profile"
             style={{
-              width: 7,
-              height: 7,
+              width: 38,
+              height: 38,
               borderRadius: '50%',
-              background: isConnected ? '#cdfb46' : 'rgba(244,246,243,0.4)',
-              boxShadow: isConnected ? '0 0 8px #cdfb46' : 'none',
+              display: 'grid',
+              placeItems: 'center',
+              flexShrink: 0,
+              background: isActive('/profile') ? 'rgba(205,251,70,0.12)' : 'rgba(255,255,255,0.05)',
+              border: `1px solid ${isActive('/profile') ? 'rgba(205,251,70,0.4)' : 'var(--line-strong)'}`,
+              color: isActive('/profile') ? '#cdfb46' : 'var(--ink)',
             }}
-          />
-          {walletLabel}
-        </button>
+          >
+            {profileIcon}
+          </Link>
+        </div>
       </header>
 
       {/* Bottom tab bar */}
@@ -106,7 +129,7 @@ export default function Navbar() {
           {tabs[2].icon}
           {tabs[2].label}
         </Link>
-        <Link href="/profile" className={`sd-tab ${isActive('/profile') ? 'is-active' : ''}`}>
+        <Link href="/tools" className={`sd-tab ${isActive('/tools') ? 'is-active' : ''}`}>
           {tabs[3].icon}
           {tabs[3].label}
         </Link>
