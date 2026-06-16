@@ -11,6 +11,7 @@ import { COMMITMENT_CONTRACT, BACKEND_URL } from '@/utils/constants'
 import { useGPSTracker } from '@/hooks/useGPSTracker'
 import { supabase } from '@/utils/supabase'
 import { generateRouteCard } from '@/utils/generateRouteCard'
+import { MapView } from '@/components/MapView'
 
 type Phase = 'loading' | 'idle' | 'tracking' | 'paused' | 'verifying' | 'submitting' | 'complete' | 'error'
 
@@ -472,6 +473,11 @@ export default function SessionPage() {
         <span className="sd-mono" style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: phase === 'tracking' ? '#cdfb46' : 'var(--muted)' }}>
           {phase === 'tracking' ? `Live · ${gps.path.length} GPS points` : 'Paused'}
         </span>
+      </div>
+
+      {/* Live map */}
+      <div style={{ height: 240, borderRadius: 20, overflow: 'hidden' }}>
+        <MapView path={gps.path} isActive={phase === 'tracking'} />
       </div>
 
       {/* Big distance */}
