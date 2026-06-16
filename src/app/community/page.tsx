@@ -255,28 +255,6 @@ export default function CommunityPage() {
             <div className="sd-mono" style={{ position: 'absolute', right: 14, top: 14, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: '5px 10px', fontWeight: 700, fontSize: 10, color: '#cdfb46' }}>412 ACTIVE</div>
           </div>
 
-          {/* Leaderboard */}
-          <div style={{ marginTop: 24 }}>
-            <div className="sd-section-row">
-              <h2 className="sd-section">City leaderboard</h2>
-              <span className="sd-meta">THIS WEEK</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {CITIES.map((c) => (
-                <div key={c.rank} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 14, background: 'linear-gradient(120deg,rgba(255,255,255,0.05),rgba(255,255,255,0.012))', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 15, padding: '13px 15px', overflow: 'hidden' }}>
-                  <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: c.w, background: 'linear-gradient(90deg,rgba(205,251,70,0.1),transparent)', pointerEvents: 'none' }} />
-                  <span className="sd-mono" style={{ position: 'relative', fontWeight: 800, fontSize: 16, color: '#cdfb46', width: 24 }}>{c.rank}</span>
-                  <span style={{ position: 'relative', flex: 1, fontFamily: "'Archivo Expanded',sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase' }}>{c.name}</span>
-                  <span style={{ position: 'relative', textAlign: 'right' }}>
-                    <span className="sd-mono" style={{ fontWeight: 800, fontSize: 16 }}>{c.km}</span>
-                    <span className="sd-mono" style={{ fontSize: 10, color: 'var(--muted-2)', marginLeft: 3 }}>km</span>
-                    <div className="sd-mono" style={{ fontSize: 9, color: 'var(--muted-2)', letterSpacing: '0.05em', marginTop: 1 }}>{c.users} active</div>
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Groups */}
           <div style={{ marginTop: 24 }}>
             <div className="sd-section-row">
@@ -402,6 +380,28 @@ export default function CommunityPage() {
                     <span className="sd-mono" style={{ fontSize: 11, color: '#cdfb46', fontWeight: 700 }}>{ch.value}</span>
                     <span className="sd-mono" style={{ fontSize: 11, color: 'var(--muted-2)' }}>{ch.progress}%</span>
                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* City leaderboard */}
+          <div style={{ marginTop: 24 }}>
+            <div className="sd-section-row">
+              <h2 className="sd-section">City leaderboard</h2>
+              <span className="sd-meta">THIS WEEK</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {CITIES.map((c) => (
+                <div key={c.rank} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 14, background: 'linear-gradient(120deg,rgba(255,255,255,0.05),rgba(255,255,255,0.012))', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 15, padding: '13px 15px', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: c.w, background: 'linear-gradient(90deg,rgba(205,251,70,0.1),transparent)', pointerEvents: 'none' }} />
+                  <span className="sd-mono" style={{ position: 'relative', fontWeight: 800, fontSize: 16, color: '#cdfb46', width: 24 }}>{c.rank}</span>
+                  <span style={{ position: 'relative', flex: 1, fontFamily: "'Archivo Expanded',sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase' }}>{c.name}</span>
+                  <span style={{ position: 'relative', textAlign: 'right' }}>
+                    <span className="sd-mono" style={{ fontWeight: 800, fontSize: 16 }}>{c.km}</span>
+                    <span className="sd-mono" style={{ fontSize: 10, color: 'var(--muted-2)', marginLeft: 3 }}>km</span>
+                    <div className="sd-mono" style={{ fontSize: 9, color: 'var(--muted-2)', letterSpacing: '0.05em', marginTop: 1 }}>{c.users} active</div>
+                  </span>
                 </div>
               ))}
             </div>
