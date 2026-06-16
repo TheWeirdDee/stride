@@ -175,3 +175,30 @@ CREATE TABLE IF NOT EXISTS challenge_participants (
 
 CREATE INDEX IF NOT EXISTS idx_challenge_participants_challenge ON challenge_participants(challenge_id);
 CREATE INDEX IF NOT EXISTS idx_challenge_participants_wallet ON challenge_participants(wallet_address);
+
+-- 9. Create 'groups' table (community groups, user-creatable)
+CREATE TABLE IF NOT EXISTS groups (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    creator_wallet TEXT NOT NULL,                       -- wallet address OR guest id of the creator
+    name TEXT NOT NULL,
+    description TEXT,
+    activity TEXT NOT NULL CHECK (activity IN ('walk', 'run')),
+    city TEXT,
+    cover_url TEXT,                                      -- public URL in the 'challenge-covers' bucket
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_groups_activity ON groups(activity);
+CREATE INDEX IF NOT EXISTS idx_groups_creator ON groups(creator_wallet);
+
+-- 10. Create 'group_members' table
+CREATE TABLE IF NOT EXISTS group_members (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+    wallet_address TEXT NOT NULL,
+    joined_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    UNIQUE (group_id, wallet_address)
+);
+
+CREATE INDEX IF NOT EXISTS idx_group_members_group ON group_members(group_id);
+CREATE INDEX IF NOT EXISTS idx_group_members_wallet ON group_members(wallet_address);
