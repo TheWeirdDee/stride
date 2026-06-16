@@ -1,179 +1,133 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
-import mapboxgl from 'mapbox-gl'
-import 'mapbox-gl/dist/mapbox-gl.css'
-import { MAPBOX_TOKEN } from '@/utils/constants'
-import { Coordinate } from '@/utils/haversine'
+import { useEffect, useRef } from 'react'
+import { getPathDistance, type Coordinate } from '@/utils/haversine'
 
 interface MapViewProps {
   path: Coordinate[]
   isActive: boolean
 }
 
+/**
+ * Free, no-token, no-payment maps via Leaflet (loaded from CDN) + CARTO's
+ * free dark raster tiles. Draws the route polyline with interactive
+ * start/finish pins.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let leafletPromise: Promise<any> | null = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function loadLeaflet(): Promise<any> {
+  if (typeof window === 'undefined') return Promise.reject(new Error('no window'))
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const w = window as any
+  if (w.L) return Promise.resolve(w.L)
+  if (leafletPromise) return leafletPromise
+  leafletPromise = new Promise((resolve, reject) => {
+    if (!document.getElementById('leaflet-css')) {
+      const link = document.createElement('link')
+      link.id = 'leaflet-css'
+      link.rel = 'stylesheet'
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+      document.head.appendChild(link)
+    }
+    const script = document.createElement('script')
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+    script.async = true
+    script.onload = () => resolve(w.L)
+    script.onerror = () => reject(new Error('Leaflet failed to load'))
+    document.body.appendChild(script)
+  })
+  return leafletPromise
+}
+
 export function MapView({ path, isActive }: MapViewProps) {
-  const mapContainerRef = useRef<HTMLDivElement>(null)
-  const mapRef = useRef<mapboxgl.Map | null>(null)
-  const markerRef = useRef<mapboxgl.Marker | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mapRef = useRef<any>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const lineRef = useRef<any>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const startRef = useRef<any>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const endRef = useRef<any>(null)
+  // Keep the latest path/isActive in a ref so the draw routine always sees fresh data.
+  const pathRef = useRef(path)
+  pathRef.current = path
+  const activeRef = useRef(isActive)
+  activeRef.current = isActive
 
-  mapboxgl.accessToken = MAPBOX_TOKEN
-
-  useEffect(() => {
-    if (!mapContainerRef.current) return
-    if (!MAPBOX_TOKEN) {
-      console.warn('Mapbox Token is not configured. Map will not load.')
-      return
-    }
-
-    // Initialize Mapbox map
-    const startingCoords: [number, number] = path.length > 0
-      ? [path[0].longitude, path[0].latitude]
-      : [3.3792, 6.5244] // Fallback to Lagos, Nigeria coordinates
-
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: 'mapbox://styles/mapbox/dark-v11', // Dark style matching Stride aesthetic
-      center: startingCoords,
-      zoom: 15,
-      pitch: 0,
-      bearing: 0,
-    })
-
-    // Add navigation controls
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: true }), 'top-right')
-
-    mapRef.current = map
-
-    // Clean up map instance on unmount
-    return () => {
-      map.remove()
-      mapRef.current = null
-    }
-  }, []) // Initialize map only once
-
-  // Update path line layer on coordinates change
-  useEffect(() => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const draw = (L: any) => {
     const map = mapRef.current
     if (!map) return
+    const pts = pathRef.current
+    const latlngs = pts.map((c) => [c.latitude, c.longitude] as [number, number])
+    if (latlngs.length === 0) return
 
-    // Convert Coordinate[] to Mapbox coordinates format: [lng, lat][]
-    const geojsonCoords = path.map((coord) => [coord.longitude, coord.latitude])
+    if (lineRef.current) lineRef.current.setLatLngs(latlngs)
+    else lineRef.current = L.polyline(latlngs, { color: '#cdfb46', weight: 5, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }).addTo(map)
 
-    const updateSourceAndLayer = () => {
-      const sourceId = 'route-source'
-      const layerId = 'route-layer'
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mk = (ll: [number, number], color: string, label: string) =>
+      L.circleMarker(ll, { radius: 7, color: '#06080a', weight: 2.5, fillColor: color, fillOpacity: 1 }).bindPopup(label)
 
-      const existingSource = map.getSource(sourceId) as mapboxgl.GeoJSONSource | undefined
+    const startLL = latlngs[0]
+    const endLL = latlngs[latlngs.length - 1]
+    const distKm = getPathDistance(pts).toFixed(2)
 
-      if (existingSource) {
-        // Source exists, update coordinates
-        existingSource.setData({
-          type: 'Feature',
-          properties: {},
-          geometry: {
-            type: 'LineString',
-            coordinates: geojsonCoords,
-          },
-        })
-      } else {
-        // Source and layer don't exist yet, add them
-        map.addSource(sourceId, {
-          type: 'geojson',
-          data: {
-            type: 'Feature',
-            properties: {},
-            geometry: {
-              type: 'LineString',
-              coordinates: geojsonCoords,
-            },
-          },
-        })
+    if (!startRef.current) startRef.current = mk(startLL, '#cdfb46', 'Start').addTo(map)
+    else startRef.current.setLatLng(startLL)
 
-        map.addLayer({
-          id: layerId,
-          type: 'line',
-          source: sourceId,
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round',
-          },
-          paint: {
-            'line-color': '#cdfb46', // Stride's signature Lime color
-            'line-width': 5,
-            'line-opacity': 0.85,
-          },
-        })
-      }
-
-      // Maintain user current position marker
-      if (path.length > 0) {
-        const lastPoint = path[path.length - 1]
-        const lastCoords: [number, number] = [lastPoint.longitude, lastPoint.latitude]
-
-        if (!markerRef.current) {
-          // Create a custom pulsing marker
-          const markerEl = document.createElement('div')
-          markerEl.className = 'custom-pulsing-marker'
-          markerEl.style.width = '16px'
-          markerEl.style.height = '16px'
-          markerEl.style.borderRadius = '50%'
-          markerEl.style.backgroundColor = '#0a5aa2'
-          markerEl.style.border = '2.5px solid #ffffff'
-          markerEl.style.boxShadow = '0 0 10px rgba(10, 90, 162, 0.6)'
-          
-          markerRef.current = new mapboxgl.Marker({ element: markerEl })
-            .setLngLat(lastCoords)
-            .addTo(map)
-        } else {
-          markerRef.current.setLngLat(lastCoords)
-        }
-
-        // Center map to current location and adapt bounds
-        if (geojsonCoords.length > 1) {
-          const bounds = new mapboxgl.LngLatBounds()
-          geojsonCoords.forEach((coord) => bounds.extend(coord as [number, number]))
-          map.fitBounds(bounds, { padding: 40, maxZoom: 16, duration: 800 })
-        } else {
-          map.easeTo({ center: lastCoords, duration: 800 })
-        }
-      }
+    if (!endRef.current) endRef.current = mk(endLL, '#7db4e6', `${activeRef.current ? 'Current' : 'Finish'} · ${distKm} km`).addTo(map)
+    else {
+      endRef.current.setLatLng(endLL)
+      endRef.current.setPopupContent(`${activeRef.current ? 'Current' : 'Finish'} · ${distKm} km`)
     }
 
-    if (map.isStyleLoaded()) {
-      updateSourceAndLayer()
-    } else {
-      map.once('style.load', updateSourceAndLayer)
-    }
-  }, [path])
-
-  if (!MAPBOX_TOKEN) {
-    return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-center text-zinc-400">
-        <svg
-          className="w-12 h-12 text-zinc-600 mb-3"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z"
-          />
-        </svg>
-        <h4 className="font-bold text-zinc-200 mb-1">Mapbox Token Missing</h4>
-        <p className="text-xs max-w-xs">
-          Please set the <code>NEXT_PUBLIC_MAPBOX_TOKEN</code> environment variable in your{' '}
-          <code>.env.local</code> file to load the GPS tracking map.
-        </p>
-      </div>
-    )
+    if (latlngs.length > 1) map.fitBounds(latlngs, { padding: [30, 30], maxZoom: 16 })
+    else map.setView(startLL, 15)
   }
 
+  // Init once
+  useEffect(() => {
+    let cancelled = false
+    loadLeaflet()
+      .then((L) => {
+        if (cancelled || !containerRef.current || mapRef.current) return
+        const first = pathRef.current[0]
+        const center: [number, number] = first ? [first.latitude, first.longitude] : [6.5244, 3.3792]
+        const map = L.map(containerRef.current, { zoomControl: false, attributionControl: false }).setView(center, 15)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', { maxZoom: 20, subdomains: 'abcd' }).addTo(map)
+        L.control.zoom({ position: 'topright' }).addTo(map)
+        mapRef.current = map
+        draw(L)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+        lineRef.current = null
+        startRef.current = null
+        endRef.current = null
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Redraw when the path updates (live tracking)
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const L = (window as any).L
+    if (L && mapRef.current) draw(L)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [path])
+
   return (
-    <div className="relative w-full h-full rounded-2xl overflow-hidden border border-zinc-800">
-      <div ref={mapContainerRef} className="w-full h-full min-h-[350px]" />
-    </div>
+    <div
+      ref={containerRef}
+      style={{ width: '100%', height: '100%', minHeight: 200, borderRadius: 'inherit', background: '#0a0c0d' }}
+    />
   )
 }
