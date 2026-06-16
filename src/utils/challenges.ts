@@ -46,7 +46,8 @@ export async function fetchChallenges(activity?: Activity): Promise<Challenge[]>
   if (activity) q = q.eq('activity', activity)
   const { data, error } = await q
   if (error) {
-    console.error('fetchChallenges failed:', error)
+    // Most commonly the 'challenges' table hasn't been created yet — fail quietly.
+    console.warn('[challenges] not reachable yet:', error.message || error.code || 'unknown', '— run supabase/schema.sql + create the challenge-covers bucket.')
     return []
   }
   return (data as Challenge[]) || []
