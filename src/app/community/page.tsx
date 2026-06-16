@@ -11,6 +11,11 @@ import {
   joinChallenge,
   getMemberId,
 } from '@/utils/challenges'
+import {
+  type Group as DbGroup,
+  fetchGroups,
+  createGroup as apiCreateGroup,
+} from '@/utils/groups'
 
 const TICKER = [
   { name: 'Amara', city: 'Lagos', act: 'finished a 3.2 km walk', reward: '+$0.25' },
@@ -87,8 +92,18 @@ export default function CommunityPage() {
   const [groupFilter, setGroupFilter] = useState<Activity>('walk')
   const [challengeFilter, setChallengeFilter] = useState<Activity>('walk')
 
-  // Real challenges from Supabase
+  // Real challenges + groups from Supabase
   const [dbChallenges, setDbChallenges] = useState<DbChallenge[]>([])
+  const [dbGroups, setDbGroups] = useState<DbGroup[]>([])
+
+  // Create-group form
+  const [showCreateGroup, setShowCreateGroup] = useState(false)
+  const [gName, setGName] = useState('')
+  const [gDesc, setGDesc] = useState('')
+  const [gCity, setGCity] = useState('')
+  const [gFile, setGFile] = useState<File | null>(null)
+  const [gPreview, setGPreview] = useState<string | undefined>(undefined)
+  const [creatingGroup, setCreatingGroup] = useState(false)
 
   // Create-challenge form
   const [showCreate, setShowCreate] = useState(false)
@@ -110,9 +125,52 @@ export default function CommunityPage() {
     setDbChallenges(await fetchChallenges())
   }, [])
 
+  const loadGroups = useCallback(async () => {
+    setDbGroups(await fetchGroups())
+  }, [])
+
   useEffect(() => {
     loadChallenges()
-  }, [loadChallenges])
+    loadGroups()
+  }, [loadChallenges, loadGroups])
+
+  const onPickGroupImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setGFile(file)
+    setGPreview(URL.createObjectURL(file))
+  }
+
+  const handleCreateGroup = async () => {
+    const creatorId = getMemberId(address)
+    if (!creatorId) {
+      alert('Connect a wallet or set up a profile first to create a group.')
+      return
+    }
+    if (!gName.trim()) return
+    setCreatingGroup(true)
+    const created = await apiCreateGroup({
+      creatorId,
+      name: gName.trim(),
+      description: gDesc.trim(),
+      activity: groupFilter,
+      city: gCity.trim(),
+      coverFile: gFile,
+    })
+    setCreatingGroup(false)
+    if (created) {
+      setGName('')
+      setGDesc('')
+      setGCity('')
+      setGFile(null)
+      setGPreview(undefined)
+      setShowCreateGroup(false)
+      setGroupFilter(created.activity)
+      loadGroups()
+    } else {
+      alert('Could not save the group. Make sure the database + "challenge-covers" bucket exist.')
+    }
+  }
 
   const onPickImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -152,7 +210,8 @@ export default function CommunityPage() {
     }
   }
 
-  const visibleGroups = GROUPS.filter((g) => g.activity === groupFilter)
+  const visibleSeedGroups = GROUPS.filter((g) => g.activity === groupFilter)
+  const visibleDbGroups = dbGroups.filter((g) => g.activity === groupFilter)
   const visibleDb = dbChallenges.filter((c) => c.activity === challengeFilter)
   const visibleSeeds = CHALLENGES.filter((c) => c.activity === challengeFilter)
   const myId = getMemberId(address)
@@ -265,9 +324,59 @@ export default function CommunityPage() {
                 ))}
               </div>
             </div>
-            <div className="sd-meta" style={{ marginBottom: 10 }}>ACTIVE {groupFilter.toUpperCase()} GROUPS</div>
+            {/* Create a group */}
+            <button onClick={() => setShowCreateGroup((s) => !s)} className="sd-mono" style={{ width: '100%', padding: 12, borderRadius: 14, background: showCreateGroup ? 'rgba(255,255,255,0.04)' : 'rgba(205,251,70,0.1)', border: showCreateGroup ? '1px solid var(--line)' : '1px dashed rgba(205,251,70,0.4)', color: '#cdfb46', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em', cursor: 'pointer', marginBottom: 12 }}>
+              {showCreateGroup ? 'Close' : '+ Create a group'}
+            </button>
+
+            {showCreateGroup && (
+              <div className="sd-card" style={{ padding: 16, marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <input className="sd-input" placeholder="Group name (e.g. Lekki Runners)" value={gName} onChange={(e) => setGName(e.target.value)} />
+                <input className="sd-input" placeholder="Description (optional)" value={gDesc} onChange={(e) => setGDesc(e.target.value)} />
+                <input className="sd-input" placeholder="City (optional)" value={gCity} onChange={(e) => setGCity(e.target.value)} />
+                <label className="sd-mono" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 12, borderRadius: 12, border: '1px dashed var(--line-strong)', color: 'var(--muted)', fontSize: 12, cursor: 'pointer', overflow: 'hidden' }}>
+                  {gPreview ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={gPreview} alt="cover" style={{ height: 60, width: '100%', objectFit: 'cover', borderRadius: 8 }} />
+                  ) : (
+                    <>↑ Upload a cover image (optional)</>
+                  )}
+                  <input type="file" accept="image/*" onChange={onPickGroupImage} style={{ display: 'none' }} />
+                </label>
+                <button onClick={handleCreateGroup} disabled={!gName.trim() || creatingGroup} className="sd-btn sd-btn-lime" style={{ fontSize: 13, padding: 13 }}>{creatingGroup ? 'Creating…' : `Create ${groupFilter} group`}</button>
+              </div>
+            )}
+
+            {/* Real groups */}
+            {visibleDbGroups.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: visibleSeedGroups.length ? 16 : 0 }}>
+                {visibleDbGroups.map((g) => (
+                  <Link key={g.id} href={`/community/group/${g.id}`} className="sd-card" style={{ padding: 14, textDecoration: 'none', color: 'inherit', display: 'block', overflow: 'hidden' }}>
+                    {g.cover_url && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={g.cover_url} alt={g.name} style={{ width: 'calc(100% + 28px)', height: 70, objectFit: 'cover', margin: '-14px -14px 12px' }} />
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 34, height: 34, borderRadius: 11, background: 'rgba(205,251,70,0.12)', color: '#cdfb46', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                        {g.activity === 'walk'
+                          ? <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="13" cy="4.5" r="1.8" /><path d="M11 8l3 1 1 4M14 9l-2 5-2 4M12 14l3 5" /></svg>
+                          : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="14" cy="5" r="2" /><path d="M12 8l-3 3 2 3 1 5M11 14l-4 1M13 11l4 2 1-3" /></svg>}
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: 13, lineHeight: 1.2 }}>{g.name}{myId && g.creator_wallet === myId && <span className="sd-mono" style={{ fontSize: 8, marginLeft: 6, color: '#cdfb46' }}>YOURS</span>}</div>
+                        <div className="sd-mono" style={{ fontSize: 10, color: 'var(--muted-2)', marginTop: 2 }}>{g.city || 'Anywhere'}</div>
+                      </div>
+                    </div>
+                    <div className="sd-mono" style={{ marginTop: 10, fontSize: 10, color: '#cdfb46', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Open →</div>
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            {/* Featured example groups */}
+            {visibleSeedGroups.length > 0 && <div className="sd-meta" style={{ marginBottom: 10 }}>FEATURED</div>}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              {visibleGroups.map((g) => (
+              {visibleSeedGroups.map((g) => (
                 <div key={g.name} className="sd-card" style={{ padding: 14 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ width: 34, height: 34, borderRadius: 11, background: 'rgba(205,251,70,0.12)', color: '#cdfb46', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
@@ -280,7 +389,7 @@ export default function CommunityPage() {
                       <div className="sd-mono" style={{ fontSize: 10, color: 'var(--muted-2)', marginTop: 2 }}>{g.city} · {g.members}</div>
                     </div>
                   </div>
-                  <button className="sd-mono" style={{ width: '100%', marginTop: 12, padding: '8px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--line-strong)', color: '#cdfb46', fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', cursor: 'pointer' }}>Join</button>
+                  <div className="sd-mono" style={{ width: '100%', marginTop: 12, padding: '8px', borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--line)', color: 'var(--muted-2)', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'center' }}>Example</div>
                 </div>
               ))}
             </div>
