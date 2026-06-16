@@ -3,7 +3,19 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/utils/supabase'
-import { BookOpen, Clock, Search, ChevronRight, RefreshCw, Sun, Moon } from 'lucide-react'
+import { BookOpen, Clock, Search, ChevronRight, RefreshCw, Sun, Moon, Quote, RotateCw } from 'lucide-react'
+import AskAI from '@/components/AskAI'
+
+const QUOTES = [
+  'The miracle isn’t that you finished. It’s that you had the courage to start.',
+  'You don’t have to be fast. You just have to be consistent.',
+  'A one-hour walk is 24 hours of momentum.',
+  'Your only competition is who you were yesterday.',
+  'Discipline is choosing what you want most over what you want now.',
+  'Every step you stake on yourself pays you back twice.',
+  'Slow progress is still progress. Keep moving.',
+  'The hardest step is the one out the door.',
+]
 
 interface ContentItem {
   id: string
@@ -87,6 +99,7 @@ export default function ContentHubPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState<'all' | 'warmup' | 'cooldown' | 'guide'>('all')
   const [activeActivity, setActiveActivity] = useState<'all' | 'walk' | 'run' | 'both'>('all')
+  const [qIdx, setQIdx] = useState(0)
 
   useEffect(() => {
     async function fetchGuides() {
@@ -147,6 +160,46 @@ export default function ContentHubPage() {
       <div className="sd-eyebrow">No wallet needed</div>
       <h1 className="sd-display" style={{ fontSize: 34, marginTop: 12 }}>Movement<br />library</h1>
       <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 12 }}>Prep, recover and breathe better. Free, works offline.</p>
+
+      {/* Coaching & motivation */}
+      <div className="sd-section-row" style={{ marginTop: 24 }}>
+        <h2 className="sd-section">Coaching</h2>
+        <span className="sd-meta">AI + Motivation</span>
+      </div>
+
+      {/* Daily motivation */}
+      <div className="sd-card-lime sd-card-glow" style={{ padding: 20, marginBottom: 14 }}>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <span className="sd-mono" style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#cdfb46', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Quote className="h-3.5 w-3.5" /> Daily motivation</span>
+          <button onClick={() => setQIdx((i) => (i + 1) % QUOTES.length)} aria-label="New quote" style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 7, color: '#cdfb46', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
+            <RotateCw className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        <p style={{ position: 'relative', fontFamily: "'Archivo Expanded',sans-serif", fontWeight: 700, fontSize: 18, lineHeight: 1.3 }}>{QUOTES[qIdx]}</p>
+      </div>
+
+      {/* AI running coach + recovery advisor */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 8 }}>
+        <AskAI
+          mode="coach"
+          title="AI running coach"
+          subtitle="Ask about training, pacing, form, or staying motivated."
+          placeholder="e.g. how do I build up to my first 5k?"
+          cta="Ask the coach"
+        />
+        <AskAI
+          mode="recovery"
+          title="Recovery advisor"
+          subtitle="Tell it how you feel after a session for recovery tips."
+          placeholder="e.g. my calves are tight and sore after a 4km run"
+          cta="Get recovery tips"
+        />
+      </div>
+
+      <div className="sd-section-row" style={{ marginTop: 26 }}>
+        <h2 className="sd-section">Library</h2>
+        <span className="sd-meta">Warmups · Cooldowns · Guides</span>
+      </div>
 
       {/* Search */}
       <div style={{ position: 'relative', marginTop: 20 }}>
