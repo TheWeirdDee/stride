@@ -348,7 +348,7 @@ export default function ProfilePage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ display: 'flex', gap: 8, padding: 12, borderRadius: 12, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', color: '#fbbf24', fontSize: 12 }}>
-              <AlertCircle className="h-4 w-4 shrink-0" style={{ marginTop: 1 }} /> Exploring as a guest. Connect to save on-chain and earn rewards.
+              <AlertCircle className="h-4 w-4 shrink-0" style={{ marginTop: 1 }} /> Connect a wallet to save your progress on-chain and earn rewards.
             </div>
             <button onClick={handleConnect} className="sd-btn sd-btn-lime" style={{ fontSize: 13, padding: 13 }}><Wallet className="h-4 w-4" /> Connect wallet</button>
           </div>
