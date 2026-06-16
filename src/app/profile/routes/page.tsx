@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useAccount, useConnect } from 'wagmi'
 import { supabase } from '@/utils/supabase'
 import RouteCard from '@/components/RouteCard'
@@ -195,18 +196,19 @@ export default function ProfileRoutesPage() {
             const km = (s.actual_distance || 0) / 1000
             const mins = Math.round((s.duration_secs || 0) / 60)
             return (
-              <RouteCard
-                key={s.id}
-                id={s.id}
-                city={city}
-                distanceKm={km}
-                durationMinutes={mins}
-                rewardCUSD={0}
-                date={new Date(s.started_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                activityType={km >= 4 ? 'run' : 'walk'}
-                svgPath={coordsToSvgPath(s.routes?.[0]?.coordinates)}
-                imageUrl={s.routes?.[0]?.map_snapshot ?? undefined}
-              />
+              <Link key={s.id} href={`/profile/routes/${s.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                <RouteCard
+                  id={s.id}
+                  city={city}
+                  distanceKm={km}
+                  durationMinutes={mins}
+                  rewardCUSD={0}
+                  date={new Date(s.started_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  activityType={km >= 4 ? 'run' : 'walk'}
+                  svgPath={coordsToSvgPath(s.routes?.[0]?.coordinates)}
+                  imageUrl={s.routes?.[0]?.map_snapshot ?? undefined}
+                />
+              </Link>
             )
           })}
         </div>
