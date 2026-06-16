@@ -1,6 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
+import { useAccount } from 'wagmi'
+import {
+  type Activity,
+  type Challenge as DbChallenge,
+  fetchChallenges,
+  createChallenge as apiCreateChallenge,
+  joinChallenge,
+  getMemberId,
+} from '@/utils/challenges'
 
 const TICKER = [
   { name: 'Amara', city: 'Lagos', act: 'finished a 3.2 km walk', reward: '+$0.25' },
@@ -27,20 +37,17 @@ const MOVERS = [
   { rank: '05', name: 'Fatou D.', city: 'Dakar', km: '88', streak: 12 },
 ]
 
-type Activity = 'walk' | 'run'
-
-interface Challenge {
+interface SeedChallenge {
   title: string
   sub: string
   activity: Activity
   progress: number
   value: string
   joined: string
-  image?: string
-  custom?: boolean
 }
 
-const CHALLENGES: Challenge[] = [
+// Featured example challenges (display-only, alongside real DB challenges).
+const CHALLENGES: SeedChallenge[] = [
   { title: 'June 50K Walk', sub: 'Cover 50 km this month', activity: 'walk', progress: 64, value: '32 / 50 km', joined: '2,140 in' },
   { title: 'Sunrise Steps', sub: '5 morning walks this week', activity: 'walk', progress: 40, value: '2 / 5 done', joined: '710 in' },
   { title: 'Weekend Warrior', sub: '3 runs Sat–Sun', activity: 'run', progress: 33, value: '1 / 3 done', joined: '880 in' },
@@ -74,63 +81,81 @@ export default function CommunityPage() {
   const [variant, setVariant] = useState<'signal' | 'atlas'>('signal')
   const [idx, setIdx] = useState(0)
 
+  const { address } = useAccount()
+
   // Walk/Run filters for groups + challenges
   const [groupFilter, setGroupFilter] = useState<Activity>('walk')
   const [challengeFilter, setChallengeFilter] = useState<Activity>('walk')
 
-  // User-created challenges (persisted to localStorage)
-  const [userChallenges, setUserChallenges] = useState<Challenge[]>([])
+  // Real challenges from Supabase
+  const [dbChallenges, setDbChallenges] = useState<DbChallenge[]>([])
+
+  // Create-challenge form
   const [showCreate, setShowCreate] = useState(false)
   const [cTitle, setCTitle] = useState('')
-  const [cGoal, setCGoal] = useState('')
+  const [cDesc, setCDesc] = useState('')
   const [cActivity, setCActivity] = useState<Activity>('walk')
-  const [cImage, setCImage] = useState<string | undefined>(undefined)
+  const [cGoalKm, setCGoalKm] = useState('5')
+  const [cDays, setCDays] = useState(30)
+  const [cFile, setCFile] = useState<File | null>(null)
+  const [cPreview, setCPreview] = useState<string | undefined>(undefined)
+  const [creating, setCreating] = useState(false)
 
   useEffect(() => {
     const t = setInterval(() => setIdx((i) => (i + 1) % TICKER.length), 2600)
     return () => clearInterval(t)
   }, [])
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem('stride_user_challenges')
-      if (raw) setUserChallenges(JSON.parse(raw))
-    } catch {}
+  const loadChallenges = useCallback(async () => {
+    setDbChallenges(await fetchChallenges())
   }, [])
+
+  useEffect(() => {
+    loadChallenges()
+  }, [loadChallenges])
 
   const onPickImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => setCImage(reader.result as string)
-    reader.readAsDataURL(file)
+    setCFile(file)
+    setCPreview(URL.createObjectURL(file))
   }
 
-  const createChallenge = () => {
-    if (!cTitle.trim()) return
-    const nc: Challenge = {
-      title: cTitle.trim(),
-      sub: cGoal.trim() || 'Custom challenge',
-      activity: cActivity,
-      progress: 0,
-      value: 'Just created',
-      joined: '1 in',
-      image: cImage,
-      custom: true,
+  const handleCreate = async () => {
+    const creatorId = getMemberId(address)
+    if (!creatorId) {
+      alert('Connect a wallet or set up a profile first to create a challenge.')
+      return
     }
-    const next = [nc, ...userChallenges]
-    setUserChallenges(next)
-    try { localStorage.setItem('stride_user_challenges', JSON.stringify(next)) } catch {}
-    setCTitle('')
-    setCGoal('')
-    setCImage(undefined)
-    setCActivity(challengeFilter)
-    setShowCreate(false)
+    if (!cTitle.trim()) return
+    setCreating(true)
+    const created = await apiCreateChallenge({
+      creatorId,
+      title: cTitle.trim(),
+      description: cDesc.trim(),
+      activity: cActivity,
+      goalKm: parseFloat(cGoalKm) || 1,
+      durationDays: cDays,
+      coverFile: cFile,
+    })
+    setCreating(false)
+    if (created) {
+      setCTitle('')
+      setCDesc('')
+      setCFile(null)
+      setCPreview(undefined)
+      setShowCreate(false)
+      setChallengeFilter(created.activity)
+      loadChallenges()
+    } else {
+      alert('Could not save the challenge. Make sure the database + "challenge-covers" bucket exist.')
+    }
   }
 
-  const allChallenges = [...userChallenges, ...CHALLENGES]
   const visibleGroups = GROUPS.filter((g) => g.activity === groupFilter)
-  const visibleChallenges = allChallenges.filter((c) => c.activity === challengeFilter)
+  const visibleDb = dbChallenges.filter((c) => c.activity === challengeFilter)
+  const visibleSeeds = CHALLENGES.filter((c) => c.activity === challengeFilter)
+  const myId = getMemberId(address)
 
   const tk = TICKER[idx]
 
@@ -302,53 +327,80 @@ export default function CommunityPage() {
             {showCreate && (
               <div className="sd-card" style={{ padding: 16, marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <input className="sd-input" placeholder="Challenge title (e.g. Lagos 100K)" value={cTitle} onChange={(e) => setCTitle(e.target.value)} />
-                <input className="sd-input" placeholder="Goal / description (e.g. Walk 100 km in June)" value={cGoal} onChange={(e) => setCGoal(e.target.value)} />
+                <input className="sd-input" placeholder="Description (optional)" value={cDesc} onChange={(e) => setCDesc(e.target.value)} />
                 <div style={{ display: 'flex', gap: 8 }}>
                   {(['walk', 'run'] as Activity[]).map((a) => (
                     <button key={a} onClick={() => setCActivity(a)} className="sd-mono" style={{ flex: 1, padding: 11, borderRadius: 12, fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em', cursor: 'pointer', background: cActivity === a ? '#cdfb46' : 'rgba(255,255,255,0.04)', color: cActivity === a ? '#06080a' : 'var(--muted)', border: cActivity === a ? '1px solid #cdfb46' : '1px solid var(--line-strong)' }}>{a}</button>
                   ))}
                 </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <label className="sd-mono" style={{ display: 'block', fontSize: 9, letterSpacing: '0.12em', color: 'var(--muted-2)', textTransform: 'uppercase', marginBottom: 6 }}>Goal (km)</label>
+                    <input className="sd-input sd-mono" type="number" min="1" value={cGoalKm} onChange={(e) => setCGoalKm(e.target.value)} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label className="sd-mono" style={{ display: 'block', fontSize: 9, letterSpacing: '0.12em', color: 'var(--muted-2)', textTransform: 'uppercase', marginBottom: 6 }}>Window</label>
+                    <select className="sd-select" value={cDays} onChange={(e) => setCDays(Number(e.target.value))}>
+                      <option value={7}>7 days</option>
+                      <option value={14}>14 days</option>
+                      <option value={30}>30 days</option>
+                    </select>
+                  </div>
+                </div>
                 <label className="sd-mono" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 12, borderRadius: 12, border: '1px dashed var(--line-strong)', color: 'var(--muted)', fontSize: 12, cursor: 'pointer', overflow: 'hidden' }}>
-                  {cImage ? (
+                  {cPreview ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={cImage} alt="cover" style={{ height: 60, width: '100%', objectFit: 'cover', borderRadius: 8 }} />
+                    <img src={cPreview} alt="cover" style={{ height: 60, width: '100%', objectFit: 'cover', borderRadius: 8 }} />
                   ) : (
                     <>↑ Upload a cover image (optional)</>
                   )}
                   <input type="file" accept="image/*" onChange={onPickImage} style={{ display: 'none' }} />
                 </label>
-                <button onClick={createChallenge} disabled={!cTitle.trim()} className="sd-btn sd-btn-lime" style={{ fontSize: 13, padding: 13 }}>Create challenge</button>
+                <button onClick={handleCreate} disabled={!cTitle.trim() || creating} className="sd-btn sd-btn-lime" style={{ fontSize: 13, padding: 13 }}>{creating ? 'Creating…' : 'Create challenge'}</button>
               </div>
             )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {visibleChallenges.length === 0 && (
-                <div className="sd-card" style={{ textAlign: 'center', padding: 24, borderStyle: 'dashed', fontSize: 13, color: 'var(--muted)' }}>No {challengeFilter} challenges yet — create the first one.</div>
-              )}
-              {visibleChallenges.map((ch, i) => (
-                <div key={`${ch.title}-${i}`} className="sd-card" style={{ overflow: 'hidden' }}>
-                  {ch.image && (
+              {/* Real challenges from the network */}
+              {visibleDb.map((c) => (
+                <Link key={c.id} href={`/community/challenge/${c.id}`} className="sd-card" style={{ overflow: 'hidden', textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                  {c.cover_url && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={ch.image} alt={ch.title} style={{ width: '100%', height: 110, objectFit: 'cover' }} />
+                    <img src={c.cover_url} alt={c.title} style={{ width: '100%', height: 110, objectFit: 'cover' }} />
                   )}
                   <div style={{ padding: 16 }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-                      <div>
-                        <div style={{ fontFamily: "'Archivo Expanded',sans-serif", fontWeight: 800, fontSize: 17, textTransform: 'uppercase' }}>
-                          {ch.title}
-                          {ch.custom && <span className="sd-mono" style={{ fontSize: 8, marginLeft: 8, padding: '2px 6px', borderRadius: 999, background: 'rgba(205,251,70,0.15)', color: '#cdfb46', letterSpacing: '0.1em', verticalAlign: 'middle' }}>YOURS</span>}
-                        </div>
-                        <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{ch.sub}</div>
+                      <div style={{ fontFamily: "'Archivo Expanded',sans-serif", fontWeight: 800, fontSize: 17, textTransform: 'uppercase' }}>
+                        {c.title}
+                        {myId && c.creator_wallet === myId && <span className="sd-mono" style={{ fontSize: 8, marginLeft: 8, padding: '2px 6px', borderRadius: 999, background: 'rgba(205,251,70,0.15)', color: '#cdfb46', letterSpacing: '0.1em', verticalAlign: 'middle' }}>YOURS</span>}
                       </div>
-                      <span className="sd-mono" style={{ fontSize: 9, color: 'var(--muted-2)', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{ch.joined}</span>
+                      <span className="sd-mono" style={{ fontSize: 9, color: c.status === 'active' ? '#cdfb46' : 'var(--muted-2)', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{c.status}</span>
                     </div>
-                    <div style={{ height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.08)', overflow: 'hidden', marginTop: 12 }}>
-                      <div style={{ height: '100%', width: `${ch.progress}%`, background: '#cdfb46', borderRadius: 999 }} />
+                    {c.description && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{c.description}</div>}
+                    <div className="sd-mono" style={{ fontSize: 11, color: 'var(--muted-2)', marginTop: 8 }}>Goal {(c.goal_value / 1000).toFixed(0)} km · tap to open →</div>
+                  </div>
+                </Link>
+              ))}
+
+              {/* Featured examples */}
+              {visibleSeeds.length > 0 && (
+                <div className="sd-meta" style={{ marginTop: 4 }}>FEATURED</div>
+              )}
+              {visibleSeeds.map((ch, i) => (
+                <div key={`seed-${i}`} className="sd-card" style={{ padding: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                    <div>
+                      <div style={{ fontFamily: "'Archivo Expanded',sans-serif", fontWeight: 800, fontSize: 17, textTransform: 'uppercase' }}>{ch.title}</div>
+                      <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{ch.sub}</div>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 7 }}>
-                      <span className="sd-mono" style={{ fontSize: 11, color: '#cdfb46', fontWeight: 700 }}>{ch.value}</span>
-                      <span className="sd-mono" style={{ fontSize: 11, color: 'var(--muted-2)' }}>{ch.progress}%</span>
-                    </div>
+                    <span className="sd-mono" style={{ fontSize: 9, color: 'var(--muted-2)', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{ch.joined}</span>
+                  </div>
+                  <div style={{ height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.08)', overflow: 'hidden', marginTop: 12 }}>
+                    <div style={{ height: '100%', width: `${ch.progress}%`, background: '#cdfb46', borderRadius: 999 }} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 7 }}>
+                    <span className="sd-mono" style={{ fontSize: 11, color: '#cdfb46', fontWeight: 700 }}>{ch.value}</span>
+                    <span className="sd-mono" style={{ fontSize: 11, color: 'var(--muted-2)' }}>{ch.progress}%</span>
                   </div>
                 </div>
               ))}
