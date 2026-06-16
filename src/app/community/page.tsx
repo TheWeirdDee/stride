@@ -19,6 +19,26 @@ const CITIES = [
   { rank: '05', name: 'Cape Town', km: '1,876', users: '489', w: '45%' },
 ]
 
+const MOVERS = [
+  { rank: '01', name: 'Amara O.', city: 'Lagos', km: '128', streak: 21 },
+  { rank: '02', name: 'David K.', city: 'Nairobi', km: '116', streak: 14 },
+  { rank: '03', name: 'Zanele M.', city: 'Cape Town', km: '102', streak: 30 },
+  { rank: '04', name: 'Kwame A.', city: 'Accra', km: '97', streak: 9 },
+  { rank: '05', name: 'Fatou D.', city: 'Dakar', km: '88', streak: 12 },
+]
+
+const CHALLENGES = [
+  { title: 'June 50K', sub: 'Cover 50 km this month', progress: 64, value: '32 / 50 km', joined: '2,140 in' },
+  { title: 'Weekend Warrior', sub: '3 sessions Sat–Sun', progress: 33, value: '1 / 3 done', joined: '880 in' },
+]
+
+const FINISHES = [
+  { name: 'Amara', city: 'Lagos', detail: '3.2 km walk · 28:14', reward: '+$0.25', fire: 12 },
+  { name: 'David', city: 'Nairobi', detail: '5.0 km run · 31:40', reward: '+$0.50', fire: 8 },
+  { name: 'Zanele', city: 'Cape Town', detail: '2.0 km walk · 19:05', reward: '+$0.10', fire: 5 },
+  { name: 'Kwame', city: 'Accra', detail: '7.4 km run · 52:03', reward: '+$0.75', fire: 21 },
+]
+
 export default function CommunityPage() {
   const [variant, setVariant] = useState<'signal' | 'atlas'>('signal')
   const [idx, setIdx] = useState(0)
@@ -89,6 +109,28 @@ export default function CommunityPage() {
             </div>
           </div>
 
+          {/* Reward pool */}
+          <div className="sd-card-lime sd-card-glow" style={{ marginTop: 14, padding: 20 }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div className="sd-mono" style={{ fontWeight: 700, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#cdfb46' }}>Community reward pool</div>
+              <span className="sd-mono" style={{ fontSize: 9, color: 'var(--muted-2)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Live</span>
+            </div>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 8 }}>
+              <span className="sd-mono" style={{ fontWeight: 800, fontSize: 44, lineHeight: 0.9, color: '#cdfb46' }}>$8,412</span>
+              <span style={{ fontSize: 13, color: 'var(--muted)' }}>in escrow</span>
+            </div>
+            <div style={{ position: 'relative', display: 'flex', gap: 10, marginTop: 16 }}>
+              <div style={{ flex: 1, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 13, padding: '11px 13px' }}>
+                <div className="sd-mono" style={{ fontSize: 9, letterSpacing: '0.12em', color: 'var(--muted-2)', textTransform: 'uppercase' }}>Paid this week</div>
+                <div className="sd-mono" style={{ fontWeight: 800, fontSize: 16, marginTop: 3 }}>$1,940</div>
+              </div>
+              <div style={{ flex: 1, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 13, padding: '11px 13px' }}>
+                <div className="sd-mono" style={{ fontSize: 9, letterSpacing: '0.12em', color: 'var(--muted-2)', textTransform: 'uppercase' }}>From forfeits</div>
+                <div className="sd-mono" style={{ fontWeight: 800, fontSize: 16, marginTop: 3 }}>$612</div>
+              </div>
+            </div>
+          </div>
+
           {/* Heat density map */}
           <div style={{ marginTop: 14, position: 'relative', height: 230, borderRadius: 24, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', background: 'radial-gradient(130% 120% at 25% 15%, rgba(10,46,78,0.5), transparent 55%), #080b0d' }}>
             <div className="sd-grid" style={{ position: 'absolute', inset: 0 }} />
@@ -121,6 +163,78 @@ export default function CommunityPage() {
                     <span className="sd-mono" style={{ fontSize: 10, color: 'var(--muted-2)', marginLeft: 3 }}>km</span>
                     <div className="sd-mono" style={{ fontSize: 9, color: 'var(--muted-2)', letterSpacing: '0.05em', marginTop: 1 }}>{c.users} active</div>
                   </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Active challenges */}
+          <div style={{ marginTop: 24 }}>
+            <div className="sd-section-row">
+              <h2 className="sd-section">Active challenges</h2>
+              <span className="sd-meta">JOIN FREE</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {CHALLENGES.map((ch) => (
+                <div key={ch.title} className="sd-card" style={{ padding: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ fontFamily: "'Archivo Expanded',sans-serif", fontWeight: 800, fontSize: 17, textTransform: 'uppercase' }}>{ch.title}</div>
+                      <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{ch.sub}</div>
+                    </div>
+                    <span className="sd-mono" style={{ fontSize: 9, color: 'var(--muted-2)', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{ch.joined}</span>
+                  </div>
+                  <div style={{ height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.08)', overflow: 'hidden', marginTop: 12 }}>
+                    <div style={{ height: '100%', width: `${ch.progress}%`, background: '#cdfb46', borderRadius: 999 }} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 7 }}>
+                    <span className="sd-mono" style={{ fontSize: 11, color: '#cdfb46', fontWeight: 700 }}>{ch.value}</span>
+                    <span className="sd-mono" style={{ fontSize: 11, color: 'var(--muted-2)' }}>{ch.progress}%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Top movers */}
+          <div style={{ marginTop: 24 }}>
+            <div className="sd-section-row">
+              <h2 className="sd-section">Top movers</h2>
+              <span className="sd-meta">THIS WEEK</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, overflow: 'hidden' }}>
+              {MOVERS.map((m) => (
+                <div key={m.rank} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#0c0f11', padding: '13px 16px' }}>
+                  <span className="sd-mono" style={{ fontWeight: 800, fontSize: 14, color: '#cdfb46', width: 22 }}>{m.rank}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{m.name}</div>
+                    <div className="sd-mono" style={{ fontSize: 10, color: 'var(--muted-2)', marginTop: 1 }}>{m.city}</div>
+                  </div>
+                  <span className="sd-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: '#fbbf24', marginRight: 12 }}>🔥{m.streak}</span>
+                  <span className="sd-mono" style={{ fontWeight: 800, fontSize: 14, width: 50, textAlign: 'right' }}>{m.km}<small style={{ color: 'var(--muted-2)', fontWeight: 400 }}>km</small></span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Recent finishes */}
+          <div style={{ marginTop: 24 }}>
+            <div className="sd-section-row">
+              <h2 className="sd-section">Recent finishes</h2>
+              <span className="sd-meta">NETWORK</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {FINISHES.map((f, i) => (
+                <div key={i} className="sd-card" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 14 }}>
+                  <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(205,251,70,0.12)', color: '#cdfb46', display: 'grid', placeItems: 'center', fontWeight: 800, fontFamily: "'Archivo Expanded',sans-serif", flexShrink: 0 }}>{f.name[0]}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>{f.name} <span style={{ color: 'var(--muted-2)', fontWeight: 400 }}>· {f.city}</span></div>
+                    <div className="sd-mono" style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>{f.detail}</div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div className="sd-mono" style={{ fontWeight: 800, fontSize: 13, color: '#cdfb46' }}>{f.reward}</div>
+                    <div className="sd-mono" style={{ fontSize: 11, color: 'var(--muted-2)', marginTop: 1 }}>🔥 {f.fire}</div>
+                  </div>
                 </div>
               ))}
             </div>
