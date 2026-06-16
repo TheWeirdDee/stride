@@ -138,8 +138,40 @@ INSERT INTO content (type, title, body, duration, phase, activity) VALUES
     'guide', 
     'Beginner Guide: Your First 2km', 
     '1. Pace yourself — Starting slow is key. There is no need to speed walk. Maintain a comfortable, sustainable pace.\n2. Shoe choice — Wear flat, supportive athletic shoes. Avoid sandals, slides, or heavy boots.\n3. Out and back — If unsure of route, walk 1km in one direction, then turn around. It ensures you do not get stuck far from home.\n4. Listen to body — If you experience sharp joint pain or extreme breathlessness, slow down or take a break.\n5. Consistency wins — Completing the distance is the goal. Celebrate showing up and logging the route on-chain.', 
-    15, 
-    'anytime', 
+    15,
+    'anytime',
     'walk'
 )
 ON CONFLICT DO NOTHING;
+
+-- 7. Create 'challenges' table (community challenges, user-creatable)
+CREATE TABLE IF NOT EXISTS challenges (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    creator_wallet TEXT NOT NULL,                       -- wallet address OR guest id of the creator
+    title TEXT NOT NULL,
+    description TEXT,
+    activity TEXT NOT NULL CHECK (activity IN ('walk', 'run')),
+    goal_value NUMERIC NOT NULL,                         -- target distance in meters
+    starts_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    ends_at TIMESTAMP WITH TIME ZONE,
+    cover_url TEXT,                                      -- public URL in the 'challenge-covers' bucket
+    status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed', 'cancelled')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_challenges_activity_status ON challenges(activity, status);
+CREATE INDEX IF NOT EXISTS idx_challenges_creator ON challenges(creator_wallet);
+
+-- 8. Create 'challenge_participants' table
+CREATE TABLE IF NOT EXISTS challenge_participants (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    challenge_id UUID NOT NULL REFERENCES challenges(id) ON DELETE CASCADE,
+    wallet_address TEXT NOT NULL,
+    joined_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    progress NUMERIC DEFAULT 0 NOT NULL,                 -- meters covered toward goal (cached)
+    completed_at TIMESTAMP WITH TIME ZONE,
+    UNIQUE (challenge_id, wallet_address)
+);
+
+CREATE INDEX IF NOT EXISTS idx_challenge_participants_challenge ON challenge_participants(challenge_id);
+CREATE INDEX IF NOT EXISTS idx_challenge_participants_wallet ON challenge_participants(wallet_address);
