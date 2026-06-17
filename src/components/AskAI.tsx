@@ -62,7 +62,6 @@ export default function AskAI({ mode, title, subtitle, placeholder, cta, accent 
       {answer && (
         <div style={{ marginTop: 12, padding: 14, borderRadius: 12, background: 'rgba(205,251,70,0.06)', border: '1px solid rgba(205,251,70,0.18)', fontSize: 13.5, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{answer}</div>
       )}
-      <div className="sd-mono" style={{ fontSize: 9, color: 'var(--muted-3)', marginTop: 10, textTransform: 'uppercase', letterSpacing: '0.1em' }}>AI estimate · not medical advice</div>
     </div>
   )
 }
