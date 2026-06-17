@@ -132,7 +132,6 @@ export default function ContentHubPage() {
     fetchGuides()
   }, [])
 
-  // Filter guides based on search query, tabs, and activity filters
   const filteredGuides = guides.filter((g) => {
     const matchesSearch = g.title.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesTab = activeTab === 'all' || g.type === activeTab
