@@ -22,8 +22,6 @@ interface SessionRow {
   routes?: { coordinates: RouteCoord[] | null; map_snapshot: string | null }[] | null
 }
 
-// Project a GPS path into RouteCard's 200x120 viewBox (start ~bottom-left,
-// end ~top-right to line up with the card's fixed start/end markers).
 function coordsToSvgPath(coords: RouteCoord[] | null | undefined): string {
   if (!coords || coords.length < 2) {
     return 'M20 100 L 70 70 L 110 80 L 150 45 L 180 20'
