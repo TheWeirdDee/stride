@@ -100,7 +100,7 @@ export default function NewCommitmentPage() {
   const goalDisplay = goalType === 'distance' ? goalValue.toFixed(1) : goalValue.toLocaleString()
   const goalUnit = goalType === 'distance' ? 'KM' : 'STEPS'
 
-  // ── Loading ──────────────────────────────────────────────
+  
   if (isPending || isConfirming) {
     return (
       <div className="sd-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '70vh', textAlign: 'center' }}>
