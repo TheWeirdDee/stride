@@ -138,7 +138,6 @@ export default function ChallengeDetailPage() {
         </div>
       </div>
 
-      {/* My progress */}
       {myId && (
         <div className="sd-card-lime sd-card-glow" style={{ padding: 18, marginTop: 14 }}>
           <div className="sd-mono" style={{ position: 'relative', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#cdfb46' }}>Your progress</div>
