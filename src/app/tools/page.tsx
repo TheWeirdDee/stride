@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Gauge, Flame, Scale, Target, Utensils } from 'lucide-react'
+import { Gauge, Flame, Scale, Target } from 'lucide-react'
 import AskAI from '@/components/AskAI'
 
 const LABEL: React.CSSProperties = { display: 'block', fontSize: 9, letterSpacing: '0.12em', color: 'var(--muted-2)', textTransform: 'uppercase', marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }
@@ -80,7 +80,11 @@ function BurnCalc() {
 function BmiCalc() {
   const [h, setH] = useState('170')
   const [w, setW] = useState('70')
-  const hm = (parseFloat(h) || 0) / 100
+  // Auto-detect the height unit by magnitude: a value of 10 or below is treated
+  // as feet (e.g. 5.8 ft), anything larger as centimetres (e.g. 170 cm).
+  const hRaw = parseFloat(h) || 0
+  const hUnit: 'ft' | 'cm' = hRaw > 0 && hRaw <= 10 ? 'ft' : 'cm'
+  const hm = hUnit === 'ft' ? hRaw * 0.3048 : hRaw / 100
   const wk = parseFloat(w) || 0
   const bmi = hm > 0 ? wk / (hm * hm) : 0
   const cat = bmi === 0 ? '—' : bmi < 18.5 ? 'Underweight' : bmi < 25 ? 'Healthy' : bmi < 30 ? 'Overweight' : 'Obese'
@@ -88,9 +92,13 @@ function BmiCalc() {
   const hi = hm > 0 ? (24.9 * hm * hm).toFixed(1) : '0'
   return (
     <div className="sd-card" style={{ padding: 18 }}>
-      <SectionHead icon={<Scale className="h-5 w-5" />} title="BMI & metrics" sub="Body mass index and healthy range" />
+      <SectionHead icon={<Scale className="h-5 w-5" />} title="BMI & metrics" sub="Enter height in cm (e.g. 170) or feet (e.g. 5.8) — auto-detected" />
       <div style={{ display: 'flex', gap: 10 }}>
-        <div style={{ flex: 1 }}><label style={LABEL}>Height (cm)</label><input className="sd-input sd-mono" type="number" value={h} onChange={(e) => setH(e.target.value)} /></div>
+        <div style={{ flex: 1 }}>
+          <label style={LABEL}>Height (cm or ft)</label>
+          <input className="sd-input sd-mono" type="number" value={h} onChange={(e) => setH(e.target.value)} />
+          {hRaw > 0 && <div className="sd-mono" style={{ fontSize: 9, color: 'var(--muted-2)', marginTop: 4 }}>Read as {hUnit === 'ft' ? `${hRaw} ft (${(hm * 100).toFixed(0)} cm)` : `${hRaw} cm`}</div>}
+        </div>
         <div style={{ flex: 1 }}><label style={LABEL}>Weight (kg)</label><input className="sd-input sd-mono" type="number" value={w} onChange={(e) => setW(e.target.value)} /></div>
       </div>
       <Result value={bmi ? bmi.toFixed(1) : '—'} unit={cat} note={hm > 0 ? `Healthy weight for your height: ${lo}–${hi} kg` : undefined} />
@@ -155,10 +163,6 @@ export default function ToolsPage() {
         <BurnCalc />
         <BmiCalc />
         <GoalPlanner />
-      </div>
-
-      <div className="sd-mono" style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', marginTop: 24, fontSize: 9, color: 'var(--muted-3)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-        <Utensils className="h-3 w-3" /> Estimates only — not medical advice
       </div>
     </div>
   )
