@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useAccount, useConnect, useDisconnect, useBalance } from 'wagmi'
 import { formatEther } from 'viem'
 import { supabase } from '@/utils/supabase'
@@ -70,6 +70,29 @@ export default function ProfilePage() {
   })
 
   const balance = balanceData ? parseFloat(formatEther(balanceData.value)).toFixed(4) : '0.0000'
+
+  // GitHub-style contribution grid — completed commitments per day over 12 weeks.
+  const contrib = useMemo(() => {
+    const days = 84
+    const counts = new Map<string, number>()
+    for (const c of commitments) {
+      if (c.status !== 'completed') continue
+      const key = new Date(c.created_at).toISOString().slice(0, 10)
+      counts.set(key, (counts.get(key) || 0) + 1)
+    }
+    const today = new Date()
+    const cells: { date: string; count: number }[] = []
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(today)
+      d.setDate(today.getDate() - i)
+      const key = d.toISOString().slice(0, 10)
+      cells.push({ date: key, count: counts.get(key) || 0 })
+    }
+    return cells
+  }, [commitments])
+  const heatColor = (n: number) =>
+    n >= 3 ? '#cdfb46' : n === 2 ? 'rgba(205,251,70,0.75)' : n === 1 ? 'rgba(205,251,70,0.45)' : 'rgba(255,255,255,0.07)'
+  const activeDays = contrib.filter((c) => c.count > 0).length
 
   useEffect(() => {
     async function loadProfile() {
@@ -313,9 +336,8 @@ export default function ProfilePage() {
       )}
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginTop: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 18 }}>
         {[
-          [<Flame key="f" className="h-4 w-4" style={{ color: '#fbbf24' }} />, profile?.streak_current ?? 0, 'Streak', '#f4f6f3'],
           [<Compass key="c" className="h-4 w-4" style={{ color: '#cdfb46' }} />, (profile ? profile.total_distance / 1000 : 0).toFixed(1), 'Km total', '#f4f6f3'],
           [<Award key="a" className="h-4 w-4" style={{ color: '#cdfb46' }} />, `$${profile?.total_earnings.toFixed(2) ?? '0.00'}`, 'Earned', '#cdfb46'],
         ].map(([icon, v, l, color], i) => (
@@ -325,6 +347,26 @@ export default function ProfilePage() {
             <div className="sd-mono" style={{ fontSize: 9, letterSpacing: '0.12em', color: 'var(--muted-2)', textTransform: 'uppercase', marginTop: 2 }}>{l as React.ReactNode}</div>
           </div>
         ))}
+      </div>
+
+      {/* Activity streak — GitHub-style contribution grid */}
+      <div className="sd-card" style={{ padding: 18, marginTop: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <span className="sd-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10, letterSpacing: '0.12em', color: 'var(--muted-2)', textTransform: 'uppercase' }}>
+            <Flame className="h-4 w-4" style={{ color: '#fbbf24' }} /> Activity
+          </span>
+          <span className="sd-mono" style={{ fontSize: 10, color: 'var(--muted-2)' }}>{activeDays} active days · 12 wks</span>
+        </div>
+        <div style={{ display: 'grid', gridAutoFlow: 'column', gridTemplateRows: 'repeat(7,1fr)', gap: 4, overflowX: 'auto', paddingBottom: 4 }}>
+          {contrib.map((cell) => (
+            <div key={cell.date} title={`${cell.date}: ${cell.count} completed`} style={{ height: 12, width: 12, borderRadius: 3, background: heatColor(cell.count) }} />
+          ))}
+        </div>
+        <div className="sd-mono" style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, fontSize: 9, color: 'var(--muted-2)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          Less
+          {[0, 1, 2, 3].map((n) => <span key={n} style={{ height: 12, width: 12, borderRadius: 3, background: heatColor(n) }} />)}
+          More
+        </div>
       </div>
 
       {/* Account status */}
