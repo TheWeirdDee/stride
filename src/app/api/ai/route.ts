@@ -1,24 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// Calls Claude (claude-opus-4-8, adaptive thinking) via raw HTTP. The official
-// @anthropic-ai/sdk would be preferred, but `npm install` is blocked in this
-// environment, so we hit the Messages API directly with fetch — no SDK needed.
-const MODEL = 'claude-opus-4-8'
+// Free, no-credit-card AI via Groq (OpenAI-compatible API). Get a free key at
+// https://console.groq.com/keys and put it in .env.local as GROQ_API_KEY.
+// Override the model with GROQ_MODEL if you like.
+const ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions'
+const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'
 
 const SYSTEMS: Record<string, string> = {
   calories:
-    'You are a nutrition estimator inside a walking/running fitness app. The user names a meal or food. Reply with a concise calorie estimate: a single kcal figure or a tight range, then one short line naming the main contributors. If portion size is unspecified, assume a typical adult portion and say so. Keep the whole reply under 60 words. Answer reasonable food questions directly; do not refuse.',
+    'You are a nutrition estimator inside a walking/running fitness app. The user names a meal or food. Reply with a concise calorie estimate: a single kcal figure or a tight range, then one short line naming the main contributors. If portion size is unspecified, assume a typical adult portion and say so. Keep the whole reply under 60 words.',
   coach:
-    "You are an encouraging, practical walking and running coach inside a fitness app. Give specific, actionable advice in under 120 words tailored to the user's message — training, pacing, motivation, or form. Avoid medical claims; for pain or possible injury, suggest seeing a professional.",
+    "You are an encouraging, practical walking and running coach inside a fitness app. Give specific, actionable advice in under 120 words tailored to the user's message — training, pacing, motivation, or form.",
   recovery:
-    'You are a recovery advisor for walkers and runners. Given how the user feels after activity (soreness, fatigue, niggles), suggest concrete recovery steps — stretches, hydration, rest, sleep — in under 120 words. Do not diagnose. Flag any red-flag symptoms (sharp/persistent pain, swelling, chest issues) that warrant seeing a doctor.',
+    'You are a recovery advisor for walkers and runners. Given how the user feels after activity (soreness, fatigue, niggles), suggest concrete recovery steps — stretches, hydration, rest, sleep — in under 120 words.',
 }
 
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.ANTHROPIC_API_KEY
+  const apiKey = process.env.GROQ_API_KEY
   if (!apiKey) {
     return NextResponse.json(
-      { error: 'AI features need an ANTHROPIC_API_KEY. Add it to .env.local and restart the dev server.' },
+      { error: 'AI needs a free GROQ_API_KEY. Get one at console.groq.com/keys, add it to .env.local, and restart the dev server.' },
       { status: 503 }
     )
   }
@@ -35,19 +36,17 @@ export async function POST(req: NextRequest) {
   if (!body.prompt?.trim()) return NextResponse.json({ error: 'Please enter something first.' }, { status: 400 })
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch(ENDPOINT, {
       method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
+      headers: { Authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 1024,
-        thinking: { type: 'adaptive' },
-        system,
-        messages: [{ role: 'user', content: body.prompt.trim() }],
+        max_tokens: 400,
+        temperature: 0.5,
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: body.prompt.trim() },
+        ],
       }),
     })
 
@@ -55,19 +54,8 @@ export async function POST(req: NextRequest) {
     if (!res.ok) {
       return NextResponse.json({ error: data?.error?.message || 'AI request failed.' }, { status: res.status })
     }
-    if (data.stop_reason === 'refusal') {
-      return NextResponse.json({ error: 'That request was declined. Try rephrasing.' }, { status: 200 })
-    }
 
-    // Adaptive thinking returns thinking blocks (empty text) + text blocks — keep the text.
-    const text = Array.isArray(data.content)
-      ? data.content
-          .filter((b: { type: string }) => b.type === 'text')
-          .map((b: { text: string }) => b.text)
-          .join('\n')
-          .trim()
-      : ''
-
+    const text = (data?.choices?.[0]?.message?.content || '').trim()
     return NextResponse.json({ text })
   } catch {
     return NextResponse.json({ error: 'Could not reach the AI service.' }, { status: 502 })
