@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAccount, useConnect, useDisconnect } from 'wagmi'
+import StrideMark from '@/components/StrideMark'
 
 export default function Navbar() {
   const pathname = usePathname()
@@ -21,8 +22,20 @@ export default function Navbar() {
       disconnect()
       return
     }
+    // No injected provider (no MetaMask/MiniPay) → tell the user instead of silently doing nothing.
+    if (typeof window !== 'undefined' && !(window as { ethereum?: unknown }).ethereum) {
+      alert('No wallet detected. Install MetaMask (or open Stride inside MiniPay) to connect.')
+      return
+    }
     const injected = connectors.find((c) => c.id === 'injected') || connectors[0]
-    if (injected) connect({ connector: injected })
+    if (!injected) {
+      alert('No wallet connector available.')
+      return
+    }
+    connect(
+      { connector: injected },
+      { onError: (err) => alert(`Wallet connection failed: ${err.message}`) }
+    )
   }
 
   const walletLabel = isConnected && address
@@ -73,7 +86,7 @@ export default function Navbar() {
       <header className="sd-topbar">
         <Link href="/explore" className="sd-logo">
           <span className="sd-logo-mark">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#06080a" strokeWidth="3" strokeLinecap="round"><path d="M5 17l5-10 4 7 5-9" /></svg>
+            <StrideMark size={16} />
           </span>
           <span className="sd-logo-word">STRIDE</span>
         </Link>
