@@ -8,7 +8,7 @@ export default function SessionCompletePage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Completion is handled in the session page itself
+     
     router.replace(`/session/${params.id}`)
   }, [params.id, router])
 
