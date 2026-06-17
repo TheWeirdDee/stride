@@ -53,7 +53,6 @@ export default function SessionPage() {
 
   const gps = useGPSTracker()
 
-  // Read commitment
   const { data: commitment, isLoading: commitLoading } = useReadContract({
     address: COMMITMENT_CONTRACT,
     abi: commitmentABI,
