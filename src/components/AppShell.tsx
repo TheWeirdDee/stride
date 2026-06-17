@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 
-// The marketing landing ('/') is a full-width page with its own styling.
+ 
 // Every other route is an app screen rendered inside the mobile-first
 // phone-width shell with the top bar + bottom tab bar.
 export default function AppShell({ children }: { children: React.ReactNode }) {
