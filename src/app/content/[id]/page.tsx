@@ -184,7 +184,6 @@ export default function ContentDetailPage() {
         <h1 className="sd-display" style={{ position: 'relative', fontSize: 28 }}>{guide.title}</h1>
       </div>
 
-      {/* Checklist */}
       <div className="sd-section-row" style={{ marginTop: 24 }}>
         <h2 className="sd-section" style={{ fontSize: 12 }}>Checklist</h2>
         <span className="sd-meta">{completedSteps.filter(Boolean).length} / {steps.length} done</span>
