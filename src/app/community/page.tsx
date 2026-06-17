@@ -88,7 +88,6 @@ export default function CommunityPage() {
 
   const { address } = useAccount()
 
-  // Walk/Run filters for groups + challenges
   const [groupFilter, setGroupFilter] = useState<Activity>('walk')
   const [challengeFilter, setChallengeFilter] = useState<Activity>('walk')
 
