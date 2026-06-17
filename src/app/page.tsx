@@ -17,7 +17,6 @@ function LandingPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // Onboarding States
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false)
   const [obScreen, setObScreen] = useState<string>('splash')
   const [obSlideIdx, setObSlideIdx] = useState(0)
