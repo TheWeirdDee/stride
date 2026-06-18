@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, ArrowLeft } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
+import StrideMark from '@/components/StrideMark'
 import { useAccount, useReadContract, useWriteContract, useConfig } from 'wagmi'
 import { formatUnits, parseEventLogs } from 'viem'
 import { waitForTransactionReceipt } from 'wagmi/actions'
@@ -45,6 +46,7 @@ export default function SessionPage() {
   const [statusMsg, setStatusMsg] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
   const [txHash, setTxHash] = useState('')
+  const [forfeiting, setForfeiting] = useState(false)
 
   const pauseCountRef = useRef(0)
   const totalPauseMsRef = useRef(0)
@@ -348,9 +350,42 @@ export default function SessionPage() {
     }
   }, [gps, commitmentId, isDistanceGoal, goalMeters, writeContractAsync, config, address])
 
+  // Forfeit an expired, unresolved commitment so the wallet is freed to create a new one.
+  const handleForfeit = useCallback(async () => {
+    setForfeiting(true)
+    try {
+      const hash = await writeContractAsync({
+        address: COMMITMENT_CONTRACT,
+        abi: commitmentABI,
+        functionName: 'forfeitExpiredCommitment',
+        args: [commitmentId],
+      })
+      await waitForTransactionReceipt(config, { hash })
+      if (supabase) {
+        await supabase.from('commitments').update({ status: 'forfeited' }).eq('commitment_id_chain', commitmentId)
+      }
+      router.push('/commitment/new')
+    } catch (err: unknown) {
+      setForfeiting(false)
+      setErrorMsg((err as { shortMessage?: string })?.shortMessage || (err instanceof Error ? err.message : 'Forfeit failed'))
+      setPhase('error')
+    }
+  }, [commitmentId, writeContractAsync, config, router])
+
   // ─── Render ───────────────────────────────────────────────
   const screen = (children: React.ReactNode) => (
-    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', padding: '28px 20px 36px' }}>{children}</div>
+    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+      <header className="sd-topbar">
+        <button onClick={() => router.push('/explore')} className="sd-logo" style={{ background: 'none', border: 0, cursor: 'pointer' }} aria-label="Back to explore">
+          <span className="sd-logo-mark"><StrideMark size={16} /></span>
+          <span className="sd-logo-word">STRIDE</span>
+        </button>
+        <button onClick={() => router.push('/explore')} aria-label="Close" style={{ width: 38, height: 38, borderRadius: '50%', display: 'grid', placeItems: 'center', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--line-strong)', color: 'var(--ink)', cursor: 'pointer' }}>
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+      </header>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '20px 20px 36px' }}>{children}</div>
+    </div>
   )
 
   if (phase === 'loading') {
@@ -446,7 +481,11 @@ export default function SessionPage() {
 
         {isExpired ? (
           <>
-            <p style={{ fontSize: 13, color: '#fb7185', fontWeight: 600, marginBottom: 14, textAlign: 'center' }}>This commitment has expired.</p>
+            <p style={{ fontSize: 13, color: '#fb7185', fontWeight: 600, marginBottom: 6, textAlign: 'center' }}>This commitment expired. Your stake went to the reward pool.</p>
+            <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 14, textAlign: 'center' }}>Forfeit it on-chain to free your wallet and start a new commitment.</p>
+            <button onClick={handleForfeit} disabled={forfeiting} className="sd-btn sd-btn-lime" style={{ marginBottom: 10 }}>
+              {forfeiting ? 'Forfeiting…' : 'Forfeit & start new'}
+            </button>
             <button onClick={() => router.push('/explore')} className="sd-btn sd-btn-ghost">Back to explore</button>
           </>
         ) : (
