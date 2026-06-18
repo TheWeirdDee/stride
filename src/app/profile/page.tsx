@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { useAccount, useConnect, useDisconnect, useBalance } from 'wagmi'
+import { useAccount, useConnect, useDisconnect, useReadContract } from 'wagmi'
 import { formatEther } from 'viem'
 import { supabase } from '@/utils/supabase'
+import { CUSD_ADDRESS } from '@/utils/constants'
+import { cusdABI } from '@/abi/cusd'
 import { useRouter } from 'next/navigation'
 import { GuestProfile } from '@/components/landing/types'
 import {
@@ -65,12 +67,15 @@ export default function ProfilePage() {
   const [editActivity, setEditActivity] = useState<'walk' | 'run' | 'both'>('walk')
   const [savingEdits, setSavingEdits] = useState(false)
 
-  const { data: balanceData } = useBalance({
-    address: address,
+  const { data: cusdBalanceRaw } = useReadContract({
+    address: CUSD_ADDRESS,
+    abi: cusdABI,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
     query: { enabled: !!address },
   })
 
-  const balance = balanceData ? parseFloat(formatEther(balanceData.value)).toFixed(4) : '0.0000'
+  const balance = cusdBalanceRaw != null ? parseFloat(formatEther(cusdBalanceRaw as bigint)).toFixed(4) : '0.0000'
 
   // GitHub-style contribution grid — completed commitments per day over 12 weeks.
   const contrib = useMemo(() => {
@@ -400,7 +405,7 @@ export default function ProfilePage() {
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
               <span className="sd-mono" style={{ fontSize: 10, color: 'var(--muted-2)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Balance</span>
-              <span className="sd-mono" style={{ fontWeight: 800, fontSize: 16 }}>{balance} <small style={{ color: 'var(--muted-2)', fontWeight: 400 }}>CELO</small></span>
+              <span className="sd-mono" style={{ fontWeight: 800, fontSize: 16 }}>{balance} <small style={{ color: 'var(--muted-2)', fontWeight: 400 }}>cUSD</small></span>
             </div>
             <button onClick={() => disconnect()} className="sd-mono" style={{ width: '100%', padding: 11, borderRadius: 12, background: 'transparent', border: '1px solid var(--line)', color: '#fb7185', fontWeight: 700, fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer' }}><LogOut className="h-3.5 w-3.5" /> Disconnect</button>
           </div>
