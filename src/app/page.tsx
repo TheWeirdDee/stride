@@ -53,9 +53,7 @@ function LandingPageContent() {
 
   useEffect(() => {
     if (searchParams.get('onboard') === 'true') {
-      setObScreen('splash')
-      setIsOnboardingOpen(true)
-      router.replace('/')
+      router.replace('/signup')
     }
   }, [searchParams, router])
 
@@ -199,11 +197,6 @@ function LandingPageContent() {
     router.push('/explore')
   }
 
-  const openOnboarding = (screen = 'splash') => {
-    setObScreen(screen)
-    setIsOnboardingOpen(true)
-  }
-
   return (
     <>
       <div className="landing-page-container">
@@ -211,19 +204,19 @@ function LandingPageContent() {
         <LandingNav
           isConnected={isConnected}
           guestProfile={guestProfile}
-          onGetStarted={() => openOnboarding('splash')}
+          onGetStarted={() => router.push('/signup')}
           onContinue={() => router.push('/explore')}
         />
         <LandingHero
           isConnected={isConnected}
           guestProfile={guestProfile}
-          onGetStarted={() => openOnboarding('splash')}
+          onGetStarted={() => router.push('/signup')}
           onContinue={() => router.push('/explore')}
-          onConnectWallet={() => openOnboarding('wallet')}
+          onConnectWallet={() => router.push('/login')}
           onStartCommitment={() => router.push('/commitment/new')}
         />
         <LandingMarketing
-          onGetStarted={() => openOnboarding('splash')}
+          onGetStarted={() => router.push('/signup')}
         />
       </div>
 
