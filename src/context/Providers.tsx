@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider } from 'wagmi'
 import { wagmiConfig } from '@/config/wagmi'
 import { registerMiniPayHook } from '@/utils/minipay'
+import { enforceEphemeralSession } from '@/utils/auth'
 
 interface ProvidersProps {
   children: ReactNode
@@ -13,6 +14,8 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   useEffect(() => {
     registerMiniPayHook()
+    // Drop "remember me = off" sessions once the browser has been restarted.
+    enforceEphemeralSession()
   }, [])
 
   // Create the QueryClient inside the component state to ensure
