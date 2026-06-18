@@ -1,26 +1,26 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAccount, useConnect, useDisconnect } from 'wagmi'
-import { supabase } from '@/utils/supabase'
-import { GuestProfile } from '@/components/landing/types'
+import { useAccount } from 'wagmi'
 import StrideMark from '@/components/StrideMark'
+import { APP_NAME } from '@/utils/constants'
 import {
   ArrowLeft,
-  User,
-  Mail,
-  MapPin,
-  Activity,
   Ruler,
   Bell,
-  Wallet,
+  Target,
+  Coins,
   Download,
   Trash2,
-  LogOut,
   Check,
   Footprints,
   FlaskConical,
+  BookOpen,
+  Users,
+  Mail,
+  User,
+  MapPin,
 } from 'lucide-react'
 
 type Units = 'km' | 'mi'
@@ -28,47 +28,31 @@ interface Prefs {
   sessionReminders: boolean
   weeklyDigest: boolean
   publicProfile: boolean
+  showCity: boolean
+}
+interface Defaults {
+  stake: string
+  goalKm: number
 }
 
-const DEFAULT_PREFS: Prefs = { sessionReminders: true, weeklyDigest: false, publicProfile: true }
+const DEFAULT_PREFS: Prefs = { sessionReminders: true, weeklyDigest: false, publicProfile: true, showCity: true }
+const DEFAULT_DEFAULTS: Defaults = { stake: '0.10', goalKm: 3 }
+const STAKE_OPTIONS = ['0.01', '0.10', '0.25', '0.50', '1.00']
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { address, isConnected } = useAccount()
-  const { connect, connectors } = useConnect()
-  const { disconnect } = useDisconnect()
+  const { address } = useAccount()
 
-  // Identity
-  const [nickname, setNickname] = useState('')
-  const [email, setEmail] = useState('')
-  const [city, setCity] = useState('')
-  const [activity, setActivity] = useState<'walk' | 'run' | 'both'>('walk')
-  const [guestId, setGuestId] = useState<string | null>(null)
-
-  // Preferences
   const [units, setUnits] = useState<Units>('km')
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS)
+  const [defaults, setDefaults] = useState<Defaults>(DEFAULT_DEFAULTS)
   const [demoMode, setDemoMode] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const savedTimer = useRef<NodeJS.Timeout | null>(null)
 
-  const [saving, setSaving] = useState(false)
-  const [savedAt, setSavedAt] = useState(0)
-
-  // ── Load everything from localStorage (and Supabase if connected) ──
+  // ── Hydrate from localStorage (deferred so it doesn't trip the render-cascade rule) ──
   useEffect(() => {
-    // Wrapped in a function (not run synchronously in the effect body) to keep
-    // state hydration out of the render-cascade lint rule.
     function hydrate() {
-      try {
-        const raw = localStorage.getItem('stride_guest_profile')
-        if (raw) {
-          const g = JSON.parse(raw) as GuestProfile
-          setGuestId(g.id || null)
-          setNickname(g.nickname || '')
-          setEmail(g.email || '')
-          setCity(g.city && g.city !== 'Unknown' ? g.city : '')
-          if (g.activity) setActivity(g.activity)
-        }
-      } catch {}
       try {
         const u = localStorage.getItem('stride_units') as Units | null
         if (u === 'km' || u === 'mi') setUnits(u)
@@ -78,6 +62,10 @@ export default function SettingsPage() {
         if (p) setPrefs({ ...DEFAULT_PREFS, ...JSON.parse(p) })
       } catch {}
       try {
+        const d = localStorage.getItem('stride_defaults')
+        if (d) setDefaults({ ...DEFAULT_DEFAULTS, ...JSON.parse(d) })
+      } catch {}
+      try {
         setDemoMode(localStorage.getItem('stride_demo_mode') === '1')
       } catch {}
     }
@@ -85,62 +73,12 @@ export default function SettingsPage() {
     return () => clearTimeout(id)
   }, [])
 
-  // If a wallet is connected, pull its saved name/city so the form reflects it.
-  useEffect(() => {
-    if (!isConnected || !address || !supabase) return
-    let cancelled = false
-    ;(async () => {
-      try {
-        const { data } = await supabase!
-          .from('users')
-          .select('nickname, city')
-          .eq('wallet_address', address)
-          .maybeSingle()
-        if (cancelled || !data) return
-        if (data.nickname) setNickname((n) => n || data.nickname)
-        if (data.city && data.city !== 'Unknown') setCity((c) => c || data.city)
-      } catch {}
-    })()
-    return () => { cancelled = true }
-  }, [isConnected, address])
-
   const flashSaved = () => {
-    setSavedAt(Date.now())
-    setTimeout(() => setSavedAt((t) => (Date.now() - t >= 1800 ? 0 : t)), 2000)
+    setSaved(true)
+    if (savedTimer.current) clearTimeout(savedTimer.current)
+    savedTimer.current = setTimeout(() => setSaved(false), 1800)
   }
 
-  // ── Persist identity ──
-  const saveIdentity = useCallback(async () => {
-    if (!nickname.trim()) return
-    setSaving(true)
-    const nextNick = nickname.trim()
-    const nextCity = city.trim() || 'Unknown'
-
-    // Always update the local guest identity — this is the single identity that
-    // survives connecting / disconnecting wallets.
-    try {
-      const id = guestId || (typeof crypto !== 'undefined' && crypto.randomUUID ? `guest_${crypto.randomUUID()}` : `guest_${Date.now()}`)
-      const updated: GuestProfile = { id, nickname: nextNick, email: email.trim(), city: nextCity, activity }
-      localStorage.setItem('stride_guest_profile', JSON.stringify(updated))
-      setGuestId(id)
-    } catch {}
-
-    // Mirror to Supabase against the wallet (if connected) and the guest id.
-    if (supabase) {
-      const rows = [address, guestId].filter(Boolean) as string[]
-      for (const key of rows) {
-        try {
-          await supabase
-            .from('users')
-            .upsert({ wallet_address: key, nickname: nextNick, city: nextCity }, { onConflict: 'wallet_address' })
-        } catch { /* non-fatal */ }
-      }
-    }
-    setSaving(false)
-    flashSaved()
-  }, [nickname, city, email, activity, guestId, address])
-
-  // ── Persist preferences immediately on change ──
   const updateUnits = (u: Units) => {
     setUnits(u)
     try { localStorage.setItem('stride_units', u) } catch {}
@@ -154,7 +92,14 @@ export default function SettingsPage() {
     })
     flashSaved()
   }
-
+  const updateDefaults = (patch: Partial<Defaults>) => {
+    setDefaults((prev) => {
+      const next = { ...prev, ...patch }
+      try { localStorage.setItem('stride_defaults', JSON.stringify(next)) } catch {}
+      return next
+    })
+    flashSaved()
+  }
   const toggleDemo = () => {
     setDemoMode((prev) => {
       const next = !prev
@@ -164,29 +109,16 @@ export default function SettingsPage() {
     flashSaved()
   }
 
-  const handleConnect = () => {
-    if (typeof window !== 'undefined' && !(window as { ethereum?: unknown }).ethereum) {
-      alert('No wallet detected. Install MetaMask (or open Stride inside MiniPay) to connect.')
-      return
-    }
-    const injected = connectors.find((c) => c.id === 'injected') || connectors[0]
-    if (injected) connect({ connector: injected })
-  }
-
   const exportData = () => {
+    let profile: unknown = null
+    try { profile = JSON.parse(localStorage.getItem('stride_guest_profile') || 'null') } catch {}
     const blob = new Blob([
-      JSON.stringify({
-        profile: { nickname, email, city, activity, guestId },
-        units,
-        prefs,
-        wallet: address || null,
-        exportedAt: new Date().toISOString(),
-      }, null, 2),
+      JSON.stringify({ profile, units, prefs, defaults, wallet: address || null, exportedAt: new Date().toISOString() }, null, 2),
     ], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'stride-profile.json'
+    a.download = 'stride-data.json'
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -197,17 +129,13 @@ export default function SettingsPage() {
       localStorage.removeItem('stride_guest_profile')
       localStorage.removeItem('stride_units')
       localStorage.removeItem('stride_prefs')
+      localStorage.removeItem('stride_defaults')
+      localStorage.removeItem('stride_demo_mode')
     } catch {}
-    if (isConnected) disconnect()
     router.push('/')
   }
 
-  const signOut = () => {
-    if (isConnected) disconnect()
-    router.push('/explore')
-  }
-
-  const justSaved = savedAt > 0
+  const justSaved = saved
 
   return (
     <div className="sd-page" style={{ paddingBottom: 120 }}>
@@ -218,7 +146,7 @@ export default function SettingsPage() {
         </button>
         <div>
           <h1 className="sd-display" style={{ fontSize: 22 }}>Settings</h1>
-          <span className="sd-mono" style={{ fontSize: 10, color: 'var(--muted-2)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Profile · preferences · account</span>
+          <span className="sd-mono" style={{ fontSize: 10, color: 'var(--muted-2)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Preferences & app</span>
         </div>
         <span style={{ marginLeft: 'auto', opacity: 0.5 }}><StrideMark size={20} /></span>
       </div>
@@ -229,44 +157,44 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* ── Identity ── */}
-      <Section title="Identity" subtitle="This stays with you across every wallet you connect.">
-        <Field icon={<User className="h-4 w-4" />} label="Display name">
-          <input className="sd-input" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="e.g. Lagos Strider" />
-        </Field>
-        <Field icon={<Mail className="h-4 w-4" />} label="Email">
-          <input className="sd-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" />
-        </Field>
-        <Field icon={<MapPin className="h-4 w-4" />} label="City">
-          <input className="sd-input" value={city} onChange={(e) => setCity(e.target.value)} placeholder="e.g. Lagos" />
-        </Field>
-        <Field icon={<Activity className="h-4 w-4" />} label="Preferred activity">
-          <div style={{ display: 'flex', gap: 8 }}>
-            {(['walk', 'run', 'both'] as const).map((a) => (
+      {/* ── Commitment defaults ── */}
+      <Section title="Commitment defaults" subtitle="Pre-fill the new-commitment screen so you start faster.">
+        <Field icon={<Coins className="h-4 w-4" />} label="Default stake (cUSD)">
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {STAKE_OPTIONS.map((s) => (
               <button
-                key={a}
-                onClick={() => setActivity(a)}
+                key={s}
+                onClick={() => updateDefaults({ stake: s })}
+                className="sd-mono"
                 style={{
-                  flex: 1,
-                  padding: '11px 0',
+                  flex: '1 0 auto',
+                  minWidth: 56,
+                  padding: '11px 4px',
                   borderRadius: 12,
-                  textTransform: 'capitalize',
-                  fontWeight: 700,
+                  fontWeight: 800,
                   fontSize: 13,
                   cursor: 'pointer',
-                  background: activity === a ? '#cdfb46' : 'rgba(255,255,255,0.04)',
-                  color: activity === a ? '#06080a' : 'var(--ink)',
-                  border: `1px solid ${activity === a ? '#cdfb46' : 'var(--line-strong)'}`,
+                  background: defaults.stake === s ? '#cdfb46' : 'rgba(255,255,255,0.04)',
+                  color: defaults.stake === s ? '#06080a' : 'var(--ink)',
+                  border: `1px solid ${defaults.stake === s ? '#cdfb46' : 'var(--line-strong)'}`,
                 }}
               >
-                {a}
+                ${s}
               </button>
             ))}
           </div>
         </Field>
-        <button onClick={saveIdentity} disabled={saving || !nickname.trim()} className="sd-btn sd-btn-lime" style={{ marginTop: 4 }}>
-          {saving ? 'Saving…' : 'Save identity'}
-        </button>
+        <Field icon={<Target className="h-4 w-4" />} label={`Default distance goal — ${defaults.goalKm} km`}>
+          <input
+            type="range"
+            min={0.5}
+            max={21}
+            step={0.5}
+            value={defaults.goalKm}
+            onChange={(e) => updateDefaults({ goalKm: Number(e.target.value) })}
+            style={{ width: '100%', accentColor: '#cdfb46' }}
+          />
+        </Field>
       </Section>
 
       {/* ── Units ── */}
@@ -283,7 +211,6 @@ export default function SettingsPage() {
                   borderRadius: 12,
                   fontWeight: 700,
                   fontSize: 13,
-                  textTransform: 'uppercase',
                   cursor: 'pointer',
                   background: units === u ? '#cdfb46' : 'rgba(255,255,255,0.04)',
                   color: units === u ? '#06080a' : 'var(--ink)',
@@ -301,27 +228,15 @@ export default function SettingsPage() {
       <Section title="Notifications" subtitle="Reminders to keep your streak alive.">
         <Toggle icon={<Bell className="h-4 w-4" />} label="Session reminders" desc="Nudge me when a commitment deadline is near." on={prefs.sessionReminders} onClick={() => togglePref('sessionReminders')} />
         <Toggle icon={<Footprints className="h-4 w-4" />} label="Weekly digest" desc="A Sunday recap of my distance & earnings." on={prefs.weeklyDigest} onClick={() => togglePref('weeklyDigest')} />
+      </Section>
+
+      {/* ── Privacy ── */}
+      <Section title="Privacy" subtitle="What others see about you in the community.">
         <Toggle icon={<User className="h-4 w-4" />} label="Public profile" desc="Show me on community leaderboards." on={prefs.publicProfile} onClick={() => togglePref('publicProfile')} />
+        <Toggle icon={<MapPin className="h-4 w-4" />} label="Show my city" desc="Display my city alongside my name publicly." on={prefs.showCity} onClick={() => togglePref('showCity')} />
       </Section>
 
-      {/* ── Wallet ── */}
-      <Section title="Wallet" subtitle="Connect any wallet — your identity above stays the same.">
-        {isConnected && address ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#cdfb46', boxShadow: '0 0 8px #cdfb46' }} />
-            <span className="sd-mono" style={{ fontSize: 13 }}>{address.slice(0, 6)}…{address.slice(-4)}</span>
-            <button onClick={() => disconnect()} className="sd-btn sd-btn-ghost" style={{ width: 'auto', marginLeft: 'auto', padding: '10px 14px', fontSize: 12 }}>
-              <LogOut className="h-3.5 w-3.5" /> Disconnect
-            </button>
-          </div>
-        ) : (
-          <button onClick={handleConnect} className="sd-btn sd-btn-dark">
-            <Wallet className="h-4 w-4" /> Connect wallet
-          </button>
-        )}
-      </Section>
-
-      {/* ── Developer / testing ── */}
+      {/* ── Demo / testing ── */}
       <Section title="Demo & testing" subtitle="Try the full session flow without an outdoor walk.">
         <Toggle
           icon={<FlaskConical className="h-4 w-4" />}
@@ -332,16 +247,24 @@ export default function SettingsPage() {
         />
       </Section>
 
-      {/* ── Data & account ── */}
-      <Section title="Data & account">
+      {/* ── About ── */}
+      <Section title="About">
+        <LinkRow icon={<BookOpen className="h-4 w-4" />} label="Guides & coaching" onClick={() => router.push('/content')} />
+        <LinkRow icon={<Users className="h-4 w-4" />} label="Community" onClick={() => router.push('/community')} />
+        <LinkRow icon={<Mail className="h-4 w-4" />} label="Contact support" onClick={() => { window.location.href = 'mailto:support@stride.app' }} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4 }}>
+          <span style={{ fontSize: 13, color: 'var(--muted-2)' }}>{APP_NAME}</span>
+          <span className="sd-mono" style={{ fontSize: 11, color: 'var(--muted-3)' }}>Celo mainnet · v1.0</span>
+        </div>
+      </Section>
+
+      {/* ── Data ── */}
+      <Section title="Data">
         <button onClick={exportData} className="sd-btn sd-btn-ghost" style={{ justifyContent: 'flex-start' }}>
           <Download className="h-4 w-4" /> Export my data
         </button>
         <button onClick={resetLocal} className="sd-btn sd-btn-ghost" style={{ justifyContent: 'flex-start', color: '#ff8a8a', borderColor: 'rgba(255,138,138,0.3)' }}>
           <Trash2 className="h-4 w-4" /> Reset this device
-        </button>
-        <button onClick={signOut} className="sd-btn sd-btn-dark" style={{ justifyContent: 'flex-start' }}>
-          <LogOut className="h-4 w-4" /> Sign out
         </button>
       </Section>
     </div>
@@ -380,6 +303,16 @@ function Toggle({ icon, label, desc, on, onClick }: { icon: React.ReactNode; lab
       <span style={{ width: 44, height: 26, borderRadius: 999, flexShrink: 0, position: 'relative', transition: 'background 0.15s', background: on ? '#cdfb46' : 'rgba(255,255,255,0.12)', border: `1px solid ${on ? '#cdfb46' : 'var(--line-strong)'}` }}>
         <span style={{ position: 'absolute', top: 2, left: on ? 20 : 2, width: 20, height: 20, borderRadius: '50%', background: on ? '#06080a' : '#f4f6f3', transition: 'left 0.15s' }} />
       </span>
+    </button>
+  )
+}
+
+function LinkRow({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
+  return (
+    <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'transparent', border: 0, padding: '2px 0', textAlign: 'left', cursor: 'pointer', width: '100%' }}>
+      <span style={{ color: '#cdfb46', flexShrink: 0 }}>{icon}</span>
+      <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{label}</span>
+      <span style={{ color: 'var(--muted-2)', fontSize: 18, lineHeight: 1 }}>›</span>
     </button>
   )
 }
