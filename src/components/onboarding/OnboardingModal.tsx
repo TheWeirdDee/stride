@@ -105,43 +105,7 @@ export default function OnboardingModal({
           ` }} />
           <div style={{ flex: 1, width:'100%', maxWidth:'480px', margin: '0 auto', fontFamily:'"Hanken Grotesk",system-ui,sans-serif', WebkitFontSmoothing:'antialiased' as React.CSSProperties['WebkitFontSmoothing'], display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', position: 'relative' }}>
 
-          {/* ════ 1. SPLASH ════ */}
-          {obScreen === 'splash' && (
-            <div style={{ width:'100%',height:'100%',background:'radial-gradient(125% 90% at 75% 0%, #1d72c0 0%, #0a5aa2 45%, #073d70 100%)',color:'#fff',display:'flex',flexDirection:'column',position:'relative',overflow:'hidden' }}>
-              <div style={{ position:'absolute',inset:0,opacity:.12,backgroundImage:'linear-gradient(rgba(255,255,255,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.6) 1px,transparent 1px)',backgroundSize:'46px 46px',WebkitMaskImage:'linear-gradient(180deg,#000,transparent 65%)',maskImage:'linear-gradient(180deg,#000,transparent 65%)',pointerEvents:'none' }} />
-              <div style={{ height:16,flexShrink:0 }} />
-              <div className="ob-scroll" style={{ flex:1 }}>
-                <div style={{ display:'flex',flexDirection:'column',minHeight:'100%',justifyContent:'space-between',padding:'16px 24px 24px',boxSizing:'border-box' }}>
-                  <div style={{ display:'flex',flexDirection:'column',alignItems:'flex-start',gap:12,marginTop:12 }}>
-                    <Link href="/" onClick={() => onClose()} style={{ display:'inline-flex',alignItems:'center',fontFamily:'"Hanken Grotesk",system-ui,sans-serif',fontWeight:800,fontSize:36,letterSpacing:'-.02em',color:'#fff',textDecoration:'none' }}>
-                      Stride<span style={{ color:'#cdfb46',letterSpacing:'-.18em',marginLeft:2 }}>&gt;&gt;</span>
-                    </Link>
-                    <span style={{ display:'inline-flex',alignItems:'center',gap:6,fontSize:12,fontWeight:600,padding:'6px 11px',borderRadius:999,background:'rgba(205,251,70,.16)',color:'#cdfb46' }}>
-                      <span style={{ width:6,height:6,borderRadius:'50%',background:'#cdfb46',display:'inline-block' }} />Built on Celo · MiniPay native
-                    </span>
-                  </div>
-                  <div style={{ paddingTop:16,marginTop:'auto',marginBottom:16 }}>
-                    <h1 style={{ fontFamily:'"Anton",sans-serif',fontWeight:400,textTransform:'uppercase',lineHeight:1.0,letterSpacing:'.01em',fontSize:40 }}>
-                      Put your money<br/>where your<br/><span style={{ color:'#cdfb46' }}>miles</span> are
-                    </h1>
-                    <p style={{ marginTop:22,fontSize:16,lineHeight:1.5,color:'rgba(255,255,255,.82)',maxWidth:'32ch' }}>
-                      Stake a little. Move for real. Get your stake back plus a bonus the moment you finish.
-                    </p>
-                  </div>
-                  <div style={{ display:'flex',flexDirection:'column',gap:11 }}>
-                    <button onClick={() => onGo('carousel')} style={{ display:'inline-flex',alignItems:'center',justifyContent:'center',gap:9,fontFamily:'"Hanken Grotesk",system-ui,sans-serif',fontWeight:700,fontSize:16,border:'none',cursor:'pointer',borderRadius:999,padding:'16px 22px',width:'100%',background:'#cdfb46',color:'#1b2700' }}>
-                      Get started <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-                    </button>
-                    <button onClick={() => onGo('wallet')} style={{ display:'inline-flex',alignItems:'center',justifyContent:'center',gap:9,fontFamily:'"Hanken Grotesk",system-ui,sans-serif',fontWeight:700,fontSize:16,borderRadius:999,padding:'16px 22px',width:'100%',background:'transparent',color:'#fff',border:'1.5px solid rgba(255,255,255,.4)',cursor:'pointer' }}>
-                      I already have a wallet
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ════ 2. CAROUSEL ════ */}
+          {/* ════ CAROUSEL ════ */}
           {obScreen === 'carousel' && (() => {
             const OB_SLIDES = [
               { eb:'Step 01 — Commit', title:'Back your goal with a stake', body:'Pick a distance or step goal, then lock in as little as 0.01 CELO. Skin in the game beats willpower.' },
