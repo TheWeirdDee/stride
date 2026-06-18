@@ -8,7 +8,7 @@ import { useAccount, useReadContract, useWriteContract, useConfig } from 'wagmi'
 import { formatUnits, parseEventLogs } from 'viem'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { commitmentABI } from '@/abi/commitment'
-import { COMMITMENT_CONTRACT, BACKEND_URL } from '@/utils/constants'
+import { COMMITMENT_CONTRACT, BACKEND_URL, GRACE_PERIOD_SECONDS } from '@/utils/constants'
 import { useGPSTracker } from '@/hooks/useGPSTracker'
 import { supabase } from '@/utils/supabase'
 import { generateRouteCard } from '@/utils/generateRouteCard'
@@ -47,6 +47,8 @@ export default function SessionPage() {
   const [errorMsg, setErrorMsg] = useState('')
   const [txHash, setTxHash] = useState('')
   const [forfeiting, setForfeiting] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const autoFinishedRef = useRef(false)
 
   const pauseCountRef = useRef(0)
   const totalPauseMsRef = useRef(0)
@@ -70,7 +72,10 @@ export default function SessionPage() {
     }
   }, [commitLoading, commitment])
 
-  const isExpired = commitment ? Number(commitment.deadline) < Date.now() / 1000 : false
+  const nowSec = Date.now() / 1000
+  const isExpired = commitment ? Number(commitment.deadline) < nowSec : false
+  // Cancel (full refund) is only valid on-chain inside the grace window after creation.
+  const inGracePeriod = commitment ? nowSec <= Number(commitment.createdAt) + GRACE_PERIOD_SECONDS : false
   const isDistanceGoal = commitment ? commitment.distanceGoal > BigInt(0) : false
   const goalMeters = commitment ? Number(isDistanceGoal ? commitment.distanceGoal : commitment.stepGoal) : 0
   const distanceMeters = Math.round(gps.distance * 1000)
@@ -351,6 +356,41 @@ export default function SessionPage() {
     }
   }, [gps, commitmentId, isDistanceGoal, goalMeters, writeContractAsync, config, address])
 
+  // Auto-complete the moment the goal is reached while tracking — the user asked
+  // for the session to finish itself rather than waiting for a manual tap.
+  useEffect(() => {
+    if (phase === 'tracking' && goalMet && !autoFinishedRef.current) {
+      autoFinishedRef.current = true
+      handleFinish()
+    }
+  }, [phase, goalMet, handleFinish])
+
+  // Cancel an active commitment for a full refund. The contract only allows this
+  // inside the grace window right after creation; afterwards the stake is locked
+  // until the goal is met (complete) or the deadline passes (forfeit).
+  const handleCancel = useCallback(async () => {
+    if (!confirm('Cancel this commitment and get your full stake back? You can start a new one right away.')) return
+    setCancelling(true)
+    gps.stopTracking()
+    try {
+      const hash = await writeContractAsync({
+        address: COMMITMENT_CONTRACT,
+        abi: commitmentABI,
+        functionName: 'cancelCommitment',
+        args: [commitmentId],
+      })
+      await waitForTransactionReceipt(config, { hash })
+      if (supabase) {
+        await supabase.from('commitments').update({ status: 'cancelled' }).eq('commitment_id_chain', commitmentId)
+      }
+      router.push('/commitment/new')
+    } catch (err: unknown) {
+      setCancelling(false)
+      setErrorMsg((err as { shortMessage?: string })?.shortMessage || (err instanceof Error ? err.message : 'Cancel failed'))
+      setPhase('error')
+    }
+  }, [commitmentId, writeContractAsync, config, router, gps])
+
   // Forfeit an expired, unresolved commitment so the wallet is freed to create a new one.
   const handleForfeit = useCallback(async () => {
     setForfeiting(true)
@@ -560,11 +600,28 @@ export default function SessionPage() {
         ) : (
           <button onClick={handleResume} className="sd-btn" style={{ background: 'rgba(205,251,70,0.12)', color: '#cdfb46', border: '1px solid rgba(205,251,70,0.4)' }}>Resume</button>
         )}
-        <button onClick={handleFinish} disabled={!isTracking} className={`sd-btn ${goalMet ? 'sd-btn-lime' : ''}`} style={goalMet ? undefined : { background: '#f4f6f3', color: '#06080a' }}>
-          {goalMet ? 'Finish & claim reward' : 'End session'}
-        </button>
-        {!goalMet && isTracking && (
-          <p className="sd-mono" style={{ textAlign: 'center', fontSize: 11, color: 'var(--muted-2)' }}>{goalMeters - distanceMeters}m remaining to goal</p>
+        {goalMet ? (
+          <button onClick={handleFinish} disabled={!isTracking} className="sd-btn sd-btn-lime">
+            Finish &amp; claim reward
+          </button>
+        ) : inGracePeriod ? (
+          <>
+            <button onClick={handleCancel} disabled={cancelling} className="sd-btn" style={{ background: '#f4f6f3', color: '#06080a' }}>
+              {cancelling ? 'Cancelling…' : 'Cancel & refund stake'}
+            </button>
+            <p className="sd-mono" style={{ textAlign: 'center', fontSize: 11, color: 'var(--muted-2)' }}>
+              {goalMeters - distanceMeters}m to go · finishing pays out automatically
+            </p>
+          </>
+        ) : (
+          <>
+            <button onClick={() => router.push('/explore')} className="sd-btn sd-btn-ghost">
+              Stop for now
+            </button>
+            <p className="sd-mono" style={{ textAlign: 'center', fontSize: 11, color: 'var(--muted-2)', lineHeight: 1.5 }}>
+              {goalMeters - distanceMeters}m left. Your stake unlocks when you reach the goal — it&apos;s only forfeited if the deadline passes.
+            </p>
+          </>
         )}
       </div>
     </>
