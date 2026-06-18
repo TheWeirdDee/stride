@@ -111,44 +111,45 @@ export default function ProfilePage() {
 
           let dbUser = data
 
-          // If connected but user doesn't exist in Supabase, create with defaults
+          // If connected but user doesn't exist in Supabase, create with defaults.
+          // Upsert avoids duplicate-key races; failures are non-fatal — we still
+          // render a default profile so a connected wallet is never shown as blank.
+          const defaults = {
+            wallet_address: address,
+            nickname: 'Anonymous Mover',
+            city: 'Unknown',
+            fitness_level: 'beginner',
+            streak_current: 0,
+            streak_best: 0,
+            total_distance: 0,
+            total_earnings: 0,
+          }
           if (!dbUser) {
             setSyncing(true)
-
             const { data: insertedUser, error: insertError } = await supabase
               .from('users')
-              .insert({
-                wallet_address: address,
-                nickname: 'Anonymous Mover',
-                city: 'Unknown',
-                fitness_level: 'beginner',
-                streak_current: 0,
-                streak_best: 0,
-                total_distance: 0,
-                total_earnings: 0
-              })
+              .upsert(defaults, { onConflict: 'wallet_address' })
               .select()
               .single()
 
             if (insertError) {
-              console.error('Error inserting new user:', insertError)
+              console.warn('Could not create user row (likely RLS) — using a local profile:', insertError.message || insertError.code || insertError)
             } else if (insertedUser) {
               dbUser = insertedUser
             }
             setSyncing(false)
           }
 
-          if (dbUser) {
-            setProfile({
-              nickname: dbUser.nickname || 'Anonymous Mover',
-              city: dbUser.city || 'Lagos',
-              fitness_level: dbUser.fitness_level || 'beginner',
-              streak_current: dbUser.streak_current || 0,
-              streak_best: dbUser.streak_best || 0,
-              total_distance: dbUser.total_distance || 0,
-              total_earnings: dbUser.total_earnings || 0,
-            })
-          }
+          const src = dbUser || defaults
+          setProfile({
+            nickname: src.nickname || 'Anonymous Mover',
+            city: src.city || 'Unknown',
+            fitness_level: src.fitness_level || 'beginner',
+            streak_current: src.streak_current || 0,
+            streak_best: src.streak_best || 0,
+            total_distance: src.total_distance || 0,
+            total_earnings: src.total_earnings || 0,
+          })
 
           // Load commitments history
           const { data: history, error: historyError } = await supabase
