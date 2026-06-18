@@ -110,6 +110,7 @@ export async function POST(req: NextRequest) {
     pauseCount: number
     totalPauseDurationMs: number
     estimatedSteps?: number
+    demo?: boolean
   }
 
   try {
@@ -128,15 +129,42 @@ export async function POST(req: NextRequest) {
     pauseCount,
     totalPauseDurationMs,
     estimatedSteps,
+    demo,
   } = body
 
-  if (!commitmentId || !Array.isArray(coordinates) || coordinates.length < 2)
+  // Demo / test mode: lets the full session flow be exercised without physically
+  // completing an outdoor route. Honoured ONLY outside production so it can never
+  // be used to drain the live reward pool. It skips the anti-cheat checks and
+  // signs a proof that meets the goal.
+  const demoAllowed = demo === true && process.env.NODE_ENV !== 'production'
+
+  if (!commitmentId)
+    return NextResponse.json({ error: 'Missing commitmentId' }, { status: 400 })
+
+  if (!demoAllowed && (!Array.isArray(coordinates) || coordinates.length < 2))
     return NextResponse.json({ error: 'Missing required fields or not enough GPS points' }, { status: 400 })
 
   if (!['walk', 'run'].includes(goalType))
     return NextResponse.json({ error: 'Invalid goalType' }, { status: 400 })
 
   const type = goalType as 'walk' | 'run'
+
+  if (demoAllowed) {
+    const measured = Array.isArray(coordinates) && coordinates.length >= 2 ? calcDistance(coordinates) : 0
+    const actualDistanceMeters = goalCategory === 'distance' ? Math.max(measured, goalValue) : measured
+    const actualSteps = goalCategory === 'steps' ? Math.max(estimatedSteps ?? 0, goalValue) : (estimatedSteps ?? 0)
+    try {
+      const { proofNonce, signature } = await signProof(commitmentId, actualDistanceMeters, actualSteps)
+      return NextResponse.json({
+        success: true,
+        demo: true,
+        proof: { commitmentId, actualDistance: actualDistanceMeters, actualSteps, proofNonce, signature },
+      })
+    } catch (err) {
+      console.error('Signing error (demo):', err)
+      return NextResponse.json({ error: 'Proof signing failed' }, { status: 500 })
+    }
+  }
 
   if (pauseCount > RULES.MAX_PAUSE_COUNT)
     return NextResponse.json({ error: `Too many pauses: ${pauseCount}` }, { status: 400 })
