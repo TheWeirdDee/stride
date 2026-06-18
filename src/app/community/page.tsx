@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { useAccount } from 'wagmi'
+import { useAccount, useReadContract } from 'wagmi'
+import { formatUnits } from 'viem'
+import { strideRewardPoolAbi } from '@/abi/rewardPool'
+import { REWARD_POOL_CONTRACT } from '@/utils/constants'
 import {
   type Activity,
   type Challenge as DbChallenge,
@@ -87,6 +90,19 @@ export default function CommunityPage() {
   const [idx, setIdx] = useState(0)
 
   const { address } = useAccount()
+
+  // Real on-chain reward-pool figures (getStats → balance, received, paidOut).
+  const { data: poolStats } = useReadContract({
+    address: REWARD_POOL_CONTRACT,
+    abi: strideRewardPoolAbi,
+    functionName: 'getStats',
+    query: { enabled: !!REWARD_POOL_CONTRACT },
+  })
+  const fmtUsd = (v?: bigint) =>
+    v != null ? `$${parseFloat(formatUnits(v, 18)).toLocaleString(undefined, { maximumFractionDigits: 2 })}` : '—'
+  const poolBalance = poolStats ? fmtUsd(poolStats[0]) : '—'
+  const poolReceived = poolStats ? fmtUsd(poolStats[1]) : '—'
+  const poolPaid = poolStats ? fmtUsd(poolStats[2]) : '—'
 
   const [groupFilter, setGroupFilter] = useState<Activity>('walk')
   const [challengeFilter, setChallengeFilter] = useState<Activity>('walk')
@@ -283,17 +299,17 @@ export default function CommunityPage() {
               <span className="sd-mono" style={{ fontSize: 9, color: 'var(--muted-2)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Live</span>
             </div>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 8 }}>
-              <span className="sd-mono" style={{ fontWeight: 800, fontSize: 44, lineHeight: 0.9, color: '#cdfb46' }}>$8,412</span>
+              <span className="sd-mono" style={{ fontWeight: 800, fontSize: 44, lineHeight: 0.9, color: '#cdfb46' }}>{poolBalance}</span>
               <span style={{ fontSize: 13, color: 'var(--muted)' }}>in escrow</span>
             </div>
             <div style={{ position: 'relative', display: 'flex', gap: 10, marginTop: 16 }}>
               <div style={{ flex: 1, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 13, padding: '11px 13px' }}>
-                <div className="sd-mono" style={{ fontSize: 9, letterSpacing: '0.12em', color: 'var(--muted-2)', textTransform: 'uppercase' }}>Paid this week</div>
-                <div className="sd-mono" style={{ fontWeight: 800, fontSize: 16, marginTop: 3 }}>$1,940</div>
+                <div className="sd-mono" style={{ fontSize: 9, letterSpacing: '0.12em', color: 'var(--muted-2)', textTransform: 'uppercase' }}>Paid out</div>
+                <div className="sd-mono" style={{ fontWeight: 800, fontSize: 16, marginTop: 3 }}>{poolPaid}</div>
               </div>
               <div style={{ flex: 1, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 13, padding: '11px 13px' }}>
                 <div className="sd-mono" style={{ fontSize: 9, letterSpacing: '0.12em', color: 'var(--muted-2)', textTransform: 'uppercase' }}>From forfeits</div>
-                <div className="sd-mono" style={{ fontWeight: 800, fontSize: 16, marginTop: 3 }}>$612</div>
+                <div className="sd-mono" style={{ fontWeight: 800, fontSize: 16, marginTop: 3 }}>{poolReceived}</div>
               </div>
             </div>
           </div>
