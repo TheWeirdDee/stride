@@ -101,6 +101,25 @@ export function MapView({ path, isActive }: MapViewProps) {
         L.control.zoom({ position: 'topright' }).addTo(map)
         mapRef.current = map
         draw(L)
+
+        // No route yet → snap the map to the user's real location (not the Lagos
+        // fallback) and drop a "you are here" pulse so the map reflects them.
+        if (pathRef.current.length === 0 && typeof navigator !== 'undefined' && navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              if (cancelled || !mapRef.current) return
+              const here: [number, number] = [pos.coords.latitude, pos.coords.longitude]
+              mapRef.current.setView(here, 16)
+              if (pathRef.current.length === 0) {
+                L.circleMarker(here, { radius: 7, color: '#06080a', weight: 2.5, fillColor: '#7db4e6', fillOpacity: 1 })
+                  .addTo(mapRef.current)
+                  .bindPopup('You are here')
+              }
+            },
+            () => {},
+            { enableHighAccuracy: true, timeout: 8000 }
+          )
+        }
       })
       .catch(() => {})
     return () => {
