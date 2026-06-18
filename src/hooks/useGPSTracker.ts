@@ -24,6 +24,7 @@ export function useGPSTracker(): UseGPSTrackerReturn {
 
   const watchIdRef = useRef<number | null>(null)
   const timerIdRef = useRef<NodeJS.Timeout | null>(null)
+  const simIdRef = useRef<NodeJS.Timeout | null>(null)
   // Synchronous path buffer — geolocation callbacks fire faster than React state
   // commits, so we accumulate into a ref and mirror it into state for rendering.
   const pathRef = useRef<Coordinate[]>([])
@@ -49,6 +50,26 @@ export function useGPSTracker(): UseGPSTrackerReturn {
       clearInterval(timerIdRef.current)
       timerIdRef.current = null
     }
+    if (simIdRef.current !== null) {
+      clearInterval(simIdRef.current)
+      simIdRef.current = null
+    }
+  }, [])
+
+  // Append a coordinate to the path (shared by real GPS + demo simulation).
+  const appendCoord = useCallback((latitude: number, longitude: number, timestamp: number) => {
+    const newCoord: Coordinate = { latitude, longitude, timestamp }
+    const prev = pathRef.current
+    if (prev.length === 0) {
+      pathRef.current = [newCoord]
+      setPath(pathRef.current)
+      return
+    }
+    const delta = getDistance(prev[prev.length - 1], newCoord)
+    if (delta < 0.002) return // filter <2m GPS jitter
+    pathRef.current = [...prev, newCoord]
+    setPath(pathRef.current)
+    setDistance((d) => d + delta)
   }, [])
 
   // Geolocation success callback
@@ -58,24 +79,41 @@ export function useGPSTracker(): UseGPSTrackerReturn {
 
     const { latitude, longitude, accuracy } = position.coords
     if (accuracy > MAX_ACCURACY_M) return
+    appendCoord(latitude, longitude, position.timestamp)
+  }, [appendCoord])
 
-    const newCoord: Coordinate = { latitude, longitude, timestamp: position.timestamp }
-    const prev = pathRef.current
+  // Demo / test mode — simulate a realistic walk so the full session flow can be
+  // exercised without physically completing an outdoor route. Opt-in via the
+  // `stride_demo_mode` flag in Settings; the server only honours demo proofs in
+  // development, so this can't be abused against the live reward pool.
+  const isDemoMode = () => {
+    try { return typeof window !== 'undefined' && localStorage.getItem('stride_demo_mode') === '1' } catch { return false }
+  }
 
-    if (prev.length === 0) {
-      pathRef.current = [newCoord]
-      setPath(pathRef.current)
-      return
+  const startSimulation = useCallback(() => {
+    // Seed near the user's real location if we can grab it, else a default.
+    let lat = 6.5244
+    let lng = 3.3792
+    const seed = () => appendCoord(lat, lng, Date.now())
+    const tick = () => {
+      const { isActive: a, isPaused: p } = stateRef.current
+      if (!a || p) return
+      // ~15 m north-east per second with a little lateral wiggle for a natural path.
+      lat += 0.000135
+      lng += 0.000045 + (Math.random() - 0.5) * 0.00002
+      appendCoord(lat, lng, Date.now())
     }
-
-    const delta = getDistance(prev[prev.length - 1], newCoord)
-    // Filter GPS jitter (< 2 metres) so a stationary device doesn't accrue noise.
-    if (delta < 0.002) return
-
-    pathRef.current = [...prev, newCoord]
-    setPath(pathRef.current)
-    setDistance((d) => d + delta)
-  }, [])
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => { lat = pos.coords.latitude; lng = pos.coords.longitude; seed() },
+        () => seed(),
+        { enableHighAccuracy: true, timeout: 5000 }
+      )
+    } else {
+      seed()
+    }
+    simIdRef.current = setInterval(tick, 1000)
+  }, [appendCoord])
 
   // Geolocation error callback
   const handlePositionError = useCallback((err: GeolocationPositionError) => {
@@ -101,6 +139,16 @@ export function useGPSTracker(): UseGPSTrackerReturn {
     setIsActive(true)
     setIsPaused(false)
 
+    // Start tracking timer (runs in both real and demo mode)
+    timerIdRef.current = setInterval(() => {
+      setElapsedTime((prevTime) => prevTime + 1)
+    }, 1000)
+
+    if (isDemoMode()) {
+      startSimulation()
+      return
+    }
+
     if (typeof window === 'undefined' || !navigator.geolocation) {
       setError('Geolocation is not supported by your browser.')
       setIsActive(false)
@@ -117,12 +165,7 @@ export function useGPSTracker(): UseGPSTrackerReturn {
         maximumAge: 0,
       }
     )
-
-    // Start tracking timer
-    timerIdRef.current = setInterval(() => {
-      setElapsedTime((prevTime) => prevTime + 1)
-    }, 1000)
-  }, [cleanup, handlePositionSuccess, handlePositionError])
+  }, [cleanup, handlePositionSuccess, handlePositionError, startSimulation])
 
   const pauseTracking = useCallback(() => {
     setIsPaused(true)
