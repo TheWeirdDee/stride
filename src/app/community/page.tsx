@@ -19,6 +19,26 @@ import {
   fetchGroups,
   createGroup as apiCreateGroup,
 } from '@/utils/groups'
+import {
+  fetchNetworkStats,
+  fetchCityLeaderboard,
+  fetchTopMovers,
+  fetchRecentFinishes,
+  type NetworkStats,
+  type CityRow,
+  type MoverRow,
+  type FinishRow,
+} from '@/utils/communityStats'
+import { Flame } from 'lucide-react'
+
+const shortName = (w: string) => (w?.startsWith('guest_') ? 'Guest mover' : `${w?.slice(0, 6)}…${w?.slice(-4)}`)
+const fmtAgo = (iso: string) => {
+  const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000))
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const h = Math.round(mins / 60)
+  return h < 24 ? `${h}h ago` : `${Math.round(h / 24)}d ago`
+}
 
 const TICKER = [
   { name: 'Amara', city: 'Lagos', act: 'finished a 3.2 km walk', reward: '+$0.25' },
@@ -111,6 +131,12 @@ export default function CommunityPage() {
   const [dbChallenges, setDbChallenges] = useState<DbChallenge[]>([])
   const [dbGroups, setDbGroups] = useState<DbGroup[]>([])
 
+  // Real community aggregates from Supabase
+  const [netStats, setNetStats] = useState<NetworkStats | null>(null)
+  const [dbCities, setDbCities] = useState<CityRow[]>([])
+  const [dbMovers, setDbMovers] = useState<MoverRow[]>([])
+  const [dbFinishes, setDbFinishes] = useState<FinishRow[]>([])
+
   // Create-group form
   const [showCreateGroup, setShowCreateGroup] = useState(false)
   const [gName, setGName] = useState('')
@@ -134,6 +160,13 @@ export default function CommunityPage() {
   useEffect(() => {
     const t = setInterval(() => setIdx((i) => (i + 1) % TICKER.length), 2600)
     return () => clearInterval(t)
+  }, [])
+
+  useEffect(() => {
+    fetchNetworkStats().then(setNetStats)
+    fetchCityLeaderboard().then(setDbCities)
+    fetchTopMovers().then(setDbMovers)
+    fetchRecentFinishes().then(setDbFinishes)
   }, [])
 
   const loadChallenges = useCallback(async () => {
@@ -279,11 +312,15 @@ export default function CommunityPage() {
           <div className="sd-card sd-card-glow" style={{ marginTop: 18, padding: 22, position: 'relative' }}>
             <div className="sd-mono" style={{ position: 'relative', fontWeight: 700, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--muted)' }}>Distance this week</div>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 6 }}>
-              <span className="sd-mono" style={{ fontWeight: 800, fontSize: 58, lineHeight: 0.9, letterSpacing: '-0.02em' }}>18,640</span>
+              <span className="sd-mono" style={{ fontWeight: 800, fontSize: 58, lineHeight: 0.9, letterSpacing: '-0.02em' }}>{netStats ? Math.round(netStats.weeklyKm).toLocaleString() : '—'}</span>
               <span style={{ fontFamily: "'Archivo Expanded',sans-serif", fontWeight: 700, fontSize: 18, color: '#cdfb46' }}>KM</span>
             </div>
             <div style={{ position: 'relative', display: 'flex', gap: 24, marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-              {[['9,421', 'Completions', false], ['37', 'Active cities', false], ['+12%', 'vs last', true]].map(([v, l, lime]) => (
+              {[
+                [netStats ? netStats.completions.toLocaleString() : '—', 'Completions', false],
+                [netStats ? String(netStats.activeCities) : '—', 'Active cities', false],
+                [netStats ? netStats.members.toLocaleString() : '—', 'Members', true],
+              ].map(([v, l, lime]) => (
                 <div key={l as string}>
                   <div className="sd-mono" style={{ fontWeight: 800, fontSize: 24, color: lime ? '#cdfb46' : '#f4f6f3' }}>{v}</div>
                   <div className="sd-mono" style={{ fontSize: 9, letterSpacing: '0.12em', color: 'var(--muted-2)', textTransform: 'uppercase', marginTop: 3 }}>{l}</div>
@@ -516,7 +553,10 @@ export default function CommunityPage() {
               <span className="sd-meta">THIS WEEK</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {CITIES.map((c) => (
+              {(dbCities.length > 0
+                ? dbCities.map((c, i) => ({ rank: String(i + 1).padStart(2, '0'), name: c.name, km: c.km.toLocaleString(), users: String(c.users), w: `${dbCities[0].km ? (c.km / dbCities[0].km) * 100 : 0}%` }))
+                : CITIES
+              ).map((c) => (
                 <div key={c.rank} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 14, background: 'linear-gradient(120deg,rgba(255,255,255,0.05),rgba(255,255,255,0.012))', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 15, padding: '13px 15px', overflow: 'hidden' }}>
                   <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: c.w, background: 'linear-gradient(90deg,rgba(205,251,70,0.1),transparent)', pointerEvents: 'none' }} />
                   <span className="sd-mono" style={{ position: 'relative', fontWeight: 800, fontSize: 16, color: '#cdfb46', width: 24 }}>{c.rank}</span>
@@ -538,14 +578,17 @@ export default function CommunityPage() {
               <span className="sd-meta">THIS WEEK</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, overflow: 'hidden' }}>
-              {MOVERS.map((m) => (
+              {(dbMovers.length > 0
+                ? dbMovers.map((m, i) => ({ rank: String(i + 1).padStart(2, '0'), name: shortName(m.wallet), city: '', km: m.km.toFixed(1), streak: m.streak }))
+                : MOVERS
+              ).map((m) => (
                 <div key={m.rank} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#0c0f11', padding: '13px 16px' }}>
                   <span className="sd-mono" style={{ fontWeight: 800, fontSize: 14, color: '#cdfb46', width: 22 }}>{m.rank}</span>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 14 }}>{m.name}</div>
-                    <div className="sd-mono" style={{ fontSize: 10, color: 'var(--muted-2)', marginTop: 1 }}>{m.city}</div>
+                    {m.city && <div className="sd-mono" style={{ fontSize: 10, color: 'var(--muted-2)', marginTop: 1 }}>{m.city}</div>}
                   </div>
-                  <span className="sd-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: '#fbbf24', marginRight: 12 }}>🔥{m.streak}</span>
+                  <span className="sd-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: '#fbbf24', marginRight: 12 }}><Flame className="h-3 w-3" />{m.streak}</span>
                   <span className="sd-mono" style={{ fontWeight: 800, fontSize: 14, width: 50, textAlign: 'right' }}>{m.km}<small style={{ color: 'var(--muted-2)', fontWeight: 400 }}>km</small></span>
                 </div>
               ))}
@@ -559,19 +602,37 @@ export default function CommunityPage() {
               <span className="sd-meta">NETWORK</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {FINISHES.map((f, i) => (
-                <div key={i} className="sd-card" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 14 }}>
-                  <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(205,251,70,0.12)', color: '#cdfb46', display: 'grid', placeItems: 'center', fontWeight: 800, fontFamily: "'Archivo Expanded',sans-serif", flexShrink: 0 }}>{f.name[0]}</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700 }}>{f.name} <span style={{ color: 'var(--muted-2)', fontWeight: 400 }}>· {f.city}</span></div>
-                    <div className="sd-mono" style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>{f.detail}</div>
+              {dbFinishes.length > 0 ? (
+                dbFinishes.map((f, i) => {
+                  const name = shortName(f.wallet)
+                  return (
+                    <div key={i} className="sd-card" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 14 }}>
+                      <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(205,251,70,0.12)', color: '#cdfb46', display: 'grid', placeItems: 'center', fontWeight: 800, fontFamily: "'Archivo Expanded',sans-serif", flexShrink: 0 }}>{name[0]?.toUpperCase()}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700 }}>{name}</div>
+                        <div className="sd-mono" style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>{f.km.toFixed(1)} km · {fmtAgo(f.date)}</div>
+                      </div>
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div className="sd-mono" style={{ fontWeight: 800, fontSize: 13, color: '#cdfb46' }}>{f.reward > 0 ? `+$${f.reward.toFixed(2)}` : 'done'}</div>
+                      </div>
+                    </div>
+                  )
+                })
+              ) : (
+                FINISHES.map((f, i) => (
+                  <div key={i} className="sd-card" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 14 }}>
+                    <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(205,251,70,0.12)', color: '#cdfb46', display: 'grid', placeItems: 'center', fontWeight: 800, fontFamily: "'Archivo Expanded',sans-serif", flexShrink: 0 }}>{f.name[0]}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700 }}>{f.name} <span style={{ color: 'var(--muted-2)', fontWeight: 400 }}>· {f.city}</span></div>
+                      <div className="sd-mono" style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>{f.detail}</div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div className="sd-mono" style={{ fontWeight: 800, fontSize: 13, color: '#cdfb46' }}>{f.reward}</div>
+                      <div className="sd-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: 'var(--muted-2)', marginTop: 1 }}><Flame className="h-3 w-3" /> {f.fire}</div>
+                    </div>
                   </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div className="sd-mono" style={{ fontWeight: 800, fontSize: 13, color: '#cdfb46' }}>{f.reward}</div>
-                    <div className="sd-mono" style={{ fontSize: 11, color: 'var(--muted-2)', marginTop: 1 }}>🔥 {f.fire}</div>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </>
