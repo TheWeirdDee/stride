@@ -24,12 +24,20 @@ export function useGPSTracker(): UseGPSTrackerReturn {
 
   const watchIdRef = useRef<number | null>(null)
   const timerIdRef = useRef<NodeJS.Timeout | null>(null)
-  
-  // Keep latest state in refs for use in geolocation callbacks to prevent stale state issues
-  const stateRef = useRef({ isActive, isPaused, path, distance })
+  // Synchronous path buffer — geolocation callbacks fire faster than React state
+  // commits, so we accumulate into a ref and mirror it into state for rendering.
+  const pathRef = useRef<Coordinate[]>([])
+
+  // Keep latest active/paused flags in a ref for the geolocation callbacks.
+  const stateRef = useRef({ isActive, isPaused })
   useEffect(() => {
-    stateRef.current = { isActive, isPaused, path, distance }
-  }, [isActive, isPaused, path, distance])
+    stateRef.current = { isActive, isPaused }
+  }, [isActive, isPaused])
+
+  // Max GPS accuracy (metres) we'll accept. Phone GPS is ~5–30m outdoors but can
+  // read 50–100m near buildings or on wifi-assisted location, so 50m was far too
+  // strict — it rejected nearly every point. 100m keeps obvious garbage out.
+  const MAX_ACCURACY_M = 100
 
   // Clear tracking listeners and timers
   const cleanup = useCallback(() => {
@@ -46,36 +54,27 @@ export function useGPSTracker(): UseGPSTrackerReturn {
   // Geolocation success callback
   const handlePositionSuccess = useCallback((position: GeolocationPosition) => {
     const { isActive: curActive, isPaused: curPaused } = stateRef.current
-
     if (!curActive || curPaused) return
 
     const { latitude, longitude, accuracy } = position.coords
-    
-    // Ignore highly inaccurate points (e.g. accuracy > 50 meters)
-    if (accuracy > 50) return
+    if (accuracy > MAX_ACCURACY_M) return
 
-    const newCoord: Coordinate = {
-      latitude,
-      longitude,
-      timestamp: position.timestamp,
+    const newCoord: Coordinate = { latitude, longitude, timestamp: position.timestamp }
+    const prev = pathRef.current
+
+    if (prev.length === 0) {
+      pathRef.current = [newCoord]
+      setPath(pathRef.current)
+      return
     }
 
-    setPath((prevPath) => {
-      if (prevPath.length === 0) {
-        return [newCoord]
-      }
+    const delta = getDistance(prev[prev.length - 1], newCoord)
+    // Filter GPS jitter (< 2 metres) so a stationary device doesn't accrue noise.
+    if (delta < 0.002) return
 
-      const lastPoint = prevPath[prevPath.length - 1]
-      const delta = getDistance(lastPoint, newCoord)
-
-      // Filter GPS noise / jittering (less than 2 meters delta)
-      if (delta < 0.002) {
-        return prevPath
-      }
-
-      setDistance((prevDist) => prevDist + delta)
-      return [...prevPath, newCoord]
-    })
+    pathRef.current = [...prev, newCoord]
+    setPath(pathRef.current)
+    setDistance((d) => d + delta)
   }, [])
 
   // Geolocation error callback
@@ -95,6 +94,7 @@ export function useGPSTracker(): UseGPSTrackerReturn {
   const startTracking = useCallback(() => {
     cleanup()
     setError(null)
+    pathRef.current = []
     setPath([])
     setDistance(0)
     setElapsedTime(0)
