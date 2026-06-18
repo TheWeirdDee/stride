@@ -19,7 +19,8 @@ import {
   Pencil,
   Check,
   X,
-  Mail
+  Mail,
+  Settings
 } from 'lucide-react'
 
 interface CommitmentItem {
@@ -111,13 +112,22 @@ export default function ProfilePage() {
 
           let dbUser = data
 
-          // If connected but user doesn't exist in Supabase, create with defaults.
-          // Upsert avoids duplicate-key races; failures are non-fatal — we still
-          // render a default profile so a connected wallet is never shown as blank.
+          // Carry over the identity the user set up as a guest (localStorage) so
+          // connecting a wallet NEVER wipes their name/city/email — it's the same
+          // person, just now with a wallet attached.
+          let g: GuestProfile | null = null
+          try {
+            const raw = typeof window !== 'undefined' && localStorage.getItem('stride_guest_profile')
+            if (raw) g = JSON.parse(raw)
+          } catch {}
+
+          // If connected but user doesn't exist in Supabase, create from the guest
+          // identity (falling back to sensible defaults). Upsert avoids races and is
+          // non-fatal so a connected wallet is never shown blank.
           const defaults = {
             wallet_address: address,
-            nickname: 'Anonymous Mover',
-            city: 'Unknown',
+            nickname: g?.nickname || 'Anonymous Mover',
+            city: g?.city || 'Unknown',
             fitness_level: 'beginner',
             streak_current: 0,
             streak_best: 0,
@@ -142,8 +152,11 @@ export default function ProfilePage() {
 
           const src = dbUser || defaults
           setProfile({
-            nickname: src.nickname || 'Anonymous Mover',
-            city: src.city || 'Unknown',
+            // Prefer the wallet's saved name, else the guest identity, else default.
+            nickname: src.nickname || g?.nickname || 'Anonymous Mover',
+            city: src.city && src.city !== 'Unknown' ? src.city : (g?.city || 'Unknown'),
+            email: g?.email,
+            activity: g?.activity,
             fitness_level: src.fitness_level || 'beginner',
             streak_current: src.streak_current || 0,
             streak_best: src.streak_best || 0,
@@ -332,7 +345,10 @@ export default function ProfilePage() {
               )}
             </div>
           </div>
-          <button onClick={startEditing} className="sd-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--line)', borderRadius: 10, padding: '7px 10px', color: '#cdfb46', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}><Pencil className="h-3 w-3" /> Edit</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button onClick={startEditing} aria-label="Edit profile" title="Edit profile" style={{ width: 36, height: 36, borderRadius: 10, display: 'grid', placeItems: 'center', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--line)', color: '#cdfb46', cursor: 'pointer' }}><Pencil className="h-4 w-4" /></button>
+            <button onClick={() => router.push('/settings')} aria-label="Settings" title="Settings" style={{ width: 36, height: 36, borderRadius: 10, display: 'grid', placeItems: 'center', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--line)', color: 'var(--ink)', cursor: 'pointer' }}><Settings className="h-4 w-4" /></button>
+          </div>
         </div>
       )}
 
