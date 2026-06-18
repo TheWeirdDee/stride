@@ -116,6 +116,14 @@ export function useCreateCommitment() {
       throw new Error(errMsg)
     }
 
+    // Guard against a missing on-chain config so we surface a clear message
+    // instead of viem's cryptic `Address "undefined" is invalid`.
+    if (!COMMITMENT_CONTRACT || !CUSD_ADDRESS) {
+      const errMsg = 'App not configured: the contract address is missing. Set NEXT_PUBLIC_COMMITMENT_CONTRACT (and restart the dev server / redeploy).'
+      setError(errMsg)
+      throw new Error(errMsg)
+    }
+
     setIsPending(true)
     setError(null)
     setStatusMessage('Preparing transaction...')
