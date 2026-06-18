@@ -15,7 +15,7 @@ export default function Navbar() {
 
   // Immersive / standalone routes manage their own chrome.
   const hideChrome =
-    pathname === '/' || pathname.startsWith('/session')
+    pathname === '/' || pathname.startsWith('/session') || pathname === '/login' || pathname === '/signup'
   if (hideChrome) return null
 
   const handleConnect = () => {
