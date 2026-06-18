@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAccount, useConnect, useDisconnect } from 'wagmi'
+import { LogOut } from 'lucide-react'
 import StrideMark from '@/components/StrideMark'
 
 export default function Navbar() {
@@ -17,11 +18,7 @@ export default function Navbar() {
     pathname === '/' || pathname.startsWith('/session')
   if (hideChrome) return null
 
-  const handleWallet = () => {
-    if (isConnected) {
-      disconnect()
-      return
-    }
+  const handleConnect = () => {
     // No injected provider (no MetaMask/MiniPay) → tell the user instead of silently doing nothing.
     if (typeof window !== 'undefined' && !(window as { ethereum?: unknown }).ethereum) {
       alert('No wallet detected. Install MetaMask (or open Stride inside MiniPay) to connect.')
@@ -90,19 +87,28 @@ export default function Navbar() {
           </span>
           <span className="sd-logo-word">STRIDE</span>
         </Link>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button onClick={handleWallet} className={`sd-wallet-btn ${isConnected ? 'is-on' : ''}`}>
-            <span
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: '50%',
-                background: isConnected ? '#cdfb46' : 'rgba(244,246,243,0.4)',
-                boxShadow: isConnected ? '0 0 8px #cdfb46' : 'none',
-              }}
-            />
-            {walletLabel}
-          </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {isConnected && address ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span className="sd-wallet-btn is-on" title={address} style={{ cursor: 'default' }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#cdfb46', boxShadow: '0 0 8px #cdfb46' }} />
+                {walletLabel}
+              </span>
+              <button
+                onClick={() => disconnect()}
+                aria-label="Disconnect wallet"
+                title="Disconnect"
+                style={{ width: 30, height: 30, borderRadius: '50%', display: 'grid', placeItems: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--line-strong)', color: 'var(--muted)', cursor: 'pointer' }}
+              >
+                <LogOut className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button onClick={handleConnect} className="sd-wallet-btn">
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'rgba(244,246,243,0.4)' }} />
+              {walletLabel}
+            </button>
+          )}
           <Link
             href="/profile"
             aria-label="Profile"
