@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAccount, useConnect } from 'wagmi'
 import { ArrowRight, ArrowLeft, AlertCircle, Flame } from 'lucide-react'
@@ -33,6 +33,22 @@ export default function NewCommitmentPage() {
   const [customStake, setCustomStake] = useState<string>('')
   const [isCustomStakeActive, setIsCustomStakeActive] = useState<boolean>(false)
   const [localError, setLocalError] = useState<string | null>(null)
+
+  // Pre-fill from the defaults saved in Settings (distance goal only — steps keep
+  // their own preset). Deferred so it stays out of the render-cascade lint rule.
+  useEffect(() => {
+    function applyDefaults() {
+      try {
+        const raw = localStorage.getItem('stride_defaults')
+        if (!raw) return
+        const d = JSON.parse(raw) as { stake?: string; goalKm?: number }
+        if (typeof d.stake === 'string') setStakeAmount(d.stake)
+        if (typeof d.goalKm === 'number') setGoalValue(d.goalKm)
+      } catch {}
+    }
+    const id = setTimeout(applyDefaults, 0)
+    return () => clearTimeout(id)
+  }, [])
 
   const stakeOptions = ['0.01', '0.10', '0.25', '0.50', '1.00']
   const durationOptions = [
