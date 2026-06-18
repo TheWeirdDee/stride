@@ -136,6 +136,7 @@ export default function SessionPage() {
           pauseCount: pauseCountRef.current,
           totalPauseDurationMs: totalPauseMsRef.current,
           estimatedSteps: 0,
+          demo: (() => { try { return localStorage.getItem('stride_demo_mode') === '1' } catch { return false } })(),
         }),
       })
 
