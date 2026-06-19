@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { GuestProfile } from './types'
-import StrideMark from '@/components/StrideMark'
 
 interface LandingNavProps {
   isConnected: boolean
