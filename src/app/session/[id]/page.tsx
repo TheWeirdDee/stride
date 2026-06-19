@@ -9,6 +9,7 @@ import { formatUnits, parseEventLogs } from 'viem'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { commitmentABI } from '@/abi/commitment'
 import { COMMITMENT_CONTRACT, BACKEND_URL, GRACE_PERIOD_SECONDS } from '@/utils/constants'
+import { miniPayTxOverrides } from '@/utils/minipay'
 import { useGPSTracker } from '@/hooks/useGPSTracker'
 import { supabase } from '@/utils/supabase'
 import { generateRouteCard } from '@/utils/generateRouteCard'
@@ -171,7 +172,7 @@ export default function SessionPage() {
           proof.proofNonce as `0x${string}`,
           proof.signature as `0x${string}`,
         ],
-
+        ...miniPayTxOverrides(),
       })
 
       setStatusMsg('Waiting for confirmation...')
@@ -378,6 +379,7 @@ export default function SessionPage() {
         abi: commitmentABI,
         functionName: 'cancelCommitment',
         args: [commitmentId],
+        ...miniPayTxOverrides(),
       })
       await waitForTransactionReceipt(config, { hash })
       if (supabase) {
@@ -400,6 +402,7 @@ export default function SessionPage() {
         abi: commitmentABI,
         functionName: 'forfeitExpiredCommitment',
         args: [commitmentId],
+        ...miniPayTxOverrides(),
       })
       await waitForTransactionReceipt(config, { hash })
       if (supabase) {
