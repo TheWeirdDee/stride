@@ -120,7 +120,6 @@ export default function CommunityPage() {
   })
   const fmtUsd = (v?: bigint) =>
     v != null ? `$${parseFloat(formatUnits(v, 18)).toLocaleString(undefined, { maximumFractionDigits: 2 })}` : '—'
-  const poolBalance = poolStats ? fmtUsd(poolStats[0]) : '—'
   const poolReceived = poolStats ? fmtUsd(poolStats[1]) : '—'
   const poolPaid = poolStats ? fmtUsd(poolStats[2]) : '—'
 
@@ -334,10 +333,6 @@ export default function CommunityPage() {
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div className="sd-mono" style={{ fontWeight: 700, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#cdfb46' }}>Community reward pool</div>
               <span className="sd-mono" style={{ fontSize: 9, color: 'var(--muted-2)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Live</span>
-            </div>
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 8 }}>
-              <span className="sd-mono" style={{ fontWeight: 800, fontSize: 44, lineHeight: 0.9, color: '#cdfb46' }}>{poolBalance}</span>
-              <span style={{ fontSize: 13, color: 'var(--muted)' }}>in escrow</span>
             </div>
             <div style={{ position: 'relative', display: 'flex', gap: 10, marginTop: 16 }}>
               <div style={{ flex: 1, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 13, padding: '11px 13px' }}>
