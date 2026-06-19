@@ -4,25 +4,25 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import StrideMark from '@/components/StrideMark'
-import { loginWithUsername } from '@/utils/auth'
+import { loginWithIdentifier } from '@/utils/auth'
 import { User, Lock, AlertCircle, ArrowRight, Eye, EyeOff, Check } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [username, setUsername] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(true)
   const [showPw, setShowPw] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
-  const ready = username.trim().length >= 3 && password.length >= 1
+  const ready = identifier.trim().length >= 3 && password.length >= 1
 
   const submit = async () => {
     if (!ready || busy) return
     setBusy(true)
     setError('')
-    const res = await loginWithUsername(username, password, remember)
+    const res = await loginWithIdentifier(identifier, password, remember)
     setBusy(false)
     if (!res.ok) { setError(res.error || 'Login failed.'); return }
     router.push('/explore')
@@ -46,8 +46,8 @@ export default function LoginPage() {
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <Labeled icon={<User className="h-4 w-4" />} label="Username">
-          <input className="sd-input" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="lagos_strider" autoCapitalize="none" autoComplete="username"
+        <Labeled icon={<User className="h-4 w-4" />} label="Username or email">
+          <input className="sd-input" value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="lagos_strider or you@email.com" autoCapitalize="none" autoComplete="username"
             onKeyDown={(e) => { if (e.key === 'Enter') submit() }} />
         </Labeled>
 
