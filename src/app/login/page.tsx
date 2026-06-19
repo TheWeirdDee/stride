@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import StrideMark from '@/components/StrideMark'
-import { loginWithIdentifier } from '@/utils/auth'
+import { loginWithIdentifier, sendPasswordReset } from '@/utils/auth'
 import { User, Lock, AlertCircle, ArrowRight, Eye, EyeOff, Check } from 'lucide-react'
 
 export default function LoginPage() {
@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [showPw, setShowPw] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
 
   const ready = identifier.trim().length >= 3 && password.length >= 1
 
@@ -22,10 +23,23 @@ export default function LoginPage() {
     if (!ready || busy) return
     setBusy(true)
     setError('')
+    setNotice('')
     const res = await loginWithIdentifier(identifier, password, remember)
     setBusy(false)
     if (!res.ok) { setError(res.error || 'Login failed.'); return }
     router.push('/explore')
+  }
+
+  const forgotPassword = async () => {
+    if (busy) return
+    setError('')
+    setNotice('')
+    if (!identifier.trim()) { setError('Enter your username or email above, then tap "Forgot password".'); return }
+    setBusy(true)
+    const res = await sendPasswordReset(identifier)
+    setBusy(false)
+    if (!res.ok) { setError(res.error || 'Could not send reset email.'); return }
+    setNotice('Password reset link sent — check your email.')
   }
 
   return (
@@ -44,6 +58,11 @@ export default function LoginPage() {
           <AlertCircle className="h-4 w-4" style={{ flexShrink: 0 }} /> {error}
         </div>
       )}
+      {notice && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(205,251,70,0.1)', border: '1px solid rgba(205,251,70,0.3)', color: '#cdfb46', borderRadius: 12, padding: '11px 13px', marginBottom: 16, fontSize: 13 }}>
+          <Check className="h-4 w-4" style={{ flexShrink: 0 }} /> {notice}
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <Labeled icon={<User className="h-4 w-4" />} label="Username or email">
@@ -60,6 +79,12 @@ export default function LoginPage() {
             </button>
           </div>
         </Labeled>
+      </div>
+
+      <div style={{ textAlign: 'right', marginTop: 10 }}>
+        <button type="button" onClick={forgotPassword} disabled={busy} style={{ background: 'none', border: 0, padding: 0, color: 'var(--muted)', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}>
+          Forgot password?
+        </button>
       </div>
 
       <button onClick={() => setRemember((r) => !r)} type="button" style={{ display: 'flex', alignItems: 'center', gap: 9, background: 'none', border: 0, padding: 0, marginTop: 16, cursor: 'pointer' }}>
