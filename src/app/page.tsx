@@ -53,7 +53,9 @@ function LandingPageContent() {
 
   useEffect(() => {
     if (searchParams.get('onboard') === 'true') {
-      router.replace('/signup')
+      setObScreen('carousel')
+      setIsOnboardingOpen(true)
+      router.replace('/')
     }
   }, [searchParams, router])
 
@@ -197,6 +199,14 @@ function LandingPageContent() {
     router.push('/explore')
   }
 
+  // Open the onboarding flow. The redundant splash screen was removed, so we
+  // start at the carousel (intro guides) and continue through wallet / location
+  // / goal as before.
+  const openOnboarding = (screen = 'carousel') => {
+    setObScreen(screen)
+    setIsOnboardingOpen(true)
+  }
+
   return (
     <>
       <div className="landing-page-container">
@@ -204,19 +214,19 @@ function LandingPageContent() {
         <LandingNav
           isConnected={isConnected}
           guestProfile={guestProfile}
-          onGetStarted={() => router.push('/signup')}
+          onGetStarted={() => openOnboarding('carousel')}
           onContinue={() => router.push('/explore')}
         />
         <LandingHero
           isConnected={isConnected}
           guestProfile={guestProfile}
-          onGetStarted={() => router.push('/signup')}
+          onGetStarted={() => openOnboarding('carousel')}
           onContinue={() => router.push('/explore')}
-          onConnectWallet={() => router.push('/login')}
+          onConnectWallet={() => openOnboarding('wallet')}
           onStartCommitment={() => router.push('/commitment/new')}
         />
         <LandingMarketing
-          onGetStarted={() => router.push('/signup')}
+          onGetStarted={() => openOnboarding('carousel')}
         />
       </div>
 
