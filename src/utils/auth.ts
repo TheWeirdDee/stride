@@ -115,6 +115,29 @@ export async function loginWithIdentifier(identifier: string, password: string, 
   return { ok: true }
 }
 
+// ── Forgot password ──
+// Sends a Supabase password-reset email. Accepts a username (resolved to its
+// email) or an email directly.
+export async function sendPasswordReset(identifier: string): Promise<AuthResult> {
+  if (!supabase) return { ok: false, error: 'Accounts are not configured (Supabase missing).' }
+  const id = identifier.trim()
+  if (!id) return { ok: false, error: 'Enter your username or email first.' }
+
+  let email = ''
+  if (id.includes('@')) {
+    email = id.toLowerCase()
+  } else {
+    const { data: resolved, error } = await supabase.rpc('email_for_username', { p_username: id })
+    if (error || !resolved) return { ok: false, error: 'No account found with that username.' }
+    email = resolved as string
+  }
+
+  const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/login` : undefined
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+  if (error) return { ok: false, error: error.message }
+  return { ok: true }
+}
+
 export async function logout() {
   try { await supabase?.auth.signOut() } catch {}
   try {
