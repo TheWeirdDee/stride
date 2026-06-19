@@ -733,30 +733,7 @@ export default function OnboardingModal({
                     </div>
                     <div style={{ padding:'24px 0 0',width:'100%' }}>
                       <button
-                        onClick={async () => {
-                          if (isConnected && address) {
-                            setIsSubmittingProfile(true);
-                            try {
-                              if (supabase) {
-                                  await supabase
-                                    .from('users')
-                                    .upsert({
-                                      wallet_address: address,
-                                      nickname: obName || 'Anonymous Mover',
-                                      city: 'Unknown',
-                                      fitness_level: 'beginner',
-                                    }, { onConflict: 'wallet_address' });
-                              }
-                            } catch (err) {
-                              console.error(err);
-                            }
-                            setIsSubmittingProfile(false);
-                            onClose();
-                            router.push('/commitment/new');
-                          } else {
-                            onConnectAndSave();
-                          }
-                        }}
+                        onClick={onConnectAndSave}
                         disabled={isSubmittingProfile}
                         style={{ display:'inline-flex',alignItems:'center',justifyContent:'center',gap:9,fontFamily:'"Hanken Grotesk",system-ui,sans-serif',fontWeight:700,fontSize:16,border:'none',cursor:isSubmittingProfile?'not-allowed':'pointer',borderRadius:999,padding:'16px 22px',width:'100%',background:isSubmittingProfile?'#1d2024':'#cdfb46',color:isSubmittingProfile?'#9aa1a8':'#1b2700' }}
                       >
