@@ -4,6 +4,18 @@ export function isMiniPay(): boolean {
   return !!(window as any).ethereum?.isMiniPay
 }
 
+/**
+ * MiniPay's in-app provider only whitelists a limited set of JSON-RPC methods.
+ * viem's default EIP-1559 flow calls `eth_maxPriorityFeePerGas` / `eth_feeHistory`,
+ * which MiniPay rejects with `-32601: rpc method is not whitelisted`. Forcing a
+ * legacy transaction makes viem price gas via `eth_gasPrice` (whitelisted), so
+ * contract writes go through. Returns {} for normal wallets so MetaMask etc. are
+ * unchanged.
+ */
+export function miniPayTxOverrides(): { type: 'legacy' } | Record<string, never> {
+  return isMiniPay() ? { type: 'legacy' } : {}
+}
+
 export function registerMiniPayHook() {
   if (typeof window === 'undefined') return
   
