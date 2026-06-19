@@ -8,7 +8,7 @@ import { useAccount, useReadContract, useWriteContract, useConfig } from 'wagmi'
 import { formatUnits, parseEventLogs } from 'viem'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { commitmentABI } from '@/abi/commitment'
-import { COMMITMENT_CONTRACT, BACKEND_URL, GRACE_PERIOD_SECONDS } from '@/utils/constants'
+import { COMMITMENT_CONTRACT, BACKEND_URL } from '@/utils/constants'
 import { miniPayTxOverrides } from '@/utils/minipay'
 import { useGPSTracker } from '@/hooks/useGPSTracker'
 import { supabase } from '@/utils/supabase'
@@ -48,7 +48,6 @@ export default function SessionPage() {
   const [errorMsg, setErrorMsg] = useState('')
   const [txHash, setTxHash] = useState('')
   const [forfeiting, setForfeiting] = useState(false)
-  const [cancelling, setCancelling] = useState(false)
   const autoFinishedRef = useRef(false)
 
   const pauseCountRef = useRef(0)
@@ -75,8 +74,6 @@ export default function SessionPage() {
 
   const nowSec = Date.now() / 1000
   const isExpired = commitment ? Number(commitment.deadline) < nowSec : false
-  // Cancel (full refund) is only valid on-chain inside the grace window after creation.
-  const inGracePeriod = commitment ? nowSec <= Number(commitment.createdAt) + GRACE_PERIOD_SECONDS : false
   const isDistanceGoal = commitment ? commitment.distanceGoal > BigInt(0) : false
   const goalMeters = commitment ? Number(isDistanceGoal ? commitment.distanceGoal : commitment.stepGoal) : 0
   const distanceMeters = Math.round(gps.distance * 1000)
@@ -366,32 +363,15 @@ export default function SessionPage() {
     }
   }, [phase, goalMet, handleFinish])
 
-  // Cancel an active commitment for a full refund. The contract only allows this
-  // inside the grace window right after creation; afterwards the stake is locked
-  // until the goal is met (complete) or the deadline passes (forfeit).
-  const handleCancel = useCallback(async () => {
-    if (!confirm('Cancel this commitment and get your full stake back? You can start a new one right away.')) return
-    setCancelling(true)
+  // Give up an active commitment. The contract has no early-forfeit function — a
+  // stake can only be reclaimed by finishing the goal, and is forfeited to the
+  // pool automatically once the deadline passes. So "give up" stops the session
+  // and leaves; the stake stays staked and is forfeited at expiry.
+  const handleGiveUp = useCallback(() => {
+    if (!confirm("Give up this commitment? You won't get your stake back — it's forfeited to the reward pool when the timer ends. You can complete it any time before then to reclaim it plus a bonus.")) return
     gps.stopTracking()
-    try {
-      const hash = await writeContractAsync({
-        address: COMMITMENT_CONTRACT,
-        abi: commitmentABI,
-        functionName: 'cancelCommitment',
-        args: [commitmentId],
-        ...miniPayTxOverrides(),
-      })
-      await waitForTransactionReceipt(config, { hash })
-      if (supabase) {
-        await supabase.from('commitments').update({ status: 'cancelled' }).eq('commitment_id_chain', commitmentId)
-      }
-      router.push('/commitment/new')
-    } catch (err: unknown) {
-      setCancelling(false)
-      setErrorMsg((err as { shortMessage?: string })?.shortMessage || (err instanceof Error ? err.message : 'Cancel failed'))
-      setPhase('error')
-    }
-  }, [commitmentId, writeContractAsync, config, router, gps])
+    router.push('/explore')
+  }, [gps, router])
 
   // Forfeit an expired, unresolved commitment so the wallet is freed to create a new one.
   const handleForfeit = useCallback(async () => {
@@ -607,22 +587,13 @@ export default function SessionPage() {
           <button onClick={handleFinish} disabled={!isTracking} className="sd-btn sd-btn-lime">
             Finish &amp; claim reward
           </button>
-        ) : inGracePeriod ? (
-          <>
-            <button onClick={handleCancel} disabled={cancelling} className="sd-btn" style={{ background: '#f4f6f3', color: '#06080a' }}>
-              {cancelling ? 'Cancelling…' : 'Cancel & refund stake'}
-            </button>
-            <p className="sd-mono" style={{ textAlign: 'center', fontSize: 11, color: 'var(--muted-2)' }}>
-              {goalMeters - distanceMeters}m to go · finishing pays out automatically
-            </p>
-          </>
         ) : (
           <>
-            <button onClick={() => router.push('/explore')} className="sd-btn sd-btn-ghost">
-              Stop for now
+            <button onClick={handleGiveUp} className="sd-btn sd-btn-ghost" style={{ color: '#fb7185', borderColor: 'rgba(251,113,133,0.4)' }}>
+              Give up &amp; forfeit stake
             </button>
             <p className="sd-mono" style={{ textAlign: 'center', fontSize: 11, color: 'var(--muted-2)', lineHeight: 1.5 }}>
-              {goalMeters - distanceMeters}m left. Your stake unlocks when you reach the goal — it&apos;s only forfeited if the deadline passes.
+              {goalMeters - distanceMeters}m to go. Finish and your stake comes back + a bonus, automatically. Give up and the stake is forfeited to the reward pool.
             </p>
           </>
         )}
