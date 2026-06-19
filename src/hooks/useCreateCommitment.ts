@@ -8,6 +8,7 @@ import { COMMITMENT_CONTRACT, CUSD_ADDRESS } from '@/utils/constants'
 import { commitmentABI } from '@/abi/commitment'
 import { cusdABI } from '@/abi/cusd'
 import { supabase } from '@/utils/supabase'
+import { miniPayTxOverrides } from '@/utils/minipay'
 
 export function useCreateCommitment() {
   const { address, isConnected } = useAccount()
@@ -139,6 +140,7 @@ export function useCreateCommitment() {
         abi: cusdABI,
         functionName: 'approve',
         args: [COMMITMENT_CONTRACT, stakeWei],
+        ...miniPayTxOverrides(),
       })
       
       setIsPending(false)
@@ -157,6 +159,7 @@ export function useCreateCommitment() {
         abi: commitmentABI,
         functionName: 'createCommitment',
         args: [goalDistance, goalSteps, BigInt(durationSeconds), stakeWei],
+        ...miniPayTxOverrides(),
       })
 
       setIsPending(false)
