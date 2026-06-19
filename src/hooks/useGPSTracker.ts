@@ -35,10 +35,11 @@ export function useGPSTracker(): UseGPSTrackerReturn {
     stateRef.current = { isActive, isPaused }
   }, [isActive, isPaused])
 
-  // Max GPS accuracy (metres) we'll accept. Phone GPS is ~5–30m outdoors but can
-  // read 50–100m near buildings or on wifi-assisted location, so 50m was far too
-  // strict — it rejected nearly every point. 100m keeps obvious garbage out.
-  const MAX_ACCURACY_M = 100
+  // Max GPS accuracy (metres) we'll accept for *subsequent* points. The very first
+  // fix is always accepted so the map can centre and distance can start, even on
+  // lower-accuracy webview GPS (e.g. inside MiniPay/Opera Mini). 150m keeps only
+  // obvious garbage out once we're moving.
+  const MAX_ACCURACY_M = 150
 
   // Clear tracking listeners and timers
   const cleanup = useCallback(() => {
@@ -78,7 +79,9 @@ export function useGPSTracker(): UseGPSTrackerReturn {
     if (!curActive || curPaused) return
 
     const { latitude, longitude, accuracy } = position.coords
-    if (accuracy > MAX_ACCURACY_M) return
+    // Always take the first fix (so location shows immediately); only filter
+    // low-accuracy readings once we already have a starting point.
+    if (pathRef.current.length > 0 && typeof accuracy === 'number' && accuracy > MAX_ACCURACY_M) return
     appendCoord(latitude, longitude, position.timestamp)
   }, [appendCoord])
 
