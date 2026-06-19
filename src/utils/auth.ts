@@ -74,18 +74,27 @@ export async function signUpWithProfile(input: SignUpInput): Promise<AuthResult>
   return { ok: true }
 }
 
-// ── Log in (by username) ──
-export async function loginWithUsername(username: string, password: string, remember: boolean): Promise<AuthResult> {
+// ── Log in (by username OR email) ──
+export async function loginWithIdentifier(identifier: string, password: string, remember: boolean): Promise<AuthResult> {
   if (!supabase) return { ok: false, error: 'Accounts are not configured (Supabase missing).' }
 
-  const { data: email, error: lookupErr } = await supabase.rpc('email_for_username', { p_username: username.trim() })
-  if (lookupErr) return { ok: false, error: 'Could not reach the login service. Try again.' }
-  if (!email) return { ok: false, error: 'No account found with that username.' }
+  const id = identifier.trim()
+  let email = ''
+  if (id.includes('@')) {
+    // Looks like an email — sign in with it directly.
+    email = id.toLowerCase()
+  } else {
+    // Treat as a username — resolve it to the account email.
+    const { data: resolved, error: lookupErr } = await supabase.rpc('email_for_username', { p_username: id })
+    if (lookupErr) return { ok: false, error: 'Could not reach the login service. Try again.' }
+    if (!resolved) return { ok: false, error: 'No account found with that username.' }
+    email = resolved as string
+  }
 
-  const { data, error } = await supabase.auth.signInWithPassword({ email: email as string, password })
-  if (error) return { ok: false, error: 'Incorrect username or password.' }
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  if (error) return { ok: false, error: 'Incorrect username/email or password.' }
 
-  let nickname = username.trim()
+  let nickname = id
   let city = ''
   let activity: Activity = 'walk'
   try {
@@ -101,7 +110,7 @@ export async function loginWithUsername(username: string, password: string, reme
     }
   } catch { /* non-fatal */ }
 
-  setLocalIdentity({ id: data.user!.id, nickname, email: email as string, city, activity })
+  setLocalIdentity({ id: data.user!.id, nickname, email, city, activity })
   applyRemember(remember)
   return { ok: true }
 }
