@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/utils/supabase'
-import { BookOpen, Clock, Search, ChevronRight, RefreshCw, Sun, Moon, Quote, RotateCw } from 'lucide-react'
+import { BookOpen, Clock, Search, ChevronRight, RefreshCw, Sun, Moon, Quote } from 'lucide-react'
 import AskAI from '@/components/AskAI'
 
 const QUOTES = [
@@ -101,6 +101,12 @@ export default function ContentHubPage() {
   const [activeActivity, setActiveActivity] = useState<'all' | 'walk' | 'run' | 'both'>('all')
   const [qIdx, setQIdx] = useState(0)
 
+  // Show one motivation per day, rotating automatically (deterministic by date).
+  useEffect(() => {
+    const dayNumber = Math.floor(Date.now() / 86_400_000)
+    setQIdx(dayNumber % QUOTES.length)
+  }, [])
+
   useEffect(() => {
     async function fetchGuides() {
       try {
@@ -169,10 +175,7 @@ export default function ContentHubPage() {
       {/* Daily motivation */}
       <div className="sd-card-lime sd-card-glow" style={{ padding: 20, marginBottom: 14 }}>
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <span className="sd-mono" style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#cdfb46', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Quote className="h-3.5 w-3.5" /> Daily motivation</span>
-          <button onClick={() => setQIdx((i) => (i + 1) % QUOTES.length)} aria-label="New quote" style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 7, color: '#cdfb46', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
-            <RotateCw className="h-3.5 w-3.5" />
-          </button>
+          <span className="sd-mono" style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#cdfb46', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Quote className="h-3.5 w-3.5" /> Today&apos;s motivation</span>
         </div>
         <p style={{ position: 'relative', fontFamily: "'Archivo Expanded',sans-serif", fontWeight: 700, fontSize: 18, lineHeight: 1.3 }}>{QUOTES[qIdx]}</p>
       </div>
