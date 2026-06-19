@@ -8,9 +8,9 @@ import OnboardingModal from '@/components/onboarding/OnboardingModal'
 import { GuestProfile } from '@/components/landing/types'
 
 // Dedicated endpoint for the onboarding tour screens (carousel → explore →
-// wallet → location → goal → profile). The account auth flow lives at /signup;
-// this is the guided walkthrough.
-export default function TeamOnboardingPage() {
+// wallet → location → goal → profile). From the tour, "Just explore for now"
+// hands off to the account flow at /signup.
+export default function OnboardingPage() {
   const { address, isConnected } = useAccount()
   const { connect, connectors } = useConnect()
   const router = useRouter()
@@ -52,11 +52,8 @@ export default function TeamOnboardingPage() {
     if (screen === 'app:home') {
       connectAndSave()
     } else if (screen === 'app:explore') {
-      if (guestProfile) {
-        router.push('/explore')
-      } else {
-        setObScreen('guest-profile')
-      }
+      // "Just explore for now" → hand off to the account flow (signup/login).
+      router.push('/signup')
     } else {
       setObScreen(screen)
     }
