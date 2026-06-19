@@ -67,6 +67,11 @@ export default function LandingStyles() {
   .btn-dark:hover{transform:translateY(-2px);}
   .btn-ghost{background:transparent;border:1.5px solid rgba(255,255,255,.5);color:#fff;}
   .btn-ghost:hover{background:rgba(255,255,255,.12);}
+  /* Link-styled buttons otherwise inherit color from the generic anchor rule,
+     which made dark buttons show black-on-dark text. */
+  .landing-page-container a.btn-dark{color:#fff;}
+  .landing-page-container a.btn-lime{color:var(--lime-ink);}
+  .landing-page-container a.btn-light{color:var(--ink);}
   .arrow-chip{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--lime-ink);color:var(--lime);}
 
   /* ================= NAV ================= */
