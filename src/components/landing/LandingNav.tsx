@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { GuestProfile } from './types'
+import StrideMark from '@/components/StrideMark'
 
 interface LandingNavProps {
   isConnected: boolean
@@ -15,7 +16,12 @@ export default function LandingNav({ isConnected, guestProfile, onGetStarted, on
   return (
     <nav className="nav">
       <div className="nav-inner">
-        <Link href="/" className="logo">Stride<span className="chev">&gt;&gt;&gt;</span></Link>
+        <Link href="/" className="logo">
+          <span style={{ width: 30, height: 30, borderRadius: 9, background: 'var(--lime)', display: 'grid', placeItems: 'center', flex: 'none', marginRight: 8 }}>
+            <StrideMark size={18} color="#1c2900" />
+          </span>
+          Stride
+        </Link>
         <div className="nav-menu">
           <a href="#how">How it works</a>
           <a href="#programs">Programs</a>
