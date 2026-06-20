@@ -8,7 +8,7 @@ import { COMMITMENT_CONTRACT, CUSD_ADDRESS } from '@/utils/constants'
 import { commitmentABI } from '@/abi/commitment'
 import { cusdABI } from '@/abi/cusd'
 import { supabase } from '@/utils/supabase'
-import { miniPayTxOverrides } from '@/utils/minipay'
+import { celoTxOverrides } from '@/utils/minipay'
 
 export function useCreateCommitment() {
   const { address, isConnected } = useAccount()
@@ -140,13 +140,14 @@ export function useCreateCommitment() {
         abi: cusdABI,
         functionName: 'approve',
         args: [COMMITMENT_CONTRACT, stakeWei],
-        ...miniPayTxOverrides(),
+        ...celoTxOverrides(),
       })
-      
+
       setIsPending(false)
       setIsConfirming(true)
       setStatusMessage('Waiting for cUSD approval confirmation...')
-      await waitForTransactionReceipt(config, { hash: approveHash })
+      const approveReceipt = await waitForTransactionReceipt(config, { hash: approveHash })
+      if (approveReceipt.status === 'reverted') throw new Error('cUSD approval failed on-chain.')
 
       setIsPending(true)
       setIsConfirming(false)
@@ -159,13 +160,14 @@ export function useCreateCommitment() {
         abi: commitmentABI,
         functionName: 'createCommitment',
         args: [goalDistance, goalSteps, BigInt(durationSeconds), stakeWei],
-        ...miniPayTxOverrides(),
+        ...celoTxOverrides(),
       })
 
       setIsPending(false)
       setIsConfirming(true)
       setStatusMessage('Waiting for commitment transaction confirmation...')
-      await waitForTransactionReceipt(config, { hash: commitHash })
+      const commitReceipt = await waitForTransactionReceipt(config, { hash: commitHash })
+      if (commitReceipt.status === 'reverted') throw new Error('Creating the commitment failed on-chain.')
 
       setStatusMessage('Syncing data with the database...')
       const { readContract } = await import('wagmi/actions')
@@ -175,6 +177,13 @@ export function useCreateCommitment() {
         functionName: 'getActiveCommitmentId',
         args: [address],
       })
+
+      // If the chain reports no active commitment, creation didn't take — never
+      // navigate to a zero-id session (which renders as a phantom "expired" stake).
+      const ZERO = `0x${'0'.repeat(64)}`
+      if (!commitmentIdChain || commitmentIdChain === ZERO) {
+        throw new Error('Commitment was not created on-chain. The transaction may have been rejected — please try again.')
+      }
 
       const expiresAt = new Date(Date.now() + durationSeconds * 1000).toISOString()
       if (supabase) {
