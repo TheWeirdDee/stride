@@ -18,8 +18,8 @@ function LandingPageContent() {
   const [guestProfile, setGuestProfile] = useState<GuestProfile | null>(null)
 
   // Load the saved identity. In MiniPay the wallet auto-connects, but the user
-  // still needs an account — so if they have no identity yet, send them through
-  // the single onboarding (signup) so their profile isn't "anonymous".
+  // still needs to go through onboarding — so if they have no identity yet, send
+  // them through the onboarding tour so their profile isn't "anonymous".
   useEffect(() => {
     let profile: GuestProfile | null = null
     try {
@@ -28,14 +28,14 @@ function LandingPageContent() {
     } catch {}
     setGuestProfile(profile)
     if (!profile && isMiniPay()) {
-      router.replace('/signup')
+      router.replace('/onboarding')
     }
   }, [router])
 
-  // Legacy ?onboard=true link → the single onboarding (signup).
+  // Legacy ?onboard=true link → the onboarding tour.
   useEffect(() => {
     if (searchParams.get('onboard') === 'true') {
-      router.replace('/signup')
+      router.replace('/onboarding')
     }
   }, [searchParams, router])
 
@@ -45,19 +45,19 @@ function LandingPageContent() {
       <LandingNav
         isConnected={isConnected}
         guestProfile={guestProfile}
-        onGetStarted={() => router.push('/signup')}
+        onGetStarted={() => router.push('/onboarding')}
         onContinue={() => router.push('/explore')}
       />
       <LandingHero
         isConnected={isConnected}
         guestProfile={guestProfile}
-        onGetStarted={() => router.push('/signup')}
+        onGetStarted={() => router.push('/onboarding')}
         onContinue={() => router.push('/explore')}
         onConnectWallet={() => router.push('/login')}
         onStartCommitment={() => router.push('/commitment/new')}
       />
       <LandingMarketing
-        onGetStarted={() => router.push('/signup')}
+        onGetStarted={() => router.push('/onboarding')}
       />
     </div>
   )
