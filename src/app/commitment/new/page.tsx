@@ -6,6 +6,7 @@ import { useAccount, useConnect } from 'wagmi'
 import { ArrowRight, ArrowLeft, AlertCircle, Flame } from 'lucide-react'
 import { useCreateCommitment } from '@/hooks/useCreateCommitment'
 import { MIN_STAKE_CELO } from '@/utils/constants'
+import { isMiniPay } from '@/utils/minipay'
 
 type GoalType = 'distance' | 'steps'
 
@@ -33,11 +34,13 @@ export default function NewCommitmentPage() {
   const [customStake, setCustomStake] = useState<string>('')
   const [isCustomStakeActive, setIsCustomStakeActive] = useState<boolean>(false)
   const [localError, setLocalError] = useState<string | null>(null)
+  const [mp, setMp] = useState(false)
 
   // Pre-fill from the defaults saved in Settings (distance goal only — steps keep
   // their own preset). Deferred so it stays out of the render-cascade lint rule.
   useEffect(() => {
     function applyDefaults() {
+      setMp(isMiniPay())
       try {
         const raw = localStorage.getItem('stride_defaults')
         if (!raw) return
@@ -126,7 +129,7 @@ export default function NewCommitmentPage() {
         </div>
         <h3 className="sd-display" style={{ fontSize: 22 }}>{isConfirming ? 'Confirming on-chain' : 'Signature requested'}</h3>
         <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 12, maxWidth: 280 }}>{statusMessage}</p>
-        <div className="sd-mono" style={{ marginTop: 28, padding: '8px 14px', borderRadius: 999, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--line)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted-2)' }}>MiniPay native transaction</div>
+        <div className="sd-mono" style={{ marginTop: 28, padding: '8px 14px', borderRadius: 999, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--line)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted-2)' }}>{mp ? 'MiniPay native transaction' : 'Secured on Celo'}</div>
       </div>
     )
   }
