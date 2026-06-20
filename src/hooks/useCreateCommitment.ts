@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useAccount, useReadContract, useWriteContract, useConfig, useBalance } from 'wagmi'
-import { formatEther, parseEther } from 'viem'
+import { formatEther, parseEther, parseEventLogs } from 'viem'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { COMMITMENT_CONTRACT, CUSD_ADDRESS } from '@/utils/constants'
 import { commitmentABI } from '@/abi/commitment'
@@ -170,19 +170,38 @@ export function useCreateCommitment() {
       if (commitReceipt.status === 'reverted') throw new Error('Creating the commitment failed on-chain.')
 
       setStatusMessage('Syncing data with the database...')
-      const { readContract } = await import('wagmi/actions')
-      const commitmentIdChain = await readContract(config, {
-        address: COMMITMENT_CONTRACT,
-        abi: commitmentABI,
-        functionName: 'getActiveCommitmentId',
-        args: [address],
-      })
-
-      // If the chain reports no active commitment, creation didn't take — never
-      // navigate to a zero-id session (which renders as a phantom "expired" stake).
       const ZERO = `0x${'0'.repeat(64)}`
+
+      // Get the commitment id straight from THIS transaction's CommitmentCreated
+      // event — reliable and immune to RPC read-lag (which made getActiveCommitmentId
+      // briefly return zero and false-fail an actually-successful commitment).
+      let commitmentIdChain: `0x${string}` | undefined
+      try {
+        const events = parseEventLogs({ abi: commitmentABI, eventName: 'CommitmentCreated', logs: commitReceipt.logs })
+        const mine = events.find((e) => e.args.user?.toLowerCase() === address.toLowerCase()) ?? events[0]
+        if (mine?.args.commitmentId) commitmentIdChain = mine.args.commitmentId as `0x${string}`
+      } catch (e) {
+        console.error('Could not parse CommitmentCreated event:', e)
+      }
+
+      // Fallback: read the active id, retrying a few times to ride out RPC lag.
       if (!commitmentIdChain || commitmentIdChain === ZERO) {
-        throw new Error('Commitment was not created on-chain. The transaction may have been rejected — please try again.')
+        const { readContract } = await import('wagmi/actions')
+        for (let i = 0; i < 5; i++) {
+          const id = await readContract(config, {
+            address: COMMITMENT_CONTRACT,
+            abi: commitmentABI,
+            functionName: 'getActiveCommitmentId',
+            args: [address],
+          }) as `0x${string}`
+          if (id && id !== ZERO) { commitmentIdChain = id; break }
+          await new Promise((r) => setTimeout(r, 1500))
+        }
+      }
+
+      // Only fail if we genuinely couldn't find the commitment anywhere.
+      if (!commitmentIdChain || commitmentIdChain === ZERO) {
+        throw new Error('Your stake was sent but we could not read the new commitment id yet. It may still be confirming — check your active session in a moment before retrying.')
       }
 
       const expiresAt = new Date(Date.now() + durationSeconds * 1000).toISOString()
