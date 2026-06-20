@@ -85,8 +85,14 @@ export default function SessionPage() {
   const isDistanceGoal = commitment ? commitment.distanceGoal > BigInt(0) : false
   const goalMeters = commitment ? Number(isDistanceGoal ? commitment.distanceGoal : commitment.stepGoal) : 0
   const distanceMeters = Math.round(gps.distance * 1000)
-  const progressPct = goalMeters > 0 ? Math.min((distanceMeters / goalMeters) * 100, 100) : 0
-  const goalMet = isDistanceGoal ? distanceMeters >= goalMeters : false // steps unsupported without sensor
+  // No pedometer on the web, so estimate steps from GPS distance (avg stride ≈ 0.75 m).
+  const STEP_LENGTH_M = 0.75
+  const estSteps = Math.round(distanceMeters / STEP_LENGTH_M)
+  // The metric that counts toward the goal: metres for distance goals, steps for step goals.
+  const progressValue = isDistanceGoal ? distanceMeters : estSteps
+  const progressPct = goalMeters > 0 ? Math.min((progressValue / goalMeters) * 100, 100) : 0
+  const goalMet = goalMeters > 0 && progressValue >= goalMeters
+  const goalUnit = isDistanceGoal ? 'm' : 'steps'
 
   const handleStart = useCallback(() => {
     sessionStartRef.current = Date.now()
@@ -146,7 +152,7 @@ export default function SessionPage() {
           durationSeconds: gps.elapsedTime,
           pauseCount: pauseCountRef.current,
           totalPauseDurationMs: totalPauseMsRef.current,
-          estimatedSteps: 0,
+          estimatedSteps: Math.round((gps.distance * 1000) / 0.75),
           demo: (() => { try { return localStorage.getItem('stride_demo_mode') === '1' } catch { return false } })(),
         }),
       })
@@ -606,18 +612,18 @@ export default function SessionPage() {
         <MapView path={gps.path} isActive={phase === 'tracking'} />
       </div>
 
-      {/* Big distance */}
+      {/* Big metric — km for distance goals, steps for step goals */}
       <div style={{ textAlign: 'center', marginTop: 12 }}>
-        <div className="sd-mono" style={{ fontSize: 9, letterSpacing: '0.2em', color: 'var(--muted-2)', textTransform: 'uppercase' }}>Distance</div>
-        <div className="sd-mono" style={{ fontWeight: 800, fontSize: 84, lineHeight: 0.92, letterSpacing: '-0.03em', marginTop: 6 }}>{kmNow.toFixed(2)}</div>
-        <div style={{ fontFamily: "'Archivo Expanded',sans-serif", fontWeight: 700, fontSize: 16, color: '#cdfb46', marginTop: 2 }}>KILOMETRES</div>
+        <div className="sd-mono" style={{ fontSize: 9, letterSpacing: '0.2em', color: 'var(--muted-2)', textTransform: 'uppercase' }}>{isDistanceGoal ? 'Distance' : 'Steps'}</div>
+        <div className="sd-mono" style={{ fontWeight: 800, fontSize: 84, lineHeight: 0.92, letterSpacing: '-0.03em', marginTop: 6 }}>{isDistanceGoal ? kmNow.toFixed(2) : estSteps.toLocaleString()}</div>
+        <div style={{ fontFamily: "'Archivo Expanded',sans-serif", fontWeight: 700, fontSize: 16, color: '#cdfb46', marginTop: 2 }}>{isDistanceGoal ? 'KILOMETRES' : 'STEPS'}</div>
       </div>
 
       {/* Progress */}
       <div style={{ marginTop: 28 }}>
         <div className="sd-mono" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--muted-2)', marginBottom: 6 }}>
-          <span>{distanceMeters}m</span>
-          <span>GOAL {goalMeters}m</span>
+          <span>{progressValue.toLocaleString()}{isDistanceGoal ? 'm' : ' steps'}</span>
+          <span>GOAL {goalMeters.toLocaleString()}{isDistanceGoal ? 'm' : ' steps'}</span>
         </div>
         <div style={{ height: 8, borderRadius: 999, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
           <div style={{ height: '100%', width: `${progressPct}%`, background: '#cdfb46', borderRadius: 999, transition: 'width 0.5s ease', boxShadow: '0 0 12px rgba(205,251,70,0.6)' }} />
@@ -674,12 +680,12 @@ export default function SessionPage() {
               {cancelling ? 'Cancelling…' : `Cancel & refund · ${graceSecondsLeft}s left`}
             </button>
             <p className="sd-mono" style={{ textAlign: 'center', fontSize: 11, color: 'var(--muted-2)', lineHeight: 1.5 }}>
-              {goalMeters - distanceMeters}m to go. Refunds are only possible in the first 60 seconds.
+              {Math.max(0, goalMeters - progressValue).toLocaleString()}{goalUnit === 'm' ? 'm' : ' steps'} to go. Refunds are only possible in the first 60 seconds.
             </p>
           </>
         ) : (
           <p className="sd-mono" style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--muted-2)', lineHeight: 1.6 }}>
-            {goalMeters - distanceMeters}m to go. Your stake is locked until <b style={{ color: 'var(--ink)' }}>{deadlineLabel}</b> — finish your goal to get it back <b style={{ color: '#cdfb46' }}>plus a bonus</b>, or it&apos;s forfeited to the pool when the timer ends. There&apos;s no way to exit mid-commitment (that&apos;s the point — skin in the game).
+            {Math.max(0, goalMeters - progressValue).toLocaleString()}{goalUnit === 'm' ? 'm' : ' steps'} to go. Your stake is locked until <b style={{ color: 'var(--ink)' }}>{deadlineLabel}</b> — finish your goal to get it back <b style={{ color: '#cdfb46' }}>plus a bonus</b>, or it&apos;s forfeited to the pool when the timer ends. There&apos;s no way to exit mid-commitment (that&apos;s the point — skin in the game).
           </p>
         )}
       </div>
