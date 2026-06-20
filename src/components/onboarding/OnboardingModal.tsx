@@ -128,14 +128,27 @@ export default function OnboardingModal({
                     <div style={{ position:'relative',height:240,display:'grid',placeItems:'center' }}>
                       <div style={{ position:'absolute',width:230,height:230,borderRadius:'50%',background:'radial-gradient(circle, rgba(205,251,70,.18), transparent 68%)' }} />
                       {obSlideIdx === 1 ? (
-                        <div style={{ width:250,height:200,borderRadius:26,background:'radial-gradient(120% 90% at 30% 10%, #16242e, #0c1116 70%)',overflow:'hidden',position:'relative' }}>
-                          <div style={{ position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px)',backgroundSize:'34px 34px' }} />
+                        <div style={{ width:250,height:200,borderRadius:26,background:'radial-gradient(120% 90% at 30% 10%, #16242e, #0c1116 70%)',overflow:'hidden',position:'relative',border:'1px solid rgba(255,255,255,.06)' }}>
+                          <div style={{ position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px)',backgroundSize:'26px 26px',maskImage:'radial-gradient(130% 100% at 50% 40%, #000 55%, transparent)',WebkitMaskImage:'radial-gradient(130% 100% at 50% 40%, #000 55%, transparent)' }} />
                           <svg style={{ position:'absolute',inset:0,width:'100%',height:'100%' }} viewBox="0 0 340 300" preserveAspectRatio="xMidYMid slice">
-                            <path d="M40 270 C70 250 90 210 130 200 C175 188 180 150 220 140 C265 128 290 95 320 60" fill="none" stroke="rgba(255,255,255,.2)" strokeWidth="5" strokeLinecap="round"/>
-                            <path d="M40 270 C70 250 90 210 130 200 C175 188 180 150 220 140 C265 128 290 95 320 60" fill="none" stroke="#cdfb46" strokeWidth="5" strokeLinecap="round" style={{ filter:'drop-shadow(0 0 8px rgba(205,251,70,.55))' }}/>
+                            <defs>
+                              <linearGradient id="ob-route" x1="0" y1="1" x2="1" y2="0">
+                                <stop offset="0" stopColor="#74c400" />
+                                <stop offset="1" stopColor="#cdfb46" />
+                              </linearGradient>
+                            </defs>
+                            <path id="ob-path" d="M44 264 C96 252 92 192 150 182 C214 171 198 116 252 100 C290 89 302 68 312 48" fill="none" stroke="rgba(255,255,255,.12)" strokeWidth="11" strokeLinecap="round" />
+                            <path d="M44 264 C96 252 92 192 150 182 C214 171 198 116 252 100 C290 89 302 68 312 48" fill="none" stroke="url(#ob-route)" strokeWidth="6" strokeLinecap="round" style={{ filter:'drop-shadow(0 0 8px rgba(205,251,70,.55))' }} />
+                            {/* a runner dot tracing the route */}
+                            <circle r="6.5" fill="#fff" stroke="#0b0c0e" strokeWidth="3">
+                              <animateMotion dur="4.5s" repeatCount="indefinite" keyPoints="0;1" keyTimes="0;1" calcMode="linear">
+                                <mpath href="#ob-path" />
+                              </animateMotion>
+                            </circle>
+                            {/* start + finish pins, anchored exactly to the path ends */}
+                            <circle cx="44" cy="264" r="8" fill="#fff" stroke="#0b0c0e" strokeWidth="3" />
+                            <circle cx="312" cy="48" r="9.5" fill="#cdfb46" stroke="#0b0c0e" strokeWidth="3" />
                           </svg>
-                          <span style={{ position:'absolute',left:'13%',top:'82%',width:18,height:18,borderRadius:'50%',background:'#fff',border:'3px solid #0b0c0e',boxShadow:'0 0 0 4px rgba(205,251,70,.25)',display:'inline-block' }} />
-                          <span style={{ position:'absolute',left:'88%',top:'14%',width:18,height:18,borderRadius:'50%',background:'#cdfb46',border:'3px solid #0b0c0e',boxShadow:'0 0 0 4px rgba(205,251,70,.25)',display:'inline-block' }} />
                         </div>
                       ) : (
                         <div className="ob-pop" style={{ width:140,height:140,borderRadius:40,background:'#cdfb46',color:'#1b2700',display:'grid',placeItems:'center',boxShadow:'0 24px 50px -16px rgba(205,251,70,.5)' }}>
