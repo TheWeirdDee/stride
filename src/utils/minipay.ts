@@ -5,15 +5,16 @@ export function isMiniPay(): boolean {
 }
 
 /**
- * MiniPay's in-app provider only whitelists a limited set of JSON-RPC methods.
- * viem's default EIP-1559 flow calls `eth_maxPriorityFeePerGas` / `eth_feeHistory`,
- * which MiniPay rejects with `-32601: rpc method is not whitelisted`. Forcing a
- * legacy transaction makes viem price gas via `eth_gasPrice` (whitelisted), so
- * contract writes go through. Returns {} for normal wallets so MetaMask etc. are
- * unchanged.
+ * Force legacy (type-0) transactions for every wallet on Celo.
+ *
+ * Celo's EIP-1559 fee RPCs are flaky across wallets: MiniPay rejects
+ * `eth_maxPriorityFeePerGas` / `eth_feeHistory` with `-32601 (not whitelisted)`,
+ * and MetaMask often shows "Network fee Unavailable" and fails to submit. Legacy
+ * txs price gas via `eth_gasPrice`, which works everywhere, so contract writes go
+ * through reliably in both MiniPay and MetaMask.
  */
-export function miniPayTxOverrides(): { type: 'legacy' } | Record<string, never> {
-  return isMiniPay() ? { type: 'legacy' } : {}
+export function celoTxOverrides(): { type: 'legacy' } {
+  return { type: 'legacy' }
 }
 
 export function registerMiniPayHook() {
