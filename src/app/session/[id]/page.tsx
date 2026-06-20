@@ -8,7 +8,7 @@ import { useAccount, useReadContract, useWriteContract, useConfig } from 'wagmi'
 import { formatUnits, parseEventLogs } from 'viem'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { commitmentABI } from '@/abi/commitment'
-import { COMMITMENT_CONTRACT, BACKEND_URL } from '@/utils/constants'
+import { COMMITMENT_CONTRACT, BACKEND_URL, GRACE_PERIOD_SECONDS } from '@/utils/constants'
 import { celoTxOverrides } from '@/utils/minipay'
 import { useGPSTracker } from '@/hooks/useGPSTracker'
 import { supabase } from '@/utils/supabase'
@@ -48,6 +48,9 @@ export default function SessionPage() {
   const [errorMsg, setErrorMsg] = useState('')
   const [txHash, setTxHash] = useState('')
   const [forfeiting, setForfeiting] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  // Centered confirmation card (replaces the browser confirm() popup).
+  const [confirmCfg, setConfirmCfg] = useState<{ title: string; body: string; label: string; danger?: boolean; onYes: () => void } | null>(null)
   const autoFinishedRef = useRef(false)
 
   const pauseCountRef = useRef(0)
@@ -74,6 +77,11 @@ export default function SessionPage() {
 
   const nowSec = Date.now() / 1000
   const isExpired = commitment ? Number(commitment.deadline) < nowSec : false
+  // Within the on-chain grace window a fresh commitment can still be cancelled
+  // for a full refund. After it, the stake is locked until the deadline.
+  const inGracePeriod = commitment ? nowSec <= Number(commitment.createdAt) + GRACE_PERIOD_SECONDS : false
+  const graceSecondsLeft = commitment ? Math.max(0, Math.ceil(Number(commitment.createdAt) + GRACE_PERIOD_SECONDS - nowSec)) : 0
+  const deadlineLabel = commitment ? new Date(Number(commitment.deadline) * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''
   const isDistanceGoal = commitment ? commitment.distanceGoal > BigInt(0) : false
   const goalMeters = commitment ? Number(isDistanceGoal ? commitment.distanceGoal : commitment.stepGoal) : 0
   const distanceMeters = Math.round(gps.distance * 1000)
@@ -363,18 +371,37 @@ export default function SessionPage() {
     }
   }, [phase, goalMet, handleFinish])
 
-  // Give up an active commitment. The contract has no early-forfeit function — a
-  // stake can only be reclaimed by finishing the goal, and is forfeited to the
-  // pool automatically once the deadline passes. So "give up" stops the session
-  // and leaves; the stake stays staked and is forfeited at expiry.
-  const handleGiveUp = useCallback(() => {
-    if (!confirm("Give up this commitment? You won't get your stake back — it's forfeited to the reward pool when the timer ends. You can complete it any time before then to reclaim it plus a bonus.")) return
+  // Cancel within the 60s grace window → full refund (the only way to exit a
+  // commitment early on-chain). Actually calls the wallet and frees the wallet.
+  const handleCancel = useCallback(async () => {
+    setConfirmCfg(null)
+    setCancelling(true)
     gps.stopTracking()
-    router.push('/explore')
-  }, [gps, router])
+    try {
+      const hash = await writeContractAsync({
+        address: COMMITMENT_CONTRACT,
+        abi: commitmentABI,
+        functionName: 'cancelCommitment',
+        args: [commitmentId],
+        ...celoTxOverrides(),
+      })
+      await waitForTransactionReceipt(config, { hash })
+      if (supabase) {
+        await supabase.from('commitments').update({ status: 'cancelled' }).eq('commitment_id_chain', commitmentId)
+      }
+      router.push('/commitment/new')
+    } catch (err: unknown) {
+      setCancelling(false)
+      const msg = (err as { shortMessage?: string })?.shortMessage || (err instanceof Error ? err.message : 'Cancel failed')
+      // The 60s window can lapse mid-flow; give a clear reason rather than a raw revert.
+      setErrorMsg(/grace period/i.test(msg) ? 'The 60-second cancel window has passed. Your stake is now locked until the deadline — finish your goal to get it back, or it is forfeited to the pool when the timer ends.' : msg)
+      setPhase('error')
+    }
+  }, [commitmentId, writeContractAsync, config, router, gps])
 
   // Forfeit an expired, unresolved commitment so the wallet is freed to create a new one.
   const handleForfeit = useCallback(async () => {
+    setConfirmCfg(null)
     setForfeiting(true)
     try {
       const hash = await writeContractAsync({
@@ -399,7 +426,7 @@ export default function SessionPage() {
   // ─── Render ───────────────────────────────────────────────
   const screen = (children: React.ReactNode) => (
     <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
-      <header className="sd-topbar">
+      <header className="sd-topbar" style={{ position: 'sticky', top: 0, zIndex: 20, background: '#06080a' }}>
         <button onClick={() => router.push('/explore')} className="sd-logo" style={{ background: 'none', border: 0, cursor: 'pointer' }} aria-label="Back to explore">
           <span className="sd-logo-mark"><StrideMark size={16} /></span>
           <span className="sd-logo-word">STRIDE</span>
@@ -409,6 +436,22 @@ export default function SessionPage() {
         </button>
       </header>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '20px 20px 36px' }}>{children}</div>
+
+      {/* Centered confirmation card */}
+      {confirmCfg && (
+        <div onClick={() => setConfirmCfg(null)} style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(3px)', display: 'grid', placeItems: 'center', padding: 24 }}>
+          <div onClick={(e) => e.stopPropagation()} className="sd-card" style={{ width: '100%', maxWidth: 360, padding: 22 }}>
+            <h3 className="sd-display" style={{ fontSize: 20 }}>{confirmCfg.title}</h3>
+            <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 10, lineHeight: 1.55 }}>{confirmCfg.body}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 22 }}>
+              <button onClick={confirmCfg.onYes} className="sd-btn" style={confirmCfg.danger ? { background: '#fb7185', color: '#06080a' } : { background: '#cdfb46', color: '#06080a' }}>
+                {confirmCfg.label}
+              </button>
+              <button onClick={() => setConfirmCfg(null)} className="sd-btn sd-btn-ghost">Never mind</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 
@@ -505,9 +548,13 @@ export default function SessionPage() {
 
         {isExpired ? (
           <>
-            <p style={{ fontSize: 13, color: '#fb7185', fontWeight: 600, marginBottom: 6, textAlign: 'center' }}>This commitment expired. Your stake went to the reward pool.</p>
-            <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 14, textAlign: 'center' }}>Forfeit it on-chain to free your wallet and start a new commitment.</p>
-            <button onClick={handleForfeit} disabled={forfeiting} className="sd-btn sd-btn-lime" style={{ marginBottom: 10 }}>
+            <p style={{ fontSize: 13, color: '#fb7185', fontWeight: 600, marginBottom: 6, textAlign: 'center' }}>This commitment expired. The deadline passed before the goal was met.</p>
+            <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 14, textAlign: 'center' }}>Forfeit it on-chain — the stake goes to the reward pool and your wallet is freed to start a new commitment.</p>
+            <button
+              onClick={() => setConfirmCfg({ title: 'Forfeit this commitment?', body: 'The deadline has passed, so the stake is forfeited to the reward pool. This frees your wallet to start a new commitment.', label: forfeiting ? 'Forfeiting…' : 'Forfeit & start new', danger: true, onYes: handleForfeit })}
+              disabled={forfeiting}
+              className="sd-btn sd-btn-lime" style={{ marginBottom: 10 }}
+            >
               {forfeiting ? 'Forfeiting…' : 'Forfeit & start new'}
             </button>
             <button onClick={() => router.push('/explore')} className="sd-btn sd-btn-ghost">Back to explore</button>
@@ -515,7 +562,23 @@ export default function SessionPage() {
         ) : (
           <>
             {gps.error && <p style={{ fontSize: 12, color: '#fb7185', marginBottom: 10 }}>{gps.error}</p>}
-            <button onClick={handleStart} className="sd-btn sd-btn-lime">Start session</button>
+            <button onClick={handleStart} className="sd-btn sd-btn-lime" style={{ marginBottom: 10 }}>Start session</button>
+            {inGracePeriod ? (
+              <>
+                <button
+                  onClick={() => setConfirmCfg({ title: 'Cancel & get a refund?', body: `You're still in the first 60 seconds, so you can cancel this commitment and get your full stake back.`, label: cancelling ? 'Cancelling…' : 'Cancel & refund', onYes: handleCancel })}
+                  disabled={cancelling}
+                  className="sd-btn sd-btn-ghost"
+                >
+                  {cancelling ? 'Cancelling…' : `Cancel & refund · ${graceSecondsLeft}s left`}
+                </button>
+                <p className="sd-mono" style={{ textAlign: 'center', fontSize: 11, color: 'var(--muted-2)', marginTop: 8 }}>Refunds are only possible in the first 60 seconds.</p>
+              </>
+            ) : (
+              <p className="sd-mono" style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--muted-2)', lineHeight: 1.6, marginTop: 4 }}>
+                The 60-second cancel window has passed, so your stake is locked until <b style={{ color: 'var(--ink)' }}>{deadlineLabel}</b>. Finish your goal to get it back <b style={{ color: '#cdfb46' }}>plus a bonus</b>, otherwise it&apos;s forfeited to the pool at the deadline.
+              </p>
+            )}
           </>
         )}
       </>
@@ -537,8 +600,9 @@ export default function SessionPage() {
         </span>
       </div>
 
-      {/* Live map */}
-      <div style={{ height: 240, borderRadius: 20, overflow: 'hidden' }}>
+      {/* Live map — isolate so Leaflet's internal z-indexes (controls/popups)
+          stay contained and don't paint over the top bar while scrolling. */}
+      <div style={{ height: 240, borderRadius: 20, overflow: 'hidden', position: 'relative', zIndex: 0, isolation: 'isolate' }}>
         <MapView path={gps.path} isActive={phase === 'tracking'} />
       </div>
 
@@ -587,15 +651,36 @@ export default function SessionPage() {
           <button onClick={handleFinish} disabled={!isTracking} className="sd-btn sd-btn-lime">
             Finish &amp; claim reward
           </button>
-        ) : (
+        ) : isExpired ? (
           <>
-            <button onClick={handleGiveUp} className="sd-btn sd-btn-ghost" style={{ color: '#fb7185', borderColor: 'rgba(251,113,133,0.4)' }}>
-              Give up &amp; forfeit stake
+            <button
+              onClick={() => setConfirmCfg({ title: 'Forfeit this commitment?', body: 'The deadline has passed, so your stake is forfeited to the reward pool. This frees your wallet to start a new commitment.', label: forfeiting ? 'Forfeiting…' : 'Forfeit & start new', danger: true, onYes: handleForfeit })}
+              disabled={forfeiting}
+              className="sd-btn" style={{ background: '#fb7185', color: '#06080a' }}
+            >
+              {forfeiting ? 'Forfeiting…' : 'Forfeit & start new'}
             </button>
             <p className="sd-mono" style={{ textAlign: 'center', fontSize: 11, color: 'var(--muted-2)', lineHeight: 1.5 }}>
-              {goalMeters - distanceMeters}m to go. Finish and your stake comes back + a bonus, automatically. Give up and the stake is forfeited to the reward pool.
+              Time&apos;s up — the goal can no longer be completed.
             </p>
           </>
+        ) : inGracePeriod ? (
+          <>
+            <button
+              onClick={() => setConfirmCfg({ title: 'Cancel & get a refund?', body: `You're still in the first 60 seconds, so you can cancel and get your full stake back. After that the stake is locked until your deadline (${deadlineLabel}).`, label: cancelling ? 'Cancelling…' : 'Cancel & refund', onYes: handleCancel })}
+              disabled={cancelling}
+              className="sd-btn" style={{ background: '#f4f6f3', color: '#06080a' }}
+            >
+              {cancelling ? 'Cancelling…' : `Cancel & refund · ${graceSecondsLeft}s left`}
+            </button>
+            <p className="sd-mono" style={{ textAlign: 'center', fontSize: 11, color: 'var(--muted-2)', lineHeight: 1.5 }}>
+              {goalMeters - distanceMeters}m to go. Refunds are only possible in the first 60 seconds.
+            </p>
+          </>
+        ) : (
+          <p className="sd-mono" style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--muted-2)', lineHeight: 1.6 }}>
+            {goalMeters - distanceMeters}m to go. Your stake is locked until <b style={{ color: 'var(--ink)' }}>{deadlineLabel}</b> — finish your goal to get it back <b style={{ color: '#cdfb46' }}>plus a bonus</b>, or it&apos;s forfeited to the pool when the timer ends. There&apos;s no way to exit mid-commitment (that&apos;s the point — skin in the game).
+          </p>
         )}
       </div>
     </>
