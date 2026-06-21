@@ -17,6 +17,23 @@ export function celoTxOverrides(): { type: 'legacy' } {
   return { type: 'legacy' }
 }
 
+/**
+ * Best-effort "is this a desktop browser?" check — no MiniPay, no touch, and a
+ * non-mobile user agent. Used to warn that GPS won't move without real walking,
+ * and to point the user at Demo mode or MiniPay.
+ */
+export function isLikelyDesktop(): boolean {
+  if (typeof window === 'undefined') return false
+  if (isMiniPay()) return false
+  const noTouch = (navigator.maxTouchPoints ?? 0) === 0
+  const notMobileUA = !/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+  return noTouch && notMobileUA
+}
+
+export function isDemoOn(): boolean {
+  try { return typeof window !== 'undefined' && localStorage.getItem('stride_demo_mode') === '1' } catch { return false }
+}
+
 export function registerMiniPayHook() {
   if (typeof window === 'undefined') return
   
