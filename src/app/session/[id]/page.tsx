@@ -9,7 +9,7 @@ import { formatUnits, parseEventLogs } from 'viem'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { commitmentABI } from '@/abi/commitment'
 import { COMMITMENT_CONTRACT, BACKEND_URL, GRACE_PERIOD_SECONDS } from '@/utils/constants'
-import { celoTxOverrides } from '@/utils/minipay'
+import { celoTxOverrides, isLikelyDesktop } from '@/utils/minipay'
 import { useGPSTracker } from '@/hooks/useGPSTracker'
 import { supabase } from '@/utils/supabase'
 import { generateRouteCard } from '@/utils/generateRouteCard'
@@ -58,7 +58,23 @@ export default function SessionPage() {
   const pauseStartRef = useRef<number | null>(null)
   const sessionStartRef = useRef<number | null>(null)
 
-  const gps = useGPSTracker()
+  const gps = useGPSTracker(commitmentId ? `stride_sess_${commitmentId}` : undefined)
+  const resumedRef = useRef(false)
+  // Desktop guidance (GPS won't move without real walking).
+  const [showDesktopHint, setShowDesktopHint] = useState(false)
+  useEffect(() => {
+    const id = setTimeout(() => {
+      let demo = false
+      try { demo = localStorage.getItem('stride_demo_mode') === '1' } catch {}
+      setShowDesktopHint(isLikelyDesktop() && !demo)
+    }, 0)
+    return () => clearTimeout(id)
+  }, [])
+
+  const enableDemoMode = useCallback(() => {
+    try { localStorage.setItem('stride_demo_mode', '1') } catch {}
+    window.location.reload()
+  }, [])
 
   const { data: commitment, isLoading: commitLoading } = useReadContract({
     address: COMMITMENT_CONTRACT,
@@ -74,6 +90,16 @@ export default function SessionPage() {
       if (!commitment) setErrorMsg('Commitment not found on-chain.')
     }
   }, [commitLoading, commitment])
+
+  // Restore an in-progress session after navigating away and back, so the timer
+  // and tracked distance/steps don't reset. Only while the commitment is still live.
+  useEffect(() => {
+    if (resumedRef.current || commitLoading || !commitment) return
+    const expired = Number(commitment.deadline) < Date.now() / 1000
+    if (expired) return
+    resumedRef.current = true
+    if (gps.resumeFromStorage()) setPhase('tracking')
+  }, [commitLoading, commitment, gps])
 
   const nowSec = Date.now() / 1000
   const isExpired = commitment ? Number(commitment.deadline) < nowSec : false
@@ -567,6 +593,22 @@ export default function SessionPage() {
           </>
         ) : (
           <>
+            {showDesktopHint && (
+              <div className="sd-card" style={{ padding: 16, marginBottom: 14, border: '1px solid rgba(205,251,70,0.25)' }}>
+                <div className="sd-mono" style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#cdfb46', marginBottom: 8 }}>You&apos;re on a desktop</div>
+                <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.55 }}>
+                  Stride tracks real GPS movement, so distance &amp; steps won&apos;t change on a computer. Two ways to try it:
+                </p>
+                <p style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.55, marginTop: 8 }}>
+                  <b style={{ color: '#cdfb46' }}>1. Demo mode</b> — simulates a walk so you can test the whole flow right here.
+                </p>
+                <p style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.55, marginTop: 4 }}>
+                  <b style={{ color: '#cdfb46' }}>2. MiniPay</b> — open Stride on your phone in MiniPay (Opera Mini) and walk for real.
+                </p>
+                <button onClick={enableDemoMode} className="sd-btn sd-btn-lime" style={{ marginTop: 12 }}>Enable Demo mode &amp; reload</button>
+                <button onClick={() => router.push('/settings')} className="sd-btn sd-btn-ghost" style={{ marginTop: 8 }}>Open settings</button>
+              </div>
+            )}
             {gps.error && <p style={{ fontSize: 12, color: '#fb7185', marginBottom: 10 }}>{gps.error}</p>}
             <button onClick={handleStart} className="sd-btn sd-btn-lime" style={{ marginBottom: 10 }}>Start session</button>
             {inGracePeriod ? (
@@ -605,6 +647,14 @@ export default function SessionPage() {
           {phase === 'tracking' ? `Live · ${gps.path.length} GPS points` : 'Paused'}
         </span>
       </div>
+
+      {showDesktopHint && distanceMeters === 0 && gps.elapsedTime > 8 && (
+        <div className="sd-card" style={{ padding: 12, marginBottom: 14, border: '1px solid rgba(205,251,70,0.25)' }}>
+          <p style={{ fontSize: 12.5, color: 'var(--muted)', lineHeight: 1.5 }}>
+            No movement detected — looks like a desktop. GPS only counts real walking. <button onClick={enableDemoMode} style={{ background: 'none', border: 0, padding: 0, color: '#cdfb46', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}>Enable Demo mode</button> to simulate a walk, or open Stride in MiniPay on your phone.
+          </p>
+        </div>
+      )}
 
       {/* Live map — isolate so Leaflet's internal z-indexes (controls/popups)
           stay contained and don't paint over the top bar while scrolling. */}
