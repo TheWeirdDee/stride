@@ -12,6 +12,7 @@ import { COMMITMENT_CONTRACT, BACKEND_URL, GRACE_PERIOD_SECONDS } from '@/utils/
 import { celoTxOverrides, isLikelyDesktop } from '@/utils/minipay'
 import { requestNotificationPermission, notify, prefAllows } from '@/utils/notifications'
 import { useGPSTracker } from '@/hooks/useGPSTracker'
+import { usePedometer } from '@/hooks/usePedometer'
 import { supabase } from '@/utils/supabase'
 import { generateRouteCard } from '@/utils/generateRouteCard'
 import { MapView } from '@/components/MapView'
@@ -60,6 +61,7 @@ export default function SessionPage() {
   const sessionStartRef = useRef<number | null>(null)
 
   const gps = useGPSTracker(commitmentId ? `stride_sess_${commitmentId}` : undefined)
+  const ped = usePedometer(commitmentId ? `stride_steps_${commitmentId}` : undefined)
   const resumedRef = useRef(false)
   // Desktop guidance (GPS won't move without real walking).
   const [showDesktopHint, setShowDesktopHint] = useState(false)
@@ -99,8 +101,11 @@ export default function SessionPage() {
     const expired = Number(commitment.deadline) < Date.now() / 1000
     if (expired) return
     resumedRef.current = true
-    if (gps.resumeFromStorage()) setPhase('tracking')
-  }, [commitLoading, commitment, gps])
+    if (gps.resumeFromStorage()) {
+      ped.start({ resume: true }) // continue the step count from where it left off
+      setPhase('tracking')
+    }
+  }, [commitLoading, commitment, gps, ped])
 
   const nowSec = Date.now() / 1000
   const isExpired = commitment ? Number(commitment.deadline) < nowSec : false
@@ -112,11 +117,14 @@ export default function SessionPage() {
   const isDistanceGoal = commitment ? commitment.distanceGoal > BigInt(0) : false
   const goalMeters = commitment ? Number(isDistanceGoal ? commitment.distanceGoal : commitment.stepGoal) : 0
   const distanceMeters = Math.round(gps.distance * 1000)
-  // No pedometer on the web, so estimate steps from GPS distance (avg stride ≈ 0.75 m).
+  // Step goals are counted by the accelerometer pedometer (works with NO GPS).
+  // Fall back to estimating from GPS distance (~0.75 m stride) if motion sensors
+  // aren't available.
   const STEP_LENGTH_M = 0.75
-  const estSteps = Math.round(distanceMeters / STEP_LENGTH_M)
+  const gpsSteps = Math.round(distanceMeters / STEP_LENGTH_M)
+  const realSteps = ped.supported && ped.steps > 0 ? ped.steps : gpsSteps
   // The metric that counts toward the goal: metres for distance goals, steps for step goals.
-  const progressValue = isDistanceGoal ? distanceMeters : estSteps
+  const progressValue = isDistanceGoal ? distanceMeters : realSteps
   const progressPct = goalMeters > 0 ? Math.min((progressValue / goalMeters) * 100, 100) : 0
   const goalMet = goalMeters > 0 && progressValue >= goalMeters
   const goalUnit = isDistanceGoal ? 'm' : 'steps'
@@ -125,8 +133,10 @@ export default function SessionPage() {
     sessionStartRef.current = Date.now()
     if (prefAllows('sessionReminders')) requestNotificationPermission()
     gps.startTracking()
+    ped.reset()
+    ped.start() // accelerometer step counting (also requests motion permission on iOS)
     setPhase('tracking')
-  }, [gps])
+  }, [gps, ped])
 
   // Schedule deadline reminders while a session is live (works while the app is
   // open/backgrounded). Re-armed whenever tracking starts or the commitment loads.
@@ -144,10 +154,11 @@ export default function SessionPage() {
 
   const handlePause = useCallback(() => {
     gps.pauseTracking()
+    ped.stop()
     pauseCountRef.current += 1
     pauseStartRef.current = Date.now()
     setPhase('paused')
-  }, [gps])
+  }, [gps, ped])
 
   const handleResume = useCallback(() => {
     if (pauseStartRef.current !== null) {
@@ -155,11 +166,13 @@ export default function SessionPage() {
       pauseStartRef.current = null
     }
     gps.resumeTracking()
+    ped.start()
     setPhase('tracking')
-  }, [gps])
+  }, [gps, ped])
 
   const handleFinish = useCallback(async () => {
     gps.stopTracking()
+    ped.stop()
     if (pauseStartRef.current !== null) {
       totalPauseMsRef.current += Date.now() - pauseStartRef.current
     }
@@ -194,7 +207,7 @@ export default function SessionPage() {
           durationSeconds: gps.elapsedTime,
           pauseCount: pauseCountRef.current,
           totalPauseDurationMs: totalPauseMsRef.current,
-          estimatedSteps: Math.round((gps.distance * 1000) / 0.75),
+          estimatedSteps: ped.supported && ped.steps > 0 ? ped.steps : Math.round((gps.distance * 1000) / 0.75),
           demo: (() => { try { return localStorage.getItem('stride_demo_mode') === '1' } catch { return false } })(),
         }),
       })
@@ -408,7 +421,7 @@ export default function SessionPage() {
       const msg = (err as { shortMessage?: string })?.shortMessage || (err instanceof Error ? err.message : 'Transaction failed')
       setErrorMsg(msg)
     }
-  }, [gps, commitmentId, isDistanceGoal, goalMeters, writeContractAsync, config, address])
+  }, [gps, ped, commitmentId, isDistanceGoal, goalMeters, writeContractAsync, config, address])
 
   // Auto-complete the moment the goal is reached while tracking — the user asked
   // for the session to finish itself rather than waiting for a manual tap.
@@ -728,7 +741,7 @@ export default function SessionPage() {
       )}
 
       {/* GPS never delivered a fix (common in MiniPay/Opera Mini's in-app browser) */}
-      {!showDesktopHint && gps.path.length === 0 && gps.elapsedTime > 12 && (
+      {isDistanceGoal && !showDesktopHint && gps.path.length === 0 && gps.elapsedTime > 12 && (
         <div className="sd-card" style={{ padding: 12, marginBottom: 14, border: '1px solid rgba(251,113,133,0.35)' }}>
           <p style={{ fontSize: 12.5, color: '#fb7185', fontWeight: 700, marginBottom: 4 }}>Can&apos;t get your location</p>
           <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5 }}>
@@ -746,7 +759,7 @@ export default function SessionPage() {
       {/* Big metric — km for distance goals, steps for step goals */}
       <div style={{ textAlign: 'center', marginTop: 12 }}>
         <div className="sd-mono" style={{ fontSize: 9, letterSpacing: '0.2em', color: 'var(--muted-2)', textTransform: 'uppercase' }}>{isDistanceGoal ? 'Distance' : 'Steps'}</div>
-        <div className="sd-mono" style={{ fontWeight: 800, fontSize: 84, lineHeight: 0.92, letterSpacing: '-0.03em', marginTop: 6 }}>{isDistanceGoal ? kmNow.toFixed(2) : estSteps.toLocaleString()}</div>
+        <div className="sd-mono" style={{ fontWeight: 800, fontSize: 84, lineHeight: 0.92, letterSpacing: '-0.03em', marginTop: 6 }}>{isDistanceGoal ? kmNow.toFixed(2) : realSteps.toLocaleString()}</div>
         <div style={{ fontFamily: "'Archivo Expanded',sans-serif", fontWeight: 700, fontSize: 16, color: '#cdfb46', marginTop: 2 }}>{isDistanceGoal ? 'KILOMETRES' : 'STEPS'}</div>
       </div>
 
