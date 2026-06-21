@@ -44,8 +44,6 @@ export function useGPSTracker(persistKey?: string): UseGPSTrackerReturn {
     stateRef.current = { isActive, isPaused }
   }, [isActive, isPaused])
 
-  const MAX_ACCURACY_M = 150
-
   const isDemoMode = () => {
     try { return typeof window !== 'undefined' && localStorage.getItem('stride_demo_mode') === '1' } catch { return false }
   }
@@ -76,19 +74,38 @@ export function useGPSTracker(persistKey?: string): UseGPSTrackerReturn {
     if (simIdRef.current !== null) { clearInterval(simIdRef.current); simIdRef.current = null }
   }, [])
 
-  const appendCoord = useCallback((latitude: number, longitude: number, timestamp: number) => {
+  // `accuracy` is the GPS uncertainty in metres (undefined for the demo simulator).
+  const appendCoord = useCallback((latitude: number, longitude: number, timestamp: number, accuracy?: number) => {
     const newCoord: Coordinate = { latitude, longitude, timestamp }
     const prev = pathRef.current
     if (prev.length === 0) {
+      // First fix: anchor the map. Don't count distance off it.
       pathRef.current = [newCoord]
       setPath(pathRef.current)
       persist()
       return
     }
-    const delta = getDistance(prev[prev.length - 1], newCoord)
-    if (delta < 0.002) return // filter <2m GPS jitter
+    const last = prev[prev.length - 1]
+    const deltaKm = getDistance(last, newCoord)
+    const deltaM = deltaKm * 1000
+
+    if (accuracy == null) {
+      // Demo/simulated path — count everything but micro-jitter.
+      if (deltaM < 1) return
+    } else {
+      // Real GPS. Reject the three things that caused fake/ballooning counts:
+      //  • poor accuracy (network-positioning drift) → don't trust it for distance
+      //  • sub-noise moves (a stationary phone drifts a few metres)
+      //  • teleports (a single reading jumping impossibly far)
+      const dt = (timestamp - (last.timestamp ?? timestamp)) / 1000
+      const speedKmh = dt > 0 ? deltaKm / (dt / 3600) : Infinity
+      if (accuracy > 30) return
+      if (deltaM < 5) return
+      if (speedKmh > 35) return
+    }
+
     pathRef.current = [...prev, newCoord]
-    distanceRef.current += delta
+    distanceRef.current += deltaKm
     setPath(pathRef.current)
     setDistance(distanceRef.current)
     persist()
@@ -98,8 +115,7 @@ export function useGPSTracker(persistKey?: string): UseGPSTrackerReturn {
     const { isActive: curActive, isPaused: curPaused } = stateRef.current
     if (!curActive || curPaused) return
     const { latitude, longitude, accuracy } = position.coords
-    if (pathRef.current.length > 0 && typeof accuracy === 'number' && accuracy > MAX_ACCURACY_M) return
-    appendCoord(latitude, longitude, position.timestamp)
+    appendCoord(latitude, longitude, position.timestamp, accuracy)
   }, [appendCoord])
 
   const startSimulation = useCallback(() => {
