@@ -100,6 +100,35 @@ export default function ProfilePage() {
     n >= 3 ? '#cdfb46' : n === 2 ? 'rgba(205,251,70,0.75)' : n === 1 ? 'rgba(205,251,70,0.45)' : 'rgba(255,255,255,0.07)'
   const activeDays = contrib.filter((c) => c.count > 0).length
 
+  // ── Analytics (#9) + badges (#5) from the data we already have ──
+  const analytics = useMemo(() => {
+    const total = commitments.length
+    const completed = commitments.filter((c) => c.status === 'completed').length
+    const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0
+    // 84-day contrib grid → 12 weekly completion totals (oldest → newest).
+    const weekly: number[] = []
+    for (let i = 0; i < contrib.length; i += 7) weekly.push(contrib.slice(i, i + 7).reduce((s, c) => s + c.count, 0))
+    const last8 = weekly.slice(-8)
+    const thisWeek = weekly[weekly.length - 1] ?? 0
+    const lastWeek = weekly[weekly.length - 2] ?? 0
+    const bestWeek = weekly.length ? Math.max(...weekly) : 0
+    return { total, completed, completionRate, weekly: last8, thisWeek, lastWeek, bestWeek }
+  }, [commitments, contrib])
+
+  const badges = useMemo(() => {
+    const km = (profile?.total_distance ?? 0) / 1000
+    const best = profile?.streak_best ?? 0
+    const finishes = analytics.completed
+    return [
+      { label: 'First steps', desc: 'Finish 1 commitment', earned: finishes >= 1 },
+      { label: 'Consistent', desc: '3-day streak', earned: best >= 3 },
+      { label: 'On a roll', desc: '7-day streak', earned: best >= 7 },
+      { label: 'Ten down', desc: '10 finishes', earned: finishes >= 10 },
+      { label: '50 km club', desc: 'Cover 50 km', earned: km >= 50 },
+      { label: 'Century', desc: 'Cover 100 km', earned: km >= 100 },
+    ]
+  }, [profile, analytics])
+
   useEffect(() => {
     async function loadProfile() {
       setLoading(true)
@@ -388,6 +417,47 @@ export default function ProfilePage() {
           Less
           {[0, 1, 2, 3].map((n) => <span key={n} style={{ height: 12, width: 12, borderRadius: 3, background: heatColor(n) }} />)}
           More
+        </div>
+      </div>
+
+      {/* Insights (#9) — completion rate, weekly trend, this-week recap */}
+      <div className="sd-card" style={{ padding: 18, marginTop: 14 }}>
+        <span className="sd-mono" style={{ fontSize: 10, letterSpacing: '0.12em', color: 'var(--muted-2)', textTransform: 'uppercase' }}>Insights</span>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginTop: 12 }}>
+          {[
+            [`${analytics.completionRate}%`, 'Completion'],
+            [`${analytics.thisWeek}`, 'This week'],
+            [`${analytics.bestWeek}`, 'Best week'],
+          ].map(([v, l]) => (
+            <div key={l} style={{ textAlign: 'center' }}>
+              <div className="sd-mono" style={{ fontWeight: 800, fontSize: 22, color: '#cdfb46' }}>{v}</div>
+              <div className="sd-mono" style={{ fontSize: 9, letterSpacing: '0.1em', color: 'var(--muted-2)', textTransform: 'uppercase', marginTop: 3 }}>{l}</div>
+            </div>
+          ))}
+        </div>
+        {/* Weekly completions trend (last 8 weeks) */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 56, marginTop: 16 }}>
+          {analytics.weekly.map((n, i) => {
+            const max = Math.max(1, ...analytics.weekly)
+            return <div key={i} title={`${n} finishes`} style={{ flex: 1, height: `${Math.max(6, (n / max) * 100)}%`, background: n > 0 ? '#cdfb46' : 'rgba(255,255,255,0.08)', borderRadius: 4 }} />
+          })}
+        </div>
+        <div className="sd-mono" style={{ fontSize: 9, color: 'var(--muted-2)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 8, textAlign: 'center' }}>
+          {analytics.thisWeek >= analytics.lastWeek ? `Up ${analytics.thisWeek - analytics.lastWeek} vs last week` : `${analytics.lastWeek - analytics.thisWeek} fewer than last week`} · finishes / week
+        </div>
+      </div>
+
+      {/* Badges (#5) */}
+      <div className="sd-card" style={{ padding: 18, marginTop: 14 }}>
+        <span className="sd-mono" style={{ fontSize: 10, letterSpacing: '0.12em', color: 'var(--muted-2)', textTransform: 'uppercase' }}>Badges</span>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginTop: 12 }}>
+          {badges.map((b) => (
+            <div key={b.label} title={b.desc} style={{ textAlign: 'center', opacity: b.earned ? 1 : 0.32, padding: '12px 6px', borderRadius: 14, background: b.earned ? 'rgba(205,251,70,0.1)' : 'rgba(255,255,255,0.03)', border: `1px solid ${b.earned ? 'rgba(205,251,70,0.3)' : 'var(--line)'}` }}>
+              <Award className="h-5 w-5" style={{ color: b.earned ? '#cdfb46' : 'var(--muted-2)', margin: '0 auto' }} />
+              <div style={{ fontSize: 11, fontWeight: 700, marginTop: 6 }}>{b.label}</div>
+              <div style={{ fontSize: 9.5, color: 'var(--muted-2)', marginTop: 2 }}>{b.desc}</div>
+            </div>
+          ))}
         </div>
       </div>
 
