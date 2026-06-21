@@ -477,6 +477,32 @@ export default function SessionPage() {
     }
   }, [commitmentId, writeContractAsync, config, router, commitmentResolved])
 
+  // Share the finished route — native share sheet with the route-card image,
+  // falling back to a text+link share, then clipboard.
+  const handleShare = useCallback(async () => {
+    const km = distanceMeters / 1000
+    const mins = gps.elapsedTime / 60
+    const pace = km > 0.05 ? mins / km : 0
+    const paceStr = pace > 0 ? `${Math.floor(pace)}:${String(Math.round((pace % 1) * 60)).padStart(2, '0')} /km` : '—'
+    const text = `I just finished a ${km.toFixed(2)} km goal on Stride — staked cUSD and earned it back plus a bonus. 💪`
+    const url = typeof window !== 'undefined' ? window.location.origin : 'https://stride-pay.netlify.app'
+    try {
+      const coords = gps.path.map((c) => ({ lat: c.latitude, lng: c.longitude }))
+      if (coords.length > 1) {
+        const blob = await generateRouteCard(coords, { distance: `${km.toFixed(2)} km`, duration: fmt(gps.elapsedTime), pace: paceStr, date: new Date().toLocaleDateString() })
+        const file = new File([blob], 'stride-route.png', { type: 'image/png' })
+        const nav = navigator as Navigator & { canShare?: (d?: ShareData) => boolean }
+        if (nav.canShare && nav.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'Stride', text })
+          return
+        }
+      }
+      if (navigator.share) { await navigator.share({ title: 'Stride', text, url }); return }
+      await navigator.clipboard.writeText(`${text} ${url}`)
+      alert('Copied to clipboard — paste it anywhere to share!')
+    } catch { /* user cancelled or unsupported — no-op */ }
+  }, [distanceMeters, gps.elapsedTime, gps.path])
+
   // ─── Render ───────────────────────────────────────────────
   const screen = (children: React.ReactNode) => (
     <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
@@ -555,7 +581,11 @@ export default function SessionPage() {
         )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 320, marginTop: 26 }}>
-          <button onClick={() => router.push('/profile/routes')} className="sd-btn sd-btn-lime">View route history</button>
+          <button onClick={handleShare} className="sd-btn sd-btn-lime" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" /></svg>
+            Share my finish
+          </button>
+          <button onClick={() => router.push('/profile/routes')} className="sd-btn sd-btn-ghost">View route history</button>
           <button onClick={() => router.push('/explore')} className="sd-btn sd-btn-ghost">Back to explore</button>
         </div>
       </div>
