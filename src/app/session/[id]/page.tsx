@@ -229,7 +229,7 @@ export default function SessionPage() {
       })
 
       setStatusMsg('Waiting for confirmation...')
-      const receipt = await waitForTransactionReceipt(config, { hash })
+      const receipt = await waitForTransactionReceipt(config, { hash, timeout: 90_000 })
       setTxHash(hash)
 
       // Pull the real bonus paid out from the CommitmentCompleted event.
@@ -720,6 +720,16 @@ export default function SessionPage() {
         <div className="sd-card" style={{ padding: 12, marginBottom: 14, border: '1px solid rgba(205,251,70,0.25)' }}>
           <p style={{ fontSize: 12.5, color: 'var(--muted)', lineHeight: 1.5 }}>
             No movement detected — looks like a desktop. GPS only counts real walking. <button onClick={enableDemoMode} style={{ background: 'none', border: 0, padding: 0, color: '#cdfb46', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}>Enable Demo mode</button> to simulate a walk, or open Stride in MiniPay on your phone.
+          </p>
+        </div>
+      )}
+
+      {/* GPS never delivered a fix (common in MiniPay/Opera Mini's in-app browser) */}
+      {!showDesktopHint && gps.path.length === 0 && gps.elapsedTime > 12 && (
+        <div className="sd-card" style={{ padding: 12, marginBottom: 14, border: '1px solid rgba(251,113,133,0.35)' }}>
+          <p style={{ fontSize: 12.5, color: '#fb7185', fontWeight: 700, marginBottom: 4 }}>Can&apos;t get your location</p>
+          <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5 }}>
+            {gps.error || 'No GPS fix yet — steps & distance need your location.'} If you&apos;re in MiniPay, allow location for Opera Mini in your phone settings; if it still won&apos;t track, open <b style={{ color: 'var(--ink)' }}>stride-pay.netlify.app</b> in Chrome/Safari and run the session there.
           </p>
         </div>
       )}
