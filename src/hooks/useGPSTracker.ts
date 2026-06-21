@@ -37,6 +37,7 @@ export function useGPSTracker(persistKey?: string): UseGPSTrackerReturn {
   const startTimeRef = useRef<number | null>(null)
   const pausedMsRef = useRef(0)
   const pauseStartedRef = useRef<number | null>(null)
+  const lowAccuracyTriedRef = useRef(false)
 
   const stateRef = useRef({ isActive, isPaused })
   useEffect(() => {
@@ -126,9 +127,9 @@ export function useGPSTracker(persistKey?: string): UseGPSTrackerReturn {
 
   const handlePositionError = useCallback((err: GeolocationPositionError) => {
     let msg = 'Failed to retrieve location'
-    if (err.code === err.PERMISSION_DENIED) msg = 'Location permission denied. Stride needs GPS access to track your commitment.'
-    else if (err.code === err.POSITION_UNAVAILABLE) msg = 'Location information is unavailable.'
-    else if (err.code === err.TIMEOUT) msg = 'Location request timed out.'
+    if (err.code === err.PERMISSION_DENIED) msg = 'Location is blocked. Allow location for this app (in MiniPay/Opera Mini and your phone settings), then restart the session.'
+    else if (err.code === err.POSITION_UNAVAILABLE) msg = 'Location unavailable. Make sure GPS/location is turned on, then try again.'
+    else if (err.code === err.TIMEOUT) msg = 'Still finding your location… make sure you are outdoors with GPS on.'
     setError(msg)
     console.error('GPS tracking error:', err)
   }, [])
@@ -152,12 +153,37 @@ export function useGPSTracker(persistKey?: string): UseGPSTrackerReturn {
       setIsActive(false)
       return
     }
+    lowAccuracyTriedRef.current = false
+
+    // Grab an immediate fix (also triggers the permission prompt) so the map
+    // centres on the user right away instead of the default fallback.
+    navigator.geolocation.getCurrentPosition(
+      (pos) => appendCoord(pos.coords.latitude, pos.coords.longitude, pos.timestamp),
+      (err) => handlePositionError(err),
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 5000 }
+    )
+
+    const onWatchError = (err: GeolocationPositionError) => {
+      handlePositionError(err)
+      // GPS often times out in webviews (MiniPay/Opera Mini) — fall back to
+      // network-based, lower-accuracy positioning so tracking still works.
+      if ((err.code === err.TIMEOUT || err.code === err.POSITION_UNAVAILABLE) && !lowAccuracyTriedRef.current) {
+        lowAccuracyTriedRef.current = true
+        if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current)
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          handlePositionSuccess,
+          handlePositionError,
+          { enableHighAccuracy: false, timeout: 27000, maximumAge: 10000 }
+        )
+      }
+    }
+
     watchIdRef.current = navigator.geolocation.watchPosition(
       handlePositionSuccess,
-      handlePositionError,
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      onWatchError,
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 2000 }
     )
-  }, [handlePositionSuccess, handlePositionError, startSimulation])
+  }, [handlePositionSuccess, handlePositionError, startSimulation, appendCoord])
 
   const startTracking = useCallback(() => {
     cleanup()
