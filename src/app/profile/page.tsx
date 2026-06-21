@@ -132,6 +132,25 @@ export default function ProfilePage() {
   useEffect(() => {
     async function loadProfile() {
       setLoading(true)
+
+      // The logged-in account (Supabase Auth) is the source of truth for the
+      // display name. A wallet's older users.nickname (e.g. "Mock Tester") must
+      // never override the name the user actually signed up / logged in with.
+      let account: { username?: string; city?: string; email?: string } | null = null
+      try {
+        if (supabase) {
+          const { data: au } = await supabase.auth.getUser()
+          if (au?.user) {
+            const { data: prof } = await supabase
+              .from('profiles')
+              .select('username, city')
+              .eq('id', au.user.id)
+              .maybeSingle()
+            account = { username: prof?.username ?? undefined, city: prof?.city ?? undefined, email: au.user.email ?? undefined }
+          }
+        }
+      } catch { /* not logged in / profiles not set up — fall back below */ }
+
       if (isConnected && address) {
         try {
           if (!supabase) throw new Error('Supabase client unavailable')
@@ -186,10 +205,10 @@ export default function ProfilePage() {
 
           const src = dbUser || defaults
           setProfile({
-            // Prefer the wallet's saved name, else the guest identity, else default.
-            nickname: src.nickname || g?.nickname || 'Anonymous Mover',
-            city: src.city && src.city !== 'Unknown' ? src.city : (g?.city || 'Unknown'),
-            email: g?.email,
+            // Logged-in account name wins, then wallet's saved name, then guest, then default.
+            nickname: account?.username || src.nickname || g?.nickname || 'Anonymous Mover',
+            city: account?.city || (src.city && src.city !== 'Unknown' ? src.city : (g?.city || 'Unknown')),
+            email: account?.email || g?.email,
             activity: g?.activity,
             fitness_level: src.fitness_level || 'beginner',
             streak_current: src.streak_current || 0,
@@ -218,14 +237,14 @@ export default function ProfilePage() {
         // Disconnected — load the local guest profile created during onboarding
         try {
           const raw = typeof window !== 'undefined' && localStorage.getItem('stride_guest_profile')
-          if (raw) {
-            const g = JSON.parse(raw) as GuestProfile
-            setGuest(g)
+          if (raw || account) {
+            const g = raw ? (JSON.parse(raw) as GuestProfile) : null
+            if (g) setGuest(g)
             setProfile({
-              nickname: g.nickname || 'Anonymous Mover',
-              city: g.city || 'Unknown',
-              email: g.email,
-              activity: g.activity,
+              nickname: account?.username || g?.nickname || 'Anonymous Mover',
+              city: account?.city || g?.city || 'Unknown',
+              email: account?.email || g?.email,
+              activity: g?.activity,
               fitness_level: 'beginner',
               streak_current: 0,
               streak_best: 0,
