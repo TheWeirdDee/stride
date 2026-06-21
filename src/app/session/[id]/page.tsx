@@ -10,6 +10,7 @@ import { waitForTransactionReceipt } from 'wagmi/actions'
 import { commitmentABI } from '@/abi/commitment'
 import { COMMITMENT_CONTRACT, BACKEND_URL, GRACE_PERIOD_SECONDS } from '@/utils/constants'
 import { celoTxOverrides, isLikelyDesktop } from '@/utils/minipay'
+import { requestNotificationPermission, notify, prefAllows } from '@/utils/notifications'
 import { useGPSTracker } from '@/hooks/useGPSTracker'
 import { supabase } from '@/utils/supabase'
 import { generateRouteCard } from '@/utils/generateRouteCard'
@@ -122,9 +123,24 @@ export default function SessionPage() {
 
   const handleStart = useCallback(() => {
     sessionStartRef.current = Date.now()
+    if (prefAllows('sessionReminders')) requestNotificationPermission()
     gps.startTracking()
     setPhase('tracking')
   }, [gps])
+
+  // Schedule deadline reminders while a session is live (works while the app is
+  // open/backgrounded). Re-armed whenever tracking starts or the commitment loads.
+  useEffect(() => {
+    if (phase !== 'tracking' || !commitment) return
+    if (!prefAllows('sessionReminders')) return
+    const deadlineMs = Number(commitment.deadline) * 1000
+    const timers: ReturnType<typeof setTimeout>[] = []
+    for (const before of [15 * 60_000, 5 * 60_000]) {
+      const delay = deadlineMs - before - Date.now()
+      if (delay > 0) timers.push(setTimeout(() => notify('Stride', `${Math.round(before / 60_000)} min left — finish your commitment to get your stake back + a bonus.`), delay))
+    }
+    return () => timers.forEach(clearTimeout)
+  }, [phase, commitment])
 
   const handlePause = useCallback(() => {
     gps.pauseTracking()
