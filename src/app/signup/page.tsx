@@ -32,8 +32,27 @@ export default function SignupPage() {
     setBusy(false)
     if (!res.ok) { setError(res.error || 'Could not create your account.'); return }
     if (res.needsConfirmation) { setConfirmEmail(true); return }
+    await askLocation()
     router.push('/explore')
   }
+
+  // Prompt for live location right after signup so the permission is primed and
+  // sessions can track straight away. Non-blocking past a short timeout; if the
+  // user only allows "once", the session screen will ask again when needed.
+  const askLocation = () => new Promise<void>((resolve) => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return resolve()
+    let done = false
+    const finish = () => { if (!done) { done = true; resolve() } }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        try { localStorage.setItem('stride_last_location', JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude, at: Date.now() })) } catch {}
+        finish()
+      },
+      () => finish(),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    )
+    setTimeout(finish, 11000)
+  })
 
   if (confirmEmail) {
     return (
