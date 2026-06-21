@@ -280,6 +280,24 @@ export default function NewCommitmentPage() {
             <div className="sd-mono" style={{ position: 'relative', fontWeight: 800, fontSize: 24, color: '#cdfb46', marginTop: 4 }}>+{bonusEstimateMin} ~ {bonusEstimateMax}<span style={{ fontSize: 12, color: 'var(--muted)' }}> cUSD</span></div>
             <div style={{ position: 'relative', fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>Stake returned + bonus paid from pool on completion.</div>
           </div>
+
+          {/* How your stake works — set expectations before they commit */}
+          <div className="sd-card" style={{ padding: 16, marginTop: 12 }}>
+            <div className="sd-mono" style={{ fontSize: 9, letterSpacing: '0.14em', color: 'var(--muted-2)', textTransform: 'uppercase', marginBottom: 12 }}>How your stake works</div>
+            {[
+              ['#cdfb46', 'Finish in time', 'Stake back in full + a bonus from the pool.'],
+              ['#f4f6f3', 'Change your mind in 60s', 'Cancel within the first minute for a full refund.'],
+              ['#fb7185', "Miss the deadline", 'Stake is forfeited to the reward pool. No mid-way exit — that’s the commitment.'],
+            ].map(([color, title, body]) => (
+              <div key={title} style={{ display: 'flex', gap: 11, marginBottom: 10 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0, marginTop: 5 }} />
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>{title}</div>
+                  <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.45 }}>{body}</div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
