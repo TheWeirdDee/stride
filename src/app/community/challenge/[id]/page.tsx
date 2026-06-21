@@ -101,6 +101,21 @@ export default function ChallengeDetailPage() {
   const myDone = myProgress >= challenge.goal_value
   const daysLeft = challenge.ends_at ? Math.max(0, Math.ceil((new Date(challenge.ends_at).getTime() - Date.now()) / 86_400_000)) : null
   const completedCount = participants.filter((p) => p.completed_at).length
+  // Leaderboard order: finishers first (by finish time), then by distance.
+  const ranked = [...participants].sort((a, b) => {
+    if (a.completed_at && b.completed_at) return new Date(a.completed_at).getTime() - new Date(b.completed_at).getTime()
+    if (a.completed_at) return -1
+    if (b.completed_at) return 1
+    return (b.progress || 0) - (a.progress || 0)
+  })
+
+  const handleInvite = async () => {
+    const url = `${window.location.origin}/community/challenge/${challenge.id}`
+    try {
+      if (navigator.share) await navigator.share({ title: challenge.title, text: `Join my "${challenge.title}" challenge on Stride 🏃`, url })
+      else { await navigator.clipboard.writeText(url); alert('Invite link copied — share it with friends!') }
+    } catch { /* cancelled */ }
+  }
 
   return (
     <div className="sd-page">
@@ -164,16 +179,22 @@ export default function ChallengeDetailPage() {
         </div>
       )}
 
-      {/* Participants */}
+      {/* Invite */}
+      <button onClick={handleInvite} className="sd-btn sd-btn-ghost" style={{ marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" /></svg>
+        Invite friends
+      </button>
+
+      {/* Leaderboard */}
       <div className="sd-section-row" style={{ marginTop: 26 }}>
-        <h2 className="sd-section">Participants</h2>
+        <h2 className="sd-section">Leaderboard</h2>
         <span className="sd-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Users className="h-3 w-3" /> {completedCount} done</span>
       </div>
       {participants.length === 0 ? (
         <div className="sd-card" style={{ textAlign: 'center', padding: 24, borderStyle: 'dashed', fontSize: 13, color: 'var(--muted)' }}>No one has joined yet — be the first.</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, overflow: 'hidden' }}>
-          {participants.map((p, i) => {
+          {ranked.map((p, i) => {
             const isMe = p.wallet_address === myId
             const km = (p.progress || 0) / 1000
             return (
