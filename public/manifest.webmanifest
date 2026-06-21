@@ -1,0 +1,14 @@
+{
+  "name": "Stride",
+  "short_name": "Stride",
+  "description": "Stake cUSD on your movement. Prove it on-chain. Get rewarded.",
+  "start_url": "/explore",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#06080a",
+  "theme_color": "#06080a",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
