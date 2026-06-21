@@ -671,7 +671,10 @@ export default function SessionPage() {
                   <b style={{ color: '#cdfb46' }}>1. Demo mode</b> — simulates a walk so you can test the whole flow right here.
                 </p>
                 <p style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.55, marginTop: 4 }}>
-                  <b style={{ color: '#cdfb46' }}>2. MiniPay</b> — open Stride on your phone in MiniPay (Opera Mini) and walk for real.
+                  <b style={{ color: '#cdfb46' }}>2. Phone browser</b> — open <b style={{ color: 'var(--ink)' }}>stride-pay.netlify.app</b> in Chrome/Safari on your phone and walk for real (most reliable GPS).
+                </p>
+                <p style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.55, marginTop: 4 }}>
+                  <b style={{ color: '#cdfb46' }}>3. MiniPay</b> — open Stride in MiniPay; note its in-app browser may block GPS.
                 </p>
                 <button onClick={enableDemoMode} className="sd-btn sd-btn-lime" style={{ marginTop: 12 }}>Enable Demo mode &amp; reload</button>
                 <button onClick={() => router.push('/settings')} className="sd-btn sd-btn-ghost" style={{ marginTop: 8 }}>Open settings</button>
