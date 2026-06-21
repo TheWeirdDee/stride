@@ -403,6 +403,24 @@ export default function SessionPage() {
     }
   }, [phase, goalMet, handleFinish])
 
+  // After a tx error, the action may actually have gone through (RPC lag can make
+  // waitForTransactionReceipt throw even though the tx confirmed). Re-read the
+  // commitment to see if it's now resolved on-chain.
+  const commitmentResolved = useCallback(async (): Promise<boolean> => {
+    try {
+      const { readContract } = await import('wagmi/actions')
+      const c = await readContract(config, {
+        address: COMMITMENT_CONTRACT,
+        abi: commitmentABI,
+        functionName: 'getCommitment',
+        args: [commitmentId],
+      })
+      return !!(c?.completed || c?.cancelled)
+    } catch {
+      return false
+    }
+  }, [config, commitmentId])
+
   // Cancel within the 60s grace window → full refund (the only way to exit a
   // commitment early on-chain). Actually calls the wallet and frees the wallet.
   const handleCancel = useCallback(async () => {
@@ -423,13 +441,14 @@ export default function SessionPage() {
       }
       router.push('/commitment/new')
     } catch (err: unknown) {
-      setCancelling(false)
       const msg = (err as { shortMessage?: string })?.shortMessage || (err instanceof Error ? err.message : 'Cancel failed')
-      // The 60s window can lapse mid-flow; give a clear reason rather than a raw revert.
+      // It may already have gone through (lag) — confirm before reporting failure.
+      if (/already resolved/i.test(msg) || await commitmentResolved()) { router.push('/commitment/new'); return }
+      setCancelling(false)
       setErrorMsg(/grace period/i.test(msg) ? 'The 60-second cancel window has passed. Your stake is now locked until the deadline — finish your goal to get it back, or it is forfeited to the pool when the timer ends.' : msg)
       setPhase('error')
     }
-  }, [commitmentId, writeContractAsync, config, router, gps])
+  }, [commitmentId, writeContractAsync, config, router, gps, commitmentResolved])
 
   // Forfeit an expired, unresolved commitment so the wallet is freed to create a new one.
   const handleForfeit = useCallback(async () => {
@@ -449,11 +468,14 @@ export default function SessionPage() {
       }
       router.push('/commitment/new')
     } catch (err: unknown) {
+      const msg = (err as { shortMessage?: string })?.shortMessage || (err instanceof Error ? err.message : 'Forfeit failed')
+      // "already resolved" / RPC lag means the forfeit actually succeeded — treat as done.
+      if (/already resolved/i.test(msg) || await commitmentResolved()) { router.push('/commitment/new'); return }
       setForfeiting(false)
-      setErrorMsg((err as { shortMessage?: string })?.shortMessage || (err instanceof Error ? err.message : 'Forfeit failed'))
+      setErrorMsg(msg)
       setPhase('error')
     }
-  }, [commitmentId, writeContractAsync, config, router])
+  }, [commitmentId, writeContractAsync, config, router, commitmentResolved])
 
   // ─── Render ───────────────────────────────────────────────
   const screen = (children: React.ReactNode) => (
