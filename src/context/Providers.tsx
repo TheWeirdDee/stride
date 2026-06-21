@@ -16,6 +16,10 @@ export function Providers({ children }: ProvidersProps) {
     registerMiniPayHook()
     // Drop "remember me = off" sessions once the browser has been restarted.
     enforceEphemeralSession()
+    // Register the PWA service worker (installable + offline fallback).
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {})
+    }
   }, [])
 
   // Create the QueryClient inside the component state to ensure
