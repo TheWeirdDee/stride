@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
 import StrideMark from '@/components/StrideMark'
 import { APP_NAME } from '@/utils/constants'
+import { requestNotificationPermission } from '@/utils/notifications'
 import {
   ArrowLeft,
   Ruler,
@@ -88,6 +89,8 @@ export default function SettingsPage() {
     setPrefs((prev) => {
       const next = { ...prev, [key]: !prev[key] }
       try { localStorage.setItem('stride_prefs', JSON.stringify(next)) } catch {}
+      // Turning a notification pref ON → ask for browser permission now.
+      if (!prev[key] && (key === 'sessionReminders' || key === 'weeklyDigest')) requestNotificationPermission()
       return next
     })
     flashSaved()
