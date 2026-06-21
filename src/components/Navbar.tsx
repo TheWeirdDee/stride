@@ -1,10 +1,12 @@
 'use client'
 
 import Link from 'next/link'
+import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAccount, useConnect, useDisconnect } from 'wagmi'
 import { LogOut } from 'lucide-react'
 import StrideMark from '@/components/StrideMark'
+import { isMobile, hasInjectedProvider, metamaskDeepLink, zerionDeepLink } from '@/utils/walletDeeplink'
 
 export default function Navbar() {
   const pathname = usePathname()
@@ -12,6 +14,7 @@ export default function Navbar() {
   const { address, isConnected } = useAccount()
   const { connect, connectors } = useConnect()
   const { disconnect } = useDisconnect()
+  const [showWalletSheet, setShowWalletSheet] = useState(false)
 
   // Immersive / standalone routes manage their own chrome.
   const hideChrome =
@@ -19,20 +22,16 @@ export default function Navbar() {
   if (hideChrome) return null
 
   const handleConnect = () => {
-    // No injected provider (no MetaMask/MiniPay) → tell the user instead of silently doing nothing.
-    if (typeof window !== 'undefined' && !(window as { ethereum?: unknown }).ethereum) {
-      alert('No wallet detected. Install MetaMask (or open Stride inside MiniPay) to connect.')
+    // Injected wallet present (desktop extension / in-app browser) → connect directly.
+    if (hasInjectedProvider()) {
+      const injected = connectors.find((c) => c.id === 'injected') || connectors[0]
+      if (!injected) { alert('No wallet connector available.'); return }
+      connect({ connector: injected }, { onError: (err) => alert(`Wallet connection failed: ${err.message}`) })
       return
     }
-    const injected = connectors.find((c) => c.id === 'injected') || connectors[0]
-    if (!injected) {
-      alert('No wallet connector available.')
-      return
-    }
-    connect(
-      { connector: injected },
-      { onError: (err) => alert(`Wallet connection failed: ${err.message}`) }
-    )
+    // Mobile browser with no wallet → offer to open in a wallet app's browser.
+    if (isMobile()) { setShowWalletSheet(true); return }
+    alert('No wallet detected. Install MetaMask, or open Stride in your phone wallet (MetaMask / Zerion).')
   }
 
   const walletLabel = isConnected && address
@@ -153,6 +152,25 @@ export default function Navbar() {
           {tabs[3].label}
         </Link>
       </nav>
+
+      {/* Mobile wallet chooser — deep-link into a wallet app's in-app browser */}
+      {showWalletSheet && (
+        <div onClick={() => setShowWalletSheet(false)} style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 480, background: '#16181b', borderTopLeftRadius: 24, borderTopRightRadius: 24, border: '1px solid var(--line-strong)', padding: '20px 20px 28px' }}>
+            <div style={{ width: 40, height: 4, borderRadius: 999, background: 'rgba(255,255,255,0.18)', margin: '0 auto 16px' }} />
+            <h3 className="sd-display" style={{ fontSize: 18 }}>Open in your wallet</h3>
+            <p style={{ fontSize: 13, color: 'var(--muted)', margin: '6px 0 16px', lineHeight: 1.5 }}>No wallet detected in this browser. Pick your wallet — Stride opens inside its browser so you can connect.</p>
+            <a href={metamaskDeepLink()} className="sd-btn sd-btn-lime" style={{ display: 'flex', textDecoration: 'none', marginBottom: 10 }}>Open in MetaMask</a>
+            <a href={zerionDeepLink()} className="sd-btn sd-btn-ghost" style={{ display: 'flex', textDecoration: 'none', marginBottom: 10 }}>Open in Zerion</a>
+            <button
+              onClick={async () => { try { await navigator.clipboard.writeText(window.location.href); alert('Link copied — paste it into your wallet app’s browser.') } catch {} }}
+              className="sd-btn sd-btn-dark" style={{ width: '100%' }}
+            >
+              Copy link for another wallet
+            </button>
+          </div>
+        </div>
+      )}
     </>
   )
 }
