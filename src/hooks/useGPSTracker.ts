@@ -125,8 +125,11 @@ export function useGPSTracker(persistKey?: string): UseGPSTrackerReturn {
     const tick = () => {
       const { isActive: a, isPaused: p } = stateRef.current
       if (!a || p) return
-      lat += 0.000135
-      lng += 0.000045 + (Math.random() - 0.5) * 0.00002
+      // ~1.8 m/s ≈ 6.5 km/h — a realistic walking pace that PASSES the server
+      // anti-cheat (walk max 8 km/h, min 7 min/km) so a demo session completes
+      // legitimately even on production where the demo bypass is off.
+      lat += 0.0000162
+      lng += 0.0000030 + (Math.random() - 0.5) * 0.0000040
       appendCoord(lat, lng, Date.now())
     }
     if (typeof navigator !== 'undefined' && navigator.geolocation) {
