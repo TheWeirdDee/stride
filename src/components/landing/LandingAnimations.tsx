@@ -33,8 +33,8 @@ export default function LandingAnimations() {
           })
         })
       })
-      // Animated streak bars in the hero card grow from the baseline.
-      gsap.from('.streak-graph i', { scaleY: 0, transformOrigin: 'bottom', duration: 0.5, ease: 'power2.out', stagger: 0.04, delay: 0.4 })
+      // Hero streak grid cells pop in like a contribution graph filling up.
+      gsap.from('.streak-grid i', { scale: 0, opacity: 0, duration: 0.35, ease: 'back.out(1.6)', stagger: { each: 0.012, from: 'start' }, delay: 0.5 })
     })
 
     // Recalculate once images/fonts settle.
