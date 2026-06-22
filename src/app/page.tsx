@@ -7,6 +7,7 @@ import LandingStyles from '@/components/landing/LandingStyles'
 import LandingNav from '@/components/landing/LandingNav'
 import LandingHero from '@/components/landing/LandingHero'
 import LandingMarketing from '@/components/landing/LandingMarketing'
+import LandingAnimations from '@/components/landing/LandingAnimations'
 import { GuestProfile } from '@/components/landing/types'
 import { isMiniPay } from '@/utils/minipay'
 
@@ -59,6 +60,7 @@ function LandingPageContent() {
       <LandingMarketing
         onGetStarted={() => router.push('/onboarding')}
       />
+      <LandingAnimations />
     </div>
   )
 }
