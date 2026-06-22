@@ -27,6 +27,16 @@ function fmt(seconds: number) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
+// Turn raw wallet/RPC errors into something the user can act on.
+function friendlyTxError(msg: string): string {
+  if (/nonce too low|nonce/i.test(msg)) {
+    return "Your wallet's transaction count is out of sync (nonce too low). In MetaMask: Settings → Advanced → Clear activity tab data for this account, then retry. Tip: don't use the same wallet that runs the funding scripts for in-app testing."
+  }
+  if (/insufficient funds/i.test(msg)) return 'Not enough CELO for gas. Top up a little CELO in this wallet and retry.'
+  if (/user rejected|denied/i.test(msg)) return 'You declined the transaction in your wallet.'
+  return msg
+}
+
 function fmtDeadline(deadline: bigint) {
   const remaining = Number(deadline) - Math.floor(Date.now() / 1000)
   if (remaining <= 0) return 'Expired'
@@ -419,7 +429,7 @@ export default function SessionPage() {
     } catch (err: unknown) {
       setPhase('error')
       const msg = (err as { shortMessage?: string })?.shortMessage || (err instanceof Error ? err.message : 'Transaction failed')
-      setErrorMsg(msg)
+      setErrorMsg(friendlyTxError(msg))
     }
   }, [gps, ped, commitmentId, isDistanceGoal, goalMeters, writeContractAsync, config, address])
 
@@ -474,7 +484,7 @@ export default function SessionPage() {
       // It may already have gone through (lag) — confirm before reporting failure.
       if (/already resolved/i.test(msg) || await commitmentResolved()) { router.push('/commitment/new'); return }
       setCancelling(false)
-      setErrorMsg(/grace period/i.test(msg) ? 'The 60-second cancel window has passed. Your stake is now locked until the deadline — finish your goal to get it back, or it is forfeited to the pool when the timer ends.' : msg)
+      setErrorMsg(/grace period/i.test(msg) ? 'The 60-second cancel window has passed. Your stake is now locked until the deadline — finish your goal to get it back, or it is forfeited to the pool when the timer ends.' : friendlyTxError(msg))
       setPhase('error')
     }
   }, [commitmentId, writeContractAsync, config, router, gps, commitmentResolved])
@@ -501,7 +511,7 @@ export default function SessionPage() {
       // "already resolved" / RPC lag means the forfeit actually succeeded — treat as done.
       if (/already resolved/i.test(msg) || await commitmentResolved()) { router.push('/commitment/new'); return }
       setForfeiting(false)
-      setErrorMsg(msg)
+      setErrorMsg(friendlyTxError(msg))
       setPhase('error')
     }
   }, [commitmentId, writeContractAsync, config, router, commitmentResolved])
