@@ -6,6 +6,7 @@ import { WagmiProvider } from 'wagmi'
 import { wagmiConfig } from '@/config/wagmi'
 import { registerMiniPayHook } from '@/utils/minipay'
 import { enforceEphemeralSession } from '@/utils/auth'
+import MiniPayAutoConnect from '@/components/MiniPayAutoConnect'
 
 interface ProvidersProps {
   children: ReactNode
@@ -36,6 +37,7 @@ export function Providers({ children }: ProvidersProps) {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
+        <MiniPayAutoConnect />
         {children}
       </QueryClientProvider>
     </WagmiProvider>
