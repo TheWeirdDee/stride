@@ -90,20 +90,20 @@ export default function LandingMarketing({ onGetStarted }: LandingMarketingProps
       <div className="pcard">
         <div className="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 4v16M15 8v12M5 12v8M19 12v8"/></svg></div>
         <h4>Step goals</h4>
-        <p>From 500 steps to 50,000. Perfect for everyday movement and your first commitment.</p>
-        <span className="pmeta">Beginner friendly</span>
+        <p>From 500 steps to 50,000 — counted by your phone&apos;s motion sensor, so they work even without GPS (great inside MiniPay).</p>
+        <span className="pmeta">No GPS needed</span>
       </div>
       <div className="pcard">
         <div className="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
         <h4>Live GPS sessions</h4>
         <p>Your route draws in real time with pace, distance and elapsed time. Pause when you need to.</p>
-        <span className="pmeta">Mapbox powered</span>
+        <span className="pmeta">Free live maps</span>
       </div>
       <div className="pcard">
-        <div className="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/></svg></div>
-        <h4>Warmups &amp; cooldowns</h4>
-        <p>Guided routines surface before and after every session. Illustrated, data-light, offline ready.</p>
-        <span className="pmeta">Content hub</span>
+        <div className="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 2l1.8 4.7L18 8l-4.2 1.5L12 14l-1.8-4.5L6 8l4.2-1.3z"/><path d="M19 14l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg></div>
+        <h4>Free AI running coach</h4>
+        <p>An AI coach tailors your pace and talks you through the hard minutes, a recovery advisor cools you down, and warmups surface before every session. No subscription.</p>
+        <span className="pmeta">Powered by free AI</span>
       </div>
       <div className="pcard">
         <div className="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 2l2.5 6.5L21 9l-5 4 1.5 7L12 16l-5.5 4L8 13 3 9l6.5-.5L12 2Z"/></svg></div>
