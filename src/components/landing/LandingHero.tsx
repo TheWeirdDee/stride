@@ -1,5 +1,6 @@
 'use client'
 
+import { motion } from 'framer-motion'
 import { GuestProfile } from './types'
 
 interface LandingHeroProps {
@@ -41,20 +42,21 @@ export default function LandingHero({ isConnected, guestProfile, onGetStarted, o
       </div>
 
       <aside className="hero-cards">
-        <div className="card-trainer">
+        <motion.div className="card-trainer" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.5, ease: 'easeOut' }}>
           <span className="pill-sm"><span className="dot"></span>Your commitment</span>
           <h3>Get Your <span className="lite">Stake Back</span> + A Bonus When You Finish</h3>
           <a className="btn btn-dark" href="#how" style={{"width":"100%","justifyContent":"center"}}>See how it works</a>
-        </div>
-        <div className="stake-card">
-          <div className="row1"><span>Today&apos;s stake</span><span>5 km · 2h window</span></div>
-          <div className="stake-amt"><b>1.00</b><small>CELO</small></div>
-          <ul className="stake-list">
-            <li>Full stake returned on finish</li>
-            <li>Bonus from the reward pool</li>
-            <li>Streak +1 · settled on-chain</li>
-          </ul>
-        </div>
+        </motion.div>
+        <motion.div className="streak-card" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.65, ease: 'easeOut' }}>
+          <div className="row1"><span>Your streak</span><span>12-day high</span></div>
+          <div className="streak-amt"><b>7</b><small>days in a row</small></div>
+          <div className="streak-graph">
+            {[35, 60, 45, 80, 55, 90, 70, 100, 50, 75, 65, 95].map((h, i) => (
+              <i key={i} className={h >= 60 ? 'on' : ''} style={{ height: `${h}%` }} />
+            ))}
+          </div>
+          <div className="streak-foot"><span className="dot"></span>Every day you move lights up — settled on-chain.</div>
+        </motion.div>
       </aside>
 
       <div className="hero-foot">
