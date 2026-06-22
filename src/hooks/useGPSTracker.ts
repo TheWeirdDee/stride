@@ -230,7 +230,21 @@ export function useGPSTracker(persistKey?: string): UseGPSTrackerReturn {
       if (!raw) return false
       const s = JSON.parse(raw)
       if (!s?.active || !s?.startedAt) return false
-      pathRef.current = Array.isArray(s.path) ? s.path : []
+
+      // Reject a stale or corrupt saved session so it can't auto-resume and then
+      // auto-complete with impossible data (e.g. old fast-demo paths) → endless
+      // "Speed too high" errors. Drop it if it's old or contains a teleport.
+      const path: Coordinate[] = Array.isArray(s.path) ? s.path : []
+      const tooOld = typeof s.updatedAt === 'number' && Date.now() - s.updatedAt > 6 * 3600_000
+      let teleport = false
+      for (let i = 1; i < path.length; i++) {
+        const km = getDistance(path[i - 1], path[i])
+        const hrs = (((path[i].timestamp ?? 0) - (path[i - 1].timestamp ?? 0)) || 0) / 3_600_000
+        if (hrs > 0 && km / hrs > 45) { teleport = true; break } // >45 km/h between fixes
+      }
+      if (tooOld || teleport) { clearPersisted(); return false }
+
+      pathRef.current = path
       distanceRef.current = Number(s.distance) || 0
       startTimeRef.current = Number(s.startedAt)
       pausedMsRef.current = Number(s.pausedMs) || 0
@@ -246,7 +260,7 @@ export function useGPSTracker(persistKey?: string): UseGPSTrackerReturn {
     } catch {
       return false
     }
-  }, [persistKey, cleanup, startTimer, startWatcher])
+  }, [persistKey, cleanup, startTimer, startWatcher, clearPersisted])
 
   const pauseTracking = useCallback(() => {
     setIsPaused(true)
