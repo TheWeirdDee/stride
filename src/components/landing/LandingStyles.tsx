@@ -46,7 +46,8 @@ export default function LandingStyles() {
   }
   .landing-page-container img {display:block;max-width:100%;height:100%;object-fit:cover;}
   .landing-page-container a {color:inherit;text-decoration:none;}
-  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 40px;}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 56px;}
+  @media(min-width:1440px){.wrap{padding:0 72px;}}
 
   .display{font-family:var(--display);font-weight:var(--display-weight);text-transform:uppercase;letter-spacing:.005em;line-height:.92;}
   .mono{font-family:var(--mono);}
@@ -291,6 +292,29 @@ export default function LandingStyles() {
   .foot-bot{display:flex;align-items:center;justify-content:space-between;gap:20px;padding-top:28px;flex-wrap:wrap;font-size:13px;color:var(--muted-d);}
   .foot-bot .socials{display:flex;gap:10px;}
   .foot-bot .icon-btn{background:var(--charcoal-2);border-color:var(--line-d);width:38px;height:38px;}
+
+  /* ---- contrast: <a>.logo / <a>.icon-btn inherited the dark anchor color ---- */
+  .landing-page-container a.logo{color:#fff;}
+  .landing-page-container .nav-right a.icon-btn{color:#fff;}
+  .landing-page-container .foot-bot a.icon-btn{color:#cdd2d7;}
+
+  /* ---- footer: keep the notify button compact (was wrapping into a big circle) ---- */
+  .foot-input .btn{white-space:nowrap;flex-shrink:0;padding:11px 18px;font-size:14px;}
+
+  /* ---- HERO streak card (replaces the stake card) ---- */
+  .streak-card{width:300px;background:rgba(12,16,22,.55);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(14px);border-radius:22px;padding:20px;color:#fff;margin-top:auto;}
+  .streak-card .row1{display:flex;align-items:center;justify-content:space-between;font-size:13px;color:rgba(255,255,255,.78);font-weight:600;}
+  .streak-amt{display:flex;align-items:baseline;gap:6px;margin:6px 0 14px;}
+  .streak-amt b{font-size:46px;font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--lime);}
+  .streak-amt small{font-size:13px;color:rgba(255,255,255,.7);}
+  .streak-graph{display:flex;align-items:flex-end;gap:5px;height:54px;}
+  .streak-graph i{flex:1;border-radius:3px;background:rgba(255,255,255,.1);}
+  .streak-graph i.on{background:var(--lime);box-shadow:0 0 8px rgba(205,251,70,.55);}
+  .streak-foot{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:12.5px;color:rgba(255,255,255,.82);}
+  .streak-foot .dot{width:6px;height:6px;border-radius:50%;background:var(--lime);flex:none;}
+
+  /* ---- scroll reveal (driven by IntersectionObserver, no JS deps) ---- */
+  @media(prefers-reduced-motion:reduce){.reveal{opacity:1 !important;transform:none !important;}}
 
   /* ===== ANIMATIONS ===== */
   @keyframes fadeUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
