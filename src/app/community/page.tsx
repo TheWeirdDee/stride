@@ -309,7 +309,7 @@ export default function CommunityPage() {
         <>
           {/* Distance stat */}
           <div className="sd-card sd-card-glow" style={{ marginTop: 18, padding: 22, position: 'relative' }}>
-            <div className="sd-mono" style={{ position: 'relative', fontWeight: 700, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--muted)' }}>Distance this week</div>
+            <div className="sd-mono" style={{ position: 'relative', fontWeight: 700, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--muted)' }}>Distance today</div>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 6 }}>
               <span className="sd-mono" style={{ fontWeight: 800, fontSize: 58, lineHeight: 0.9, letterSpacing: '-0.02em' }}>{netStats ? Math.round(netStats.weeklyKm).toLocaleString() : '—'}</span>
               <span style={{ fontFamily: "'Archivo Expanded',sans-serif", fontWeight: 700, fontSize: 18, color: '#cdfb46' }}>KM</span>
