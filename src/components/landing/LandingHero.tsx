@@ -50,10 +50,13 @@ export default function LandingHero({ isConnected, guestProfile, onGetStarted, o
         <motion.div className="streak-card" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.65, ease: 'easeOut' }}>
           <div className="row1"><span>Your streak</span><span>12-day high</span></div>
           <div className="streak-amt"><b>7</b><small>days in a row</small></div>
-          <div className="streak-graph">
-            {[35, 60, 45, 80, 55, 90, 70, 100, 50, 75, 65, 95].map((h, i) => (
-              <i key={i} className={h >= 60 ? 'on' : ''} style={{ height: `${h}%` }} />
-            ))}
+          <div className="streak-grid">
+            {Array.from({ length: 84 }).map((_, i) => {
+              const r = ((i * 2654435761) >>> 0) % 100
+              const lvl = r < 45 ? 0 : r < 65 ? 1 : r < 85 ? 2 : 3
+              const bg = lvl >= 3 ? '#cdfb46' : lvl === 2 ? 'rgba(205,251,70,0.75)' : lvl === 1 ? 'rgba(205,251,70,0.45)' : 'rgba(255,255,255,0.08)'
+              return <i key={i} style={{ background: bg }} />
+            })}
           </div>
           <div className="streak-foot"><span className="dot"></span>Every day you move lights up — settled on-chain.</div>
         </motion.div>
