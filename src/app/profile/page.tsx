@@ -96,8 +96,9 @@ export default function ProfilePage() {
     }
     return cells
   }, [commitments])
+  // Frosted-glass (iOS) palette — translucent lime that lights up with activity.
   const heatColor = (n: number) =>
-    n >= 3 ? '#cdfb46' : n === 2 ? 'rgba(205,251,70,0.75)' : n === 1 ? 'rgba(205,251,70,0.45)' : 'rgba(255,255,255,0.07)'
+    n >= 3 ? 'rgba(205,251,70,0.55)' : n === 2 ? 'rgba(205,251,70,0.36)' : n === 1 ? 'rgba(205,251,70,0.20)' : 'rgba(255,255,255,0.05)'
   const activeDays = contrib.filter((c) => c.count > 0).length
 
   // ── Analytics (#9) + badges (#5) from the data we already have ──
@@ -429,12 +430,12 @@ export default function ProfilePage() {
         </div>
         <div style={{ display: 'grid', gridAutoFlow: 'column', gridTemplateRows: 'repeat(7,1fr)', gap: 4, overflowX: 'auto', paddingBottom: 4 }}>
           {contrib.map((cell) => (
-            <div key={cell.date} title={`${cell.date}: ${cell.count} completed`} style={{ height: 12, width: 12, borderRadius: 3, background: heatColor(cell.count) }} />
+            <div key={cell.date} title={`${cell.date}: ${cell.count} completed`} style={{ height: 12, width: 12, borderRadius: 3, background: heatColor(cell.count), border: '1px solid rgba(255,255,255,0.12)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.18)' }} />
           ))}
         </div>
         <div className="sd-mono" style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, fontSize: 9, color: 'var(--muted-2)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
           Less
-          {[0, 1, 2, 3].map((n) => <span key={n} style={{ height: 12, width: 12, borderRadius: 3, background: heatColor(n) }} />)}
+          {[0, 1, 2, 3].map((n) => <span key={n} style={{ height: 12, width: 12, borderRadius: 3, background: heatColor(n), border: '1px solid rgba(255,255,255,0.12)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.18)' }} />)}
           More
         </div>
       </div>
