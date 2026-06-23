@@ -307,9 +307,10 @@ export default function LandingStyles() {
   .streak-amt{display:flex;align-items:baseline;gap:6px;margin:6px 0 14px;}
   .streak-amt b{font-size:46px;font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--lime);}
   .streak-amt small{font-size:13px;color:rgba(255,255,255,.7);}
-  /* GitHub-style contribution grid — matches the streak graph in the app profile */
+  /* GitHub-style contribution grid — matches the streak graph in the app profile,
+     with a frosted-glass (iOS) finish on each cell */
   .streak-grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,1fr);gap:3px;}
-  .streak-grid i{width:100%;aspect-ratio:1;border-radius:2px;background:rgba(255,255,255,.08);}
+  .streak-grid i{width:100%;aspect-ratio:1;border-radius:3px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.13);box-shadow:inset 0 1px 0 rgba(255,255,255,.18);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);}
   .streak-foot{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:12.5px;color:rgba(255,255,255,.82);}
   .streak-foot .dot{width:6px;height:6px;border-radius:50%;background:var(--lime);flex:none;}
 
