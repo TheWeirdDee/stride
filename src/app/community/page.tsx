@@ -2,10 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { useAccount, useReadContract } from 'wagmi'
-import { formatUnits } from 'viem'
-import { strideRewardPoolAbi } from '@/abi/rewardPool'
-import { REWARD_POOL_CONTRACT } from '@/utils/constants'
+import { useAccount } from 'wagmi'
 import {
   type Activity,
   type Challenge as DbChallenge,
@@ -110,18 +107,6 @@ export default function CommunityPage() {
   const [idx, setIdx] = useState(0)
 
   const { address } = useAccount()
-
-  // Real on-chain reward-pool figures (getStats → balance, received, paidOut).
-  const { data: poolStats } = useReadContract({
-    address: REWARD_POOL_CONTRACT,
-    abi: strideRewardPoolAbi,
-    functionName: 'getStats',
-    query: { enabled: !!REWARD_POOL_CONTRACT },
-  })
-  const fmtUsd = (v?: bigint) =>
-    v != null ? `$${parseFloat(formatUnits(v, 18)).toLocaleString(undefined, { maximumFractionDigits: 2 })}` : '—'
-  const poolReceived = poolStats ? fmtUsd(poolStats[1]) : '—'
-  const poolPaid = poolStats ? fmtUsd(poolStats[2]) : '—'
 
   const [groupFilter, setGroupFilter] = useState<Activity>('walk')
   const [challengeFilter, setChallengeFilter] = useState<Activity>('walk')
@@ -328,21 +313,19 @@ export default function CommunityPage() {
             </div>
           </div>
 
-          {/* Reward pool */}
+          {/* Why it works */}
           <div className="sd-card-lime sd-card-glow" style={{ marginTop: 14, padding: 20 }}>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div className="sd-mono" style={{ fontWeight: 700, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#cdfb46' }}>Community reward pool</div>
-              <span className="sd-mono" style={{ fontSize: 9, color: 'var(--muted-2)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Live</span>
+              <div className="sd-mono" style={{ fontWeight: 700, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#cdfb46' }}>Skin in the game</div>
+              <span className="sd-mono" style={{ fontSize: 9, color: 'var(--muted-2)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>On-chain</span>
             </div>
-            <div style={{ position: 'relative', display: 'flex', gap: 10, marginTop: 16 }}>
-              <div style={{ flex: 1, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 13, padding: '11px 13px' }}>
-                <div className="sd-mono" style={{ fontSize: 9, letterSpacing: '0.12em', color: 'var(--muted-2)', textTransform: 'uppercase' }}>Paid out</div>
-                <div className="sd-mono" style={{ fontWeight: 800, fontSize: 16, marginTop: 3 }}>{poolPaid}</div>
-              </div>
-              <div style={{ flex: 1, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 13, padding: '11px 13px' }}>
-                <div className="sd-mono" style={{ fontSize: 9, letterSpacing: '0.12em', color: 'var(--muted-2)', textTransform: 'uppercase' }}>From forfeits</div>
-                <div className="sd-mono" style={{ fontWeight: 800, fontSize: 16, marginTop: 3 }}>{poolReceived}</div>
-              </div>
+            <p style={{ position: 'relative', margin: '12px 0 0', fontSize: 13, lineHeight: 1.5, color: 'rgba(244,246,243,0.85)' }}>
+              Every commitment is backed by a real stake. Finish your goal and your stake comes straight back — plus a bonus. Nothing happens unless you move.
+            </p>
+            <div style={{ position: 'relative', display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+              {['Stake to start', 'GPS-verified', 'Settled instantly'].map((t) => (
+                <span key={t} className="sd-mono" style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', color: '#cdfb46', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(205,251,70,0.25)', borderRadius: 20, padding: '6px 11px' }}>{t}</span>
+              ))}
             </div>
           </div>
 
