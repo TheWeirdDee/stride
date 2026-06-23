@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { getPathDistance, type Coordinate } from '@/utils/haversine'
+import { getStoredLocation } from '@/utils/location'
 
 interface MapViewProps {
   path: Coordinate[]
@@ -95,7 +96,10 @@ export function MapView({ path, isActive }: MapViewProps) {
       .then((L) => {
         if (cancelled || !containerRef.current || mapRef.current) return
         const first = pathRef.current[0]
-        const center: [number, number] = first ? [first.latitude, first.longitude] : [6.5244, 3.3792]
+        const saved = getStoredLocation()
+        const center: [number, number] = first
+          ? [first.latitude, first.longitude]
+          : saved ? [saved.lat, saved.lng] : [6.5244, 3.3792]
         const map = L.map(containerRef.current, { zoomControl: false, attributionControl: false }).setView(center, 15)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', { maxZoom: 20, subdomains: 'abcd' }).addTo(map)
         L.control.zoom({ position: 'topright' }).addTo(map)
