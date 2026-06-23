@@ -54,7 +54,7 @@ export default function LandingHero({ isConnected, guestProfile, onGetStarted, o
             {Array.from({ length: 84 }).map((_, i) => {
               const r = ((i * 2654435761) >>> 0) % 100
               const lvl = r < 45 ? 0 : r < 65 ? 1 : r < 85 ? 2 : 3
-              const bg = lvl >= 3 ? '#cdfb46' : lvl === 2 ? 'rgba(205,251,70,0.75)' : lvl === 1 ? 'rgba(205,251,70,0.45)' : 'rgba(255,255,255,0.08)'
+              const bg = lvl >= 3 ? 'rgba(205,251,70,0.55)' : lvl === 2 ? 'rgba(205,251,70,0.36)' : lvl === 1 ? 'rgba(205,251,70,0.20)' : 'rgba(255,255,255,0.05)'
               return <i key={i} style={{ background: bg }} />
             })}
           </div>
