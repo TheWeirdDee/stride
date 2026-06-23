@@ -120,32 +120,24 @@ export function useGPSTracker(persistKey?: string): UseGPSTrackerReturn {
   }, [appendCoord])
 
   const startSimulation = useCallback(() => {
-    // Start the simulated walk from the user's set/last location if they have one,
-    // else try a real fix, else fall back to a default.
+    // Start the simulated walk from the user's saved location, else a default.
     const stored = getStoredLocation()
     let lat = stored?.lat ?? 6.5244
     let lng = stored?.lng ?? 3.3792
-    const seed = () => appendCoord(lat, lng, Date.now())
+    // Virtual clock + fixed step so EVERY segment is a constant, safe speed,
+    // immune to real setInterval drift (which was spiking past the 8 km/h cap).
+    // ~1.4 m/s ≈ 5 km/h: well under the walk limit and over the min-pace floor.
+    let simTime = Date.now()
+    const STEP_LAT = 0.0000126 // ≈ 1.4 m north per tick
+    const STEP_LNG = 0.0000006 // tiny eastward drift for a natural diagonal
+    appendCoord(lat, lng, simTime) // seed synchronously (no async GPS in demo)
     const tick = () => {
       const { isActive: a, isPaused: p } = stateRef.current
       if (!a || p) return
-      // ~1.8 m/s ≈ 6.5 km/h — a realistic walking pace that PASSES the server
-      // anti-cheat (walk max 8 km/h, min 7 min/km) so a demo session completes
-      // legitimately even on production where the demo bypass is off.
-      lat += 0.0000162
-      lng += 0.0000030 + (Math.random() - 0.5) * 0.0000040
-      appendCoord(lat, lng, Date.now())
-    }
-    if (!stored && typeof navigator !== 'undefined' && navigator.geolocation) {
-      // No saved location — try a real fix (low-accuracy is faster/more reliable
-      // on desktop than high-accuracy, which often times out).
-      navigator.geolocation.getCurrentPosition(
-        (pos) => { lat = pos.coords.latitude; lng = pos.coords.longitude; seed() },
-        () => seed(),
-        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
-      )
-    } else {
-      seed()
+      simTime += 1000
+      lat += STEP_LAT
+      lng += STEP_LNG
+      appendCoord(lat, lng, simTime)
     }
     simIdRef.current = setInterval(tick, 1000)
   }, [appendCoord])
