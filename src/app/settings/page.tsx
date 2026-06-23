@@ -6,6 +6,7 @@ import { useAccount } from 'wagmi'
 import StrideMark from '@/components/StrideMark'
 import { APP_NAME } from '@/utils/constants'
 import { requestNotificationPermission } from '@/utils/notifications'
+import { getStoredLocation, setStoredLocation, clearStoredLocation, captureCurrentLocation, geocodePlace } from '@/utils/location'
 import {
   ArrowLeft,
   Ruler,
@@ -51,6 +52,12 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false)
   const savedTimer = useRef<NodeJS.Timeout | null>(null)
 
+  // Location
+  const [locLabel, setLocLabel] = useState<string>('')
+  const [locInput, setLocInput] = useState('')
+  const [locBusy, setLocBusy] = useState(false)
+  const [locErr, setLocErr] = useState('')
+
   // ── Hydrate from localStorage (deferred so it doesn't trip the render-cascade rule) ──
   useEffect(() => {
     function hydrate() {
@@ -69,10 +76,36 @@ export default function SettingsPage() {
       try {
         setDemoMode(localStorage.getItem('stride_demo_mode') === '1')
       } catch {}
+      const loc = getStoredLocation()
+      if (loc) setLocLabel(loc.label || `${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}`)
     }
     const id = setTimeout(hydrate, 0)
     return () => clearTimeout(id)
   }, [])
+
+  const useCurrentLocation = async () => {
+    setLocErr(''); setLocBusy(true)
+    const loc = await captureCurrentLocation()
+    setLocBusy(false)
+    if (!loc) { setLocErr('Could not read your GPS location. Allow location access, or type a place below.'); return }
+    setStoredLocation(loc)
+    setLocLabel(loc.label || `${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}`)
+    flashSaved()
+  }
+
+  const setTypedLocation = async () => {
+    if (!locInput.trim() || locBusy) return
+    setLocErr(''); setLocBusy(true)
+    const loc = await geocodePlace(locInput)
+    setLocBusy(false)
+    if (!loc) { setLocErr('Couldn’t find that place. Try a city, an address, or "lat, lng".'); return }
+    setStoredLocation(loc)
+    setLocLabel(loc.label || `${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}`)
+    setLocInput('')
+    flashSaved()
+  }
+
+  const clearLocation = () => { clearStoredLocation(); setLocLabel(''); flashSaved() }
 
   const flashSaved = () => {
     setSaved(true)
@@ -198,6 +231,23 @@ export default function SettingsPage() {
             style={{ width: '100%', accentColor: '#cdfb46' }}
           />
         </Field>
+      </Section>
+
+      {/* ── Location ── */}
+      <Section title="Your location" subtitle="Pins where the map and demo sessions start — useful on desktop where GPS is rough.">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: locLabel ? 'var(--ink)' : 'var(--muted)' }}>
+          <MapPin className="h-4 w-4" style={{ color: '#cdfb46', flexShrink: 0 }} />
+          {locLabel ? <span>{locLabel}</span> : <span>No location set — using your device GPS / default.</span>}
+        </div>
+        <button onClick={useCurrentLocation} disabled={locBusy} className="sd-btn sd-btn-lime" style={{ marginTop: 4 }}>
+          {locBusy ? 'Locating…' : 'Use my current GPS location'}
+        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input className="sd-input" value={locInput} onChange={(e) => setLocInput(e.target.value)} placeholder='City, address, or "lat, lng"' onKeyDown={(e) => { if (e.key === 'Enter') setTypedLocation() }} />
+          <button onClick={setTypedLocation} disabled={locBusy || !locInput.trim()} className="sd-btn sd-btn-ghost" style={{ width: 'auto', flexShrink: 0, padding: '0 18px' }}>Set</button>
+        </div>
+        {locErr && <p style={{ fontSize: 12, color: '#fb7185', lineHeight: 1.4 }}>{locErr}</p>}
+        {locLabel && <button onClick={clearLocation} className="sd-btn sd-btn-ghost" style={{ fontSize: 12, padding: 10 }}>Clear saved location</button>}
       </Section>
 
       {/* ── Units ── */}
