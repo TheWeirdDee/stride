@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Coordinate, getDistance } from '@/utils/haversine'
+import { getStoredLocation } from '@/utils/location'
 
 export interface UseGPSTrackerReturn {
   isActive: boolean
@@ -119,8 +120,11 @@ export function useGPSTracker(persistKey?: string): UseGPSTrackerReturn {
   }, [appendCoord])
 
   const startSimulation = useCallback(() => {
-    let lat = 6.5244
-    let lng = 3.3792
+    // Start the simulated walk from the user's set/last location if they have one,
+    // else try a real fix, else fall back to a default.
+    const stored = getStoredLocation()
+    let lat = stored?.lat ?? 6.5244
+    let lng = stored?.lng ?? 3.3792
     const seed = () => appendCoord(lat, lng, Date.now())
     const tick = () => {
       const { isActive: a, isPaused: p } = stateRef.current
@@ -132,11 +136,13 @@ export function useGPSTracker(persistKey?: string): UseGPSTrackerReturn {
       lng += 0.0000030 + (Math.random() - 0.5) * 0.0000040
       appendCoord(lat, lng, Date.now())
     }
-    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+    if (!stored && typeof navigator !== 'undefined' && navigator.geolocation) {
+      // No saved location — try a real fix (low-accuracy is faster/more reliable
+      // on desktop than high-accuracy, which often times out).
       navigator.geolocation.getCurrentPosition(
         (pos) => { lat = pos.coords.latitude; lng = pos.coords.longitude; seed() },
         () => seed(),
-        { enableHighAccuracy: true, timeout: 5000 }
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
       )
     } else {
       seed()
