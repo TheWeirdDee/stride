@@ -2,7 +2,7 @@
 
 > Commit to your movement. Prove it on-chain. Get rewarded.
 
-Stride is a MiniPay-native fitness accountability app built on Celo. Users stake cUSD as a personal commitment to a walk or run goal, track their live GPS route, and automatically receive their stake back plus a bonus reward when they complete it.
+Stride is a MiniPay-native fitness accountability app built on Celo. Users stake USDm as a personal commitment to a walk or run goal, track their live GPS route, and automatically receive their stake back plus a bonus reward when they complete it.
 
 **No competition. No leaderboards. Just you, your goal, and your word on-chain.**
 
@@ -22,7 +22,7 @@ Both contracts are verified on Celoscan.
 ## What Stride Does
 
 - Users browse and explore the app with no wallet required
-- When ready, they create a **Commitment** — a GPS-based movement goal with a cUSD stake (minimum $0.01)
+- When ready, they create a **Commitment** — a GPS-based movement goal with a USDm stake (minimum $0.01)
 - The stake is locked in a smart contract on Celo
 - During the session, the app tracks their live GPS route on a map (Strava-style)
 - When the goal is completed, on-chain proof is submitted automatically

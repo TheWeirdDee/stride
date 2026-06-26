@@ -200,7 +200,7 @@ export default function ProfileRoutesPage() {
                   city={city}
                   distanceKm={km}
                   durationMinutes={mins}
-                  rewardCUSD={0}
+                  rewardUSDm={0}
                   date={new Date(s.started_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                   activityType={km >= 4 ? 'run' : 'walk'}
                   svgPath={coordsToSvgPath(s.routes?.[0]?.coordinates)}

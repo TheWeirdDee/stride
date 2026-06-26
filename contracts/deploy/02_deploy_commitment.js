@@ -6,7 +6,7 @@ const hre = require("hardhat");
 const fs = require("fs");
 const path = require("path");
 
-const CUSD_ADDRESSES = {
+const USDm_ADDRESSES = {
   celo: "0x765DE816845861e75A25fCA122bb6898B8B1282a",
   alfajores: "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1",
 };
@@ -20,18 +20,18 @@ async function main() {
 
   const verifierAddress = process.env.VERIFIER_ADDRESS;
   const rewardPoolAddress = process.env.REWARD_POOL_ADDRESS;
-  const cusdAddress = CUSD_ADDRESSES[network];
+  const USDmAddress = USDm_ADDRESSES[network];
 
   if (!verifierAddress) throw new Error("Missing VERIFIER_ADDRESS in .env");
   if (!rewardPoolAddress) throw new Error("Missing REWARD_POOL_ADDRESS in .env");
-  if (!cusdAddress) throw new Error(`No cUSD address for network: ${network}`);
+  if (!USDmAddress) throw new Error(`No USDm address for network: ${network}`);
 
   console.log(`Verifier:   ${verifierAddress}`);
   console.log(`RewardPool: ${rewardPoolAddress}`);
-  console.log(`cUSD:       ${cusdAddress}\n`);
+  console.log(`USDm:       ${USDmAddress}\n`);
 
   const Commitment = await hre.ethers.getContractFactory("StrideCommitment");
-  const commitment = await Commitment.deploy(verifierAddress, rewardPoolAddress, cusdAddress);
+  const commitment = await Commitment.deploy(verifierAddress, rewardPoolAddress, USDmAddress);
   await commitment.waitForDeployment();
   const commitmentAddress = await commitment.getAddress();
   console.log(`StrideCommitment deployed: ${commitmentAddress}`);

@@ -8,7 +8,7 @@ export const strideRewardPoolAbi = [
       },
       {
         "internalType": "address",
-        "name": "_cusd",
+        "name": "_USDm",
         "type": "address"
       }
     ],
@@ -133,7 +133,7 @@ export const strideRewardPoolAbi = [
   },
   {
     "inputs": [],
-    "name": "CUSD",
+    "name": "USDm",
     "outputs": [
       {
         "internalType": "contract IERC20",

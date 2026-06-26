@@ -1,7 +1,7 @@
 {
   "network": "celo",
   "deployer": "0x1b8cbc7A0F928CA940bd1d2Ae2c007b460fabD4d",
-  "cusd": "0x765DE816845861e75A25fCA122bb6898B8B1282a",
+  "USDm": "0x765DE816845861e75A25fCA122bb6898B8B1282a",
   "StrideRewardPool": "0xf9A538c04f580eDf8c51069555ED6B880552C337",
   "updatedAt": "2026-06-03T09:36:09.586Z",
   "StrideCommitment": "0x3ebbFE73400E5D65477c61EE3b5278c56fBa6a77",

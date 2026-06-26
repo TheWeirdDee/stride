@@ -6,7 +6,7 @@ interface RouteCardProps {
   city: string
   distanceKm: number
   durationMinutes: number
-  rewardCUSD: number
+  rewardUSDm: number
   date: string
   activityType: 'walk' | 'run'
   svgPath: string
@@ -18,7 +18,7 @@ export default function RouteCard({
   city,
   distanceKm,
   durationMinutes,
-  rewardCUSD,
+  rewardUSDm,
   date,
   activityType,
   svgPath,
@@ -77,8 +77,8 @@ export default function RouteCard({
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 11, paddingTop: 11, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
           <span className="sd-mono" style={{ fontSize: 10, color: 'rgba(244,246,243,0.4)', letterSpacing: '0.05em' }}>{date}</span>
-          {rewardCUSD > 0 && (
-            <span className="sd-mono" style={{ fontSize: 13, fontWeight: 800, color: '#cdfb46' }}>+${rewardCUSD.toFixed(2)}</span>
+          {rewardUSDm > 0 && (
+            <span className="sd-mono" style={{ fontSize: 13, fontWeight: 800, color: '#cdfb46' }}>+${rewardUSDm.toFixed(2)}</span>
           )}
         </div>
       </div>

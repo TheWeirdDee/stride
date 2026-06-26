@@ -13,15 +13,15 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  */
 contract StrideRewardPool is Ownable, ReentrancyGuard {
 
-    // cUSD address is passed at deploy time so the same contract works on
+    // USDm address is passed at deploy time so the same contract works on
     // Alfajores testnet, Celo Mainnet, and local Hardhat tests (MockERC20).
-    IERC20 public immutable CUSD;
+    IERC20 public immutable USDm;
 
     address public commitmentContract;
 
     // Bonus = bonusPercent% of user's stake, capped at maxBonus
     uint256 public bonusPercent = 10;
-    uint256 public maxBonus = 5e17; // 0.50 cUSD
+    uint256 public maxBonus = 5e17; // 0.50 USDm
 
     uint256 public totalReceived;
     uint256 public totalPaidOut;
@@ -36,17 +36,17 @@ contract StrideRewardPool is Ownable, ReentrancyGuard {
         _;
     }
 
-    constructor(address _commitmentContract, address _cusd) Ownable(msg.sender) {
+    constructor(address _commitmentContract, address _USDm) Ownable(msg.sender) {
         commitmentContract = _commitmentContract;
-        CUSD = IERC20(_cusd);
+        USDm = IERC20(_USDm);
     }
 
     /**
-     * @notice Receive forfeited cUSD from the commitment contract
+     * @notice Receive forfeited USDm from the commitment contract
      */
     function receiveForfeiture(uint256 amount) external onlyCommitmentContract nonReentrant {
         require(
-            CUSD.transferFrom(commitmentContract, address(this), amount),
+            USDm.transferFrom(commitmentContract, address(this), amount),
             "Pool: forfeiture transfer failed"
         );
         totalReceived += amount;
@@ -57,7 +57,7 @@ contract StrideRewardPool is Ownable, ReentrancyGuard {
      * @notice Release a bonus reward to a user who completed a commitment
      * @param user Recipient address
      * @param baseStake Their original stake amount (determines bonus size)
-     * @return bonusAmount Amount of cUSD bonus paid
+     * @return bonusAmount Amount of USDm bonus paid
      */
     function releaseReward(address user, uint256 baseStake)
         external
@@ -79,14 +79,14 @@ contract StrideRewardPool is Ownable, ReentrancyGuard {
         if (bonusAmount == 0) return 0;
 
         totalPaidOut += bonusAmount;
-        require(CUSD.transfer(user, bonusAmount), "Pool: reward transfer failed");
+        require(USDm.transfer(user, bonusAmount), "Pool: reward transfer failed");
 
         emit RewardPaid(user, bonusAmount);
         return bonusAmount;
     }
 
     function getPoolBalance() public view returns (uint256) {
-        return CUSD.balanceOf(address(this));
+        return USDm.balanceOf(address(this));
     }
 
     function getStats() external view returns (
@@ -114,10 +114,10 @@ contract StrideRewardPool is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Seed the pool with initial cUSD (owner only, for launch bootstrapping)
+     * @notice Seed the pool with initial USDm (owner only, for launch bootstrapping)
      */
     function seedPool(uint256 amount) external onlyOwner {
-        require(CUSD.transferFrom(msg.sender, address(this), amount), "Pool: seed transfer failed");
+        require(USDm.transferFrom(msg.sender, address(this), amount), "Pool: seed transfer failed");
         totalReceived += amount;
         emit ForfeitureReceived(amount, getPoolBalance());
     }
@@ -128,6 +128,6 @@ contract StrideRewardPool is Ownable, ReentrancyGuard {
     function emergencyWithdraw() external onlyOwner {
         uint256 balance = getPoolBalance();
         require(balance > 0, "Pool: empty");
-        CUSD.transfer(owner(), balance);
+        USDm.transfer(owner(), balance);
     }
 }

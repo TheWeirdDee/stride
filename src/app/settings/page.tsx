@@ -195,7 +195,7 @@ export default function SettingsPage() {
 
       {/* ── Commitment defaults ── */}
       <Section title="Commitment defaults" subtitle="Pre-fill the new-commitment screen so you start faster.">
-        <Field icon={<Coins className="h-4 w-4" />} label="Default stake (cUSD)">
+        <Field icon={<Coins className="h-4 w-4" />} label="Default stake (USDm)">
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {STAKE_OPTIONS.map((s) => (
               <button

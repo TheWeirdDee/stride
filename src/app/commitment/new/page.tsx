@@ -16,7 +16,7 @@ export default function NewCommitmentPage() {
   const { connect, connectors } = useConnect()
 
   const {
-    cusdBalance,
+    USDmBalance,
     hasActiveCommitment,
     activeCommitmentId,
     createCommitment,
@@ -68,19 +68,19 @@ export default function NewCommitmentPage() {
   const bonusEstimateMin = (stakeValue * 0.02).toFixed(4)
   const bonusEstimateMax = (stakeValue * 0.1).toFixed(4)
 
-  const userCusdFloat = parseFloat(cusdBalance)
-  const isBalanceInsufficient = isConnected && userCusdFloat < stakeValue
-  const isStakeHighPercent = isConnected && stakeValue > 0 && userCusdFloat > 0 && stakeValue / userCusdFloat > 0.2
+  const userUSDmFloat = parseFloat(USDmBalance)
+  const isBalanceInsufficient = isConnected && userUSDmFloat < stakeValue
+  const isStakeHighPercent = isConnected && stakeValue > 0 && userUSDmFloat > 0 && stakeValue / userUSDmFloat > 0.2
 
   const handleNext = () => {
     if (step === 3) {
       const val = parseFloat(finalStake)
       if (isNaN(val) || val < MIN_STAKE_CELO) {
-        setLocalError(`Stake must be at least ${MIN_STAKE_CELO} cUSD`)
+        setLocalError(`Stake must be at least ${MIN_STAKE_CELO} USDm`)
         return
       }
       if (isBalanceInsufficient) {
-        setLocalError('Insufficient cUSD balance. Top up your cUSD to stake.')
+        setLocalError('Insufficient USDm balance. Top up your USDm to stake.')
         return
       }
       setLocalError(null)
@@ -220,7 +220,7 @@ export default function NewCommitmentPage() {
           <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 12 }}>Locked in escrow, returned on completion.</p>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 18, padding: '11px 14px', borderRadius: 13, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--line)' }}>
             <span className="sd-mono" style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Your balance</span>
-            <span className="sd-mono" style={{ fontWeight: 800, fontSize: 13 }}>{isConnected ? `${userCusdFloat.toFixed(4)} cUSD` : 'Wallet not connected'}</span>
+            <span className="sd-mono" style={{ fontWeight: 800, fontSize: 13 }}>{isConnected ? `${userUSDmFloat.toFixed(4)} USDm` : 'Wallet not connected'}</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 7, marginTop: 14 }}>
             {stakeOptions.map((opt) => (
@@ -233,12 +233,12 @@ export default function NewCommitmentPage() {
           )}
           {isStakeHighPercent && !isBalanceInsufficient && (
             <div style={{ display: 'flex', gap: 8, padding: 12, borderRadius: 13, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', color: '#fbbf24', fontSize: 12, marginTop: 12 }}>
-              <AlertCircle className="h-4 w-4 shrink-0" /> Staking {stakeValue.toFixed(2)} cUSD is over 20% of your balance.
+              <AlertCircle className="h-4 w-4 shrink-0" /> Staking {stakeValue.toFixed(2)} USDm is over 20% of your balance.
             </div>
           )}
           {isBalanceInsufficient && (
             <div style={{ display: 'flex', gap: 8, padding: 12, borderRadius: 13, background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.25)', color: '#fb7185', fontSize: 12, marginTop: 12 }}>
-              <AlertCircle className="h-4 w-4 shrink-0" /> Not enough cUSD. Need {stakeValue.toFixed(2)}, have {userCusdFloat.toFixed(4)}.
+              <AlertCircle className="h-4 w-4 shrink-0" /> Not enough USDm. Need {stakeValue.toFixed(2)}, have {userUSDmFloat.toFixed(4)}.
             </div>
           )}
         </div>
@@ -266,7 +266,7 @@ export default function NewCommitmentPage() {
           <div className="sd-card" style={{ marginTop: 22, padding: 4, overflow: 'hidden' }}>
             {[
               ['Goal', goalType === 'distance' ? `${goalValue.toFixed(1)} KM` : `${goalValue.toLocaleString()} STEPS`],
-              ['Stake', `${parseFloat(finalStake).toFixed(2)} cUSD`],
+              ['Stake', `${parseFloat(finalStake).toFixed(2)} USDm`],
               ['Window', `${durationHours} ${durationHours === 1 ? 'Hour' : 'Hours'}`],
             ].map(([k, v], i) => (
               <div key={k} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '15px 16px', borderBottom: i < 2 ? '1px solid var(--line)' : 'none' }}>
@@ -277,7 +277,7 @@ export default function NewCommitmentPage() {
           </div>
           <div className="sd-card-lime sd-card-glow" style={{ padding: 18, marginTop: 12 }}>
             <div className="sd-mono" style={{ position: 'relative', fontSize: 9, letterSpacing: '0.14em', color: '#cdfb46', textTransform: 'uppercase' }}>Reward estimate</div>
-            <div className="sd-mono" style={{ position: 'relative', fontWeight: 800, fontSize: 24, color: '#cdfb46', marginTop: 4 }}>+{bonusEstimateMin} ~ {bonusEstimateMax}<span style={{ fontSize: 12, color: 'var(--muted)' }}> cUSD</span></div>
+            <div className="sd-mono" style={{ position: 'relative', fontWeight: 800, fontSize: 24, color: '#cdfb46', marginTop: 4 }}>+{bonusEstimateMin} ~ {bonusEstimateMax}<span style={{ fontSize: 12, color: 'var(--muted)' }}> USDm</span></div>
             <div style={{ position: 'relative', fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>Stake returned + bonus paid from pool on completion.</div>
           </div>
 

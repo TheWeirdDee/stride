@@ -1,4 +1,4 @@
-export const cusdABI = [
+export const USDmABI = [
   {
     type: 'function',
     name: 'approve',

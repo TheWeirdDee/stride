@@ -4,9 +4,9 @@ import { useState } from 'react'
 import { useAccount, useReadContract, useWriteContract, useConfig, useBalance } from 'wagmi'
 import { formatEther, parseEther, parseEventLogs } from 'viem'
 import { waitForTransactionReceipt } from 'wagmi/actions'
-import { COMMITMENT_CONTRACT, CUSD_ADDRESS } from '@/utils/constants'
+import { COMMITMENT_CONTRACT, USDm_ADDRESS } from '@/utils/constants'
 import { commitmentABI } from '@/abi/commitment'
-import { cusdABI } from '@/abi/cusd'
+import { USDmABI } from '@/abi/USDm'
 import { supabase } from '@/utils/supabase'
 import { celoTxOverrides } from '@/utils/minipay'
 
@@ -28,16 +28,16 @@ export function useCreateCommitment() {
 
   const balance = balanceData ? formatEther(balanceData.value) : '0.00'
 
-  // Read cUSD balance — this is what the contract actually stakes
-  const { data: cusdBalanceRaw, refetch: refetchCusdBalance } = useReadContract({
-    address: CUSD_ADDRESS,
-    abi: cusdABI,
+  // Read USDm balance — this is what the contract actually stakes
+  const { data: USDmBalanceRaw, refetch: refetchUSDmBalance } = useReadContract({
+    address: USDm_ADDRESS,
+    abi: USDmABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
     query: { enabled: !!address },
   })
 
-  const cusdBalance = cusdBalanceRaw != null ? formatEther(cusdBalanceRaw as bigint) : '0.00'
+  const USDmBalance = USDmBalanceRaw != null ? formatEther(USDmBalanceRaw as bigint) : '0.00'
 
   // Read Active Commitment ID from Chain
   const { data: rawActiveId, refetch: refetchActiveCommitment } = useReadContract({
@@ -119,7 +119,7 @@ export function useCreateCommitment() {
 
     // Guard against a missing on-chain config so we surface a clear message
     // instead of viem's cryptic `Address "undefined" is invalid`.
-    if (!COMMITMENT_CONTRACT || !CUSD_ADDRESS) {
+    if (!COMMITMENT_CONTRACT || !USDm_ADDRESS) {
       const errMsg = 'App not configured: the contract address is missing. Set NEXT_PUBLIC_COMMITMENT_CONTRACT (and restart the dev server / redeploy).'
       setError(errMsg)
       throw new Error(errMsg)
@@ -134,10 +134,10 @@ export function useCreateCommitment() {
 
       await ensureUserExists(address)
 
-      setStatusMessage('Approving cUSD stake (Please confirm in wallet)...')
+      setStatusMessage('Approving USDm stake (Please confirm in wallet)...')
       const approveHash = await writeContractAsync({
-        address: CUSD_ADDRESS,
-        abi: cusdABI,
+        address: USDm_ADDRESS,
+        abi: USDmABI,
         functionName: 'approve',
         args: [COMMITMENT_CONTRACT, stakeWei],
         ...celoTxOverrides(),
@@ -145,9 +145,9 @@ export function useCreateCommitment() {
 
       setIsPending(false)
       setIsConfirming(true)
-      setStatusMessage('Waiting for cUSD approval confirmation...')
+      setStatusMessage('Waiting for USDm approval confirmation...')
       const approveReceipt = await waitForTransactionReceipt(config, { hash: approveHash })
-      if (approveReceipt.status === 'reverted') throw new Error('cUSD approval failed on-chain.')
+      if (approveReceipt.status === 'reverted') throw new Error('USDm approval failed on-chain.')
 
       setIsPending(true)
       setIsConfirming(false)
@@ -224,7 +224,7 @@ export function useCreateCommitment() {
       }
 
       await refetchBalance()
-      await refetchCusdBalance()
+      await refetchUSDmBalance()
       await refetchActiveCommitment()
 
       setStatusMessage('Success!')
@@ -244,7 +244,7 @@ export function useCreateCommitment() {
 
   return {
     balance,
-    cusdBalance,
+    USDmBalance,
     hasActiveCommitment,
     activeCommitmentId: rawActiveId,
     refetchBalance,

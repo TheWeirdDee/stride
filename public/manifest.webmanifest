@@ -1,7 +1,7 @@
 {
   "name": "Stride",
   "short_name": "Stride",
-  "description": "Stake cUSD on your movement. Prove it on-chain. Get rewarded.",
+  "description": "Stake USDm on your movement. Prove it on-chain. Get rewarded.",
   "start_url": "/explore",
   "scope": "/",
   "display": "standalone",

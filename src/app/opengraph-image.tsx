@@ -21,7 +21,7 @@ export default function OpengraphImage() {
           <span style={{ color: '#cdfb46' }}>miles are</span>
         </div>
         <div style={{ display: 'flex', fontSize: 32, color: '#9aa1a8' }}>
-          Stake cUSD · move for real · get it back plus a bonus · on Celo
+          Stake USDm · move for real · get it back plus a bonus · on Celo
         </div>
       </div>
     ),

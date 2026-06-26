@@ -3,35 +3,35 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-const MOCK_CUSD_AMOUNT = ethers.parseUnits("100", 18);
+const MOCK_USDm_AMOUNT = ethers.parseUnits("100", 18);
 const MIN_STAKE = ethers.parseUnits("0.01", 18);
 const ONE_DOLLAR = ethers.parseUnits("1", 18);
 
 describe("StrideCommitment + StrideRewardPool", function () {
-  let commitment, rewardPool, mockCUSD;
+  let commitment, rewardPool, mockUSDm;
   let owner, verifier, user1, user2;
 
   beforeEach(async function () {
     [owner, verifier, user1, user2] = await ethers.getSigners();
 
-    // Deploy mock ERC20 (stands in for cUSD on local Hardhat network)
+    // Deploy mock ERC20 (stands in for USDm on local Hardhat network)
     const MockERC20 = await ethers.getContractFactory("MockERC20");
-    mockCUSD = await MockERC20.deploy("Celo Dollar", "cUSD", 18);
-    const cusdAddress = await mockCUSD.getAddress();
+    mockUSDm = await MockERC20.deploy("Celo Dollar", "USDm", 18);
+    const USDmAddress = await mockUSDm.getAddress();
 
-    await mockCUSD.mint(user1.address, MOCK_CUSD_AMOUNT);
-    await mockCUSD.mint(user2.address, MOCK_CUSD_AMOUNT);
+    await mockUSDm.mint(user1.address, MOCK_USDm_AMOUNT);
+    await mockUSDm.mint(user2.address, MOCK_USDm_AMOUNT);
 
-    // Deploy RewardPool — pass ZeroAddress for commitment (linked after), mockCUSD as token
+    // Deploy RewardPool — pass ZeroAddress for commitment (linked after), mockUSDm as token
     const RewardPool = await ethers.getContractFactory("StrideRewardPool");
-    rewardPool = await RewardPool.deploy(ethers.ZeroAddress, cusdAddress);
+    rewardPool = await RewardPool.deploy(ethers.ZeroAddress, USDmAddress);
 
-    // Deploy Commitment — pass verifier, rewardPool, and mockCUSD addresses
+    // Deploy Commitment — pass verifier, rewardPool, and mockUSDm addresses
     const Commitment = await ethers.getContractFactory("StrideCommitment");
     commitment = await Commitment.deploy(
       verifier.address,
       await rewardPool.getAddress(),
-      cusdAddress
+      USDmAddress
     );
 
     // Link RewardPool → Commitment
@@ -42,7 +42,7 @@ describe("StrideCommitment + StrideRewardPool", function () {
 
   describe("createCommitment", function () {
     it("should create a commitment with valid parameters", async function () {
-      await mockCUSD.connect(user1).approve(await commitment.getAddress(), ONE_DOLLAR);
+      await mockUSDm.connect(user1).approve(await commitment.getAddress(), ONE_DOLLAR);
 
       const tx = await commitment.connect(user1).createCommitment(
         3000,      // 3km in meters
@@ -56,17 +56,17 @@ describe("StrideCommitment + StrideRewardPool", function () {
       expect(event).to.not.be.undefined;
     });
 
-    it("should reject stake below minimum (0.01 cUSD)", async function () {
+    it("should reject stake below minimum (0.01 USDm)", async function () {
       const tooLow = ethers.parseUnits("0.001", 18);
-      await mockCUSD.connect(user1).approve(await commitment.getAddress(), tooLow);
+      await mockUSDm.connect(user1).approve(await commitment.getAddress(), tooLow);
 
       await expect(
         commitment.connect(user1).createCommitment(3000, 0, 3600, tooLow)
-      ).to.be.revertedWith("Stride: stake below 0.01 cUSD minimum");
+      ).to.be.revertedWith("Stride: stake below 0.01 USDm minimum");
     });
 
     it("should reject when both distance and steps are set", async function () {
-      await mockCUSD.connect(user1).approve(await commitment.getAddress(), ONE_DOLLAR);
+      await mockUSDm.connect(user1).approve(await commitment.getAddress(), ONE_DOLLAR);
 
       await expect(
         commitment.connect(user1).createCommitment(3000, 5000, 3600, ONE_DOLLAR)
@@ -74,7 +74,7 @@ describe("StrideCommitment + StrideRewardPool", function () {
     });
 
     it("should reject when neither goal is set", async function () {
-      await mockCUSD.connect(user1).approve(await commitment.getAddress(), ONE_DOLLAR);
+      await mockUSDm.connect(user1).approve(await commitment.getAddress(), ONE_DOLLAR);
 
       await expect(
         commitment.connect(user1).createCommitment(0, 0, 3600, ONE_DOLLAR)
@@ -82,7 +82,7 @@ describe("StrideCommitment + StrideRewardPool", function () {
     });
 
     it("should reject a second active commitment from same user", async function () {
-      await mockCUSD.connect(user1).approve(await commitment.getAddress(), ONE_DOLLAR * 2n);
+      await mockUSDm.connect(user1).approve(await commitment.getAddress(), ONE_DOLLAR * 2n);
       await commitment.connect(user1).createCommitment(3000, 0, 3600, ONE_DOLLAR);
 
       await expect(
@@ -95,21 +95,21 @@ describe("StrideCommitment + StrideRewardPool", function () {
 
   describe("cancelCommitment", function () {
     it("should allow cancel within grace period and refund stake", async function () {
-      await mockCUSD.connect(user1).approve(await commitment.getAddress(), ONE_DOLLAR);
+      await mockUSDm.connect(user1).approve(await commitment.getAddress(), ONE_DOLLAR);
       const tx = await commitment.connect(user1).createCommitment(3000, 0, 3600, ONE_DOLLAR);
       const receipt = await tx.wait();
       const event = receipt.logs.find(l => l.fragment?.name === "CommitmentCreated");
       const commitmentId = event.args[0];
 
-      const balanceBefore = await mockCUSD.balanceOf(user1.address);
+      const balanceBefore = await mockUSDm.balanceOf(user1.address);
       await commitment.connect(user1).cancelCommitment(commitmentId);
-      const balanceAfter = await mockCUSD.balanceOf(user1.address);
+      const balanceAfter = await mockUSDm.balanceOf(user1.address);
 
       expect(balanceAfter - balanceBefore).to.equal(ONE_DOLLAR);
     });
 
     it("should reject cancel after grace period", async function () {
-      await mockCUSD.connect(user1).approve(await commitment.getAddress(), ONE_DOLLAR);
+      await mockUSDm.connect(user1).approve(await commitment.getAddress(), ONE_DOLLAR);
       const tx = await commitment.connect(user1).createCommitment(3000, 0, 3600, ONE_DOLLAR);
       const receipt = await tx.wait();
       const event = receipt.logs.find(l => l.fragment?.name === "CommitmentCreated");
@@ -129,7 +129,7 @@ describe("StrideCommitment + StrideRewardPool", function () {
 
   describe("forfeitExpiredCommitment", function () {
     it("should forfeit an expired commitment and send to reward pool", async function () {
-      await mockCUSD.connect(user1).approve(await commitment.getAddress(), ONE_DOLLAR);
+      await mockUSDm.connect(user1).approve(await commitment.getAddress(), ONE_DOLLAR);
       const tx = await commitment.connect(user1).createCommitment(3000, 0, 3600, ONE_DOLLAR);
       const receipt = await tx.wait();
       const event = receipt.logs.find(l => l.fragment?.name === "CommitmentCreated");
@@ -147,7 +147,7 @@ describe("StrideCommitment + StrideRewardPool", function () {
     });
 
     it("should reject forfeit of non-expired commitment", async function () {
-      await mockCUSD.connect(user1).approve(await commitment.getAddress(), ONE_DOLLAR);
+      await mockUSDm.connect(user1).approve(await commitment.getAddress(), ONE_DOLLAR);
       const tx = await commitment.connect(user1).createCommitment(3000, 0, 3600, ONE_DOLLAR);
       const receipt = await tx.wait();
       const event = receipt.logs.find(l => l.fragment?.name === "CommitmentCreated");
@@ -163,7 +163,7 @@ describe("StrideCommitment + StrideRewardPool", function () {
 
   describe("completeCommitment", function () {
     async function createAndGetId(user, stake) {
-      await mockCUSD.connect(user).approve(await commitment.getAddress(), stake);
+      await mockUSDm.connect(user).approve(await commitment.getAddress(), stake);
       const tx = await commitment.connect(user).createCommitment(3000, 0, 3600, stake);
       const receipt = await tx.wait();
       const event = receipt.logs.find(l => l.fragment?.name === "CommitmentCreated");
@@ -184,9 +184,9 @@ describe("StrideCommitment + StrideRewardPool", function () {
       const commitmentId = await createAndGetId(user1, ONE_DOLLAR);
       const { proofNonce, sig } = await buildProof(commitmentId, 3000, 0);
 
-      const balanceBefore = await mockCUSD.balanceOf(user1.address);
+      const balanceBefore = await mockUSDm.balanceOf(user1.address);
       await commitment.connect(user1).completeCommitment(commitmentId, 3000, 0, proofNonce, sig);
-      const balanceAfter = await mockCUSD.balanceOf(user1.address);
+      const balanceAfter = await mockUSDm.balanceOf(user1.address);
 
       // User gets stake back (at minimum)
       expect(balanceAfter - balanceBefore).to.be.gte(ONE_DOLLAR);

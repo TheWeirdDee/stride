@@ -14,11 +14,11 @@ interface IStrideRewardPool {
 
 contract StrideCommitment is Ownable, ReentrancyGuard {
 
-    IERC20 public immutable CUSD;
+    IERC20 public immutable USDm;
     IStrideRewardPool public immutable rewardPool;
     address public immutable verifier;
 
-    uint256 public constant MIN_STAKE = 10 ** 16; // 0.01 cUSD
+    uint256 public constant MIN_STAKE = 10 ** 16; // 0.01 USDm
     uint256 public constant GRACE_PERIOD = 60;    // seconds
 
     struct Commitment {
@@ -50,10 +50,10 @@ contract StrideCommitment is Ownable, ReentrancyGuard {
     event CommitmentCancelled(bytes32 indexed commitmentId, address indexed user);
     event CommitmentForfeited(bytes32 indexed commitmentId, address indexed user, uint256 amount);
 
-    constructor(address _verifier, address _rewardPool, address _cusd) Ownable(msg.sender) {
+    constructor(address _verifier, address _rewardPool, address _USDm) Ownable(msg.sender) {
         verifier = _verifier;
         rewardPool = IStrideRewardPool(_rewardPool);
-        CUSD = IERC20(_cusd);
+        USDm = IERC20(_USDm);
     }
 
     function createCommitment(
@@ -62,12 +62,12 @@ contract StrideCommitment is Ownable, ReentrancyGuard {
         uint256 timeWindowSeconds,
         uint256 stakeAmount
     ) external nonReentrant {
-        require(stakeAmount >= MIN_STAKE, "Stride: stake below 0.01 cUSD minimum");
+        require(stakeAmount >= MIN_STAKE, "Stride: stake below 0.01 USDm minimum");
         require(!(distanceGoalMeters > 0 && stepGoal > 0), "Stride: set only one goal type");
         require(distanceGoalMeters > 0 || stepGoal > 0, "Stride: set distance or steps goal");
         require(activeCommitment[msg.sender] == bytes32(0), "Stride: active commitment exists");
 
-        require(CUSD.transferFrom(msg.sender, address(this), stakeAmount), "Stride: transfer failed");
+        require(USDm.transferFrom(msg.sender, address(this), stakeAmount), "Stride: transfer failed");
 
         bytes32 commitmentId = keccak256(abi.encodePacked(msg.sender, block.timestamp, _nonce++));
 
@@ -98,7 +98,7 @@ contract StrideCommitment is Ownable, ReentrancyGuard {
         c.cancelled = true;
         activeCommitment[msg.sender] = bytes32(0);
 
-        require(CUSD.transfer(msg.sender, c.stakeAmount), "Stride: refund failed");
+        require(USDm.transfer(msg.sender, c.stakeAmount), "Stride: refund failed");
         emit CommitmentCancelled(commitmentId, msg.sender);
     }
 
@@ -126,7 +126,7 @@ contract StrideCommitment is Ownable, ReentrancyGuard {
         c.completed = true;
         activeCommitment[msg.sender] = bytes32(0);
 
-        require(CUSD.transfer(msg.sender, c.stakeAmount), "Stride: stake return failed");
+        require(USDm.transfer(msg.sender, c.stakeAmount), "Stride: stake return failed");
 
         // Bonus from pool — never block completion if pool call fails
         try rewardPool.releaseReward(msg.sender, c.stakeAmount) returns (uint256 bonus) {
@@ -145,7 +145,7 @@ contract StrideCommitment is Ownable, ReentrancyGuard {
         activeCommitment[c.user] = bytes32(0);
 
         // Approve RewardPool to pull the forfeited stake via transferFrom
-        CUSD.approve(address(rewardPool), c.stakeAmount);
+        USDm.approve(address(rewardPool), c.stakeAmount);
         rewardPool.receiveForfeiture(c.stakeAmount);
 
         emit CommitmentForfeited(commitmentId, c.user, c.stakeAmount);

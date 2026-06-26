@@ -212,7 +212,7 @@ export default function LandingMarketing({ onGetStarted }: LandingMarketingProps
       <div className="pcard">
         <div className="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="9" r="5"/><path d="M14.5 5.3A5 5 0 1 1 16 14.7"/></svg></div>
         <h4>Stake &amp; auto-payout</h4>
-        <p>Back a goal with cUSD from your wallet. Finish in time and your stake returns in full plus a bonus from the reward pool.</p>
+        <p>Back a goal with USDm from your wallet. Finish in time and your stake returns in full plus a bonus from the reward pool.</p>
         <div className="pmeta">On-chain escrow</div>
       </div>
       <div className="pcard">

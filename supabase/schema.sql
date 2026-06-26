@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
     streak_current INTEGER DEFAULT 0 NOT NULL,
     streak_best INTEGER DEFAULT 0 NOT NULL,
     total_distance NUMERIC DEFAULT 0 NOT NULL, -- in meters
-    total_earnings NUMERIC DEFAULT 0 NOT NULL  -- in cUSD
+    total_earnings NUMERIC DEFAULT 0 NOT NULL  -- in USDm
 );
 
 -- Index for fast user lookups by wallet address
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS commitments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     commitment_id_chain TEXT UNIQUE, -- bytes32 hex from contract
     wallet_address TEXT NOT NULL REFERENCES users(wallet_address) ON DELETE CASCADE,
-    stake_amount NUMERIC NOT NULL,   -- cUSD stake
+    stake_amount NUMERIC NOT NULL,   -- USDm stake
     goal_type TEXT NOT NULL CHECK (goal_type IN ('distance', 'steps')),
     goal_value NUMERIC NOT NULL,    -- meters or steps
     status TEXT NOT NULL CHECK (status IN ('active', 'completed', 'forfeited', 'cancelled')),

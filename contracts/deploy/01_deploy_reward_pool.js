@@ -3,8 +3,8 @@ const hre = require("hardhat");
 const fs = require("fs");
 const path = require("path");
 
-// cUSD contract addresses per network
-const CUSD_ADDRESSES = {
+// USDm contract addresses per network
+const USDm_ADDRESSES = {
   celo: "0x765DE816845861e75A25fCA122bb6898B8B1282a",
   alfajores: "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1",
 };
@@ -19,15 +19,15 @@ async function main() {
   const balance = await hre.ethers.provider.getBalance(deployer.address);
   console.log(`Balance: ${hre.ethers.formatEther(balance)} CELO\n`);
 
-  const cusdAddress = CUSD_ADDRESSES[network];
-  if (!cusdAddress) {
-    throw new Error(`No cUSD address configured for network: ${network}`);
+  const USDmAddress = USDm_ADDRESSES[network];
+  if (!USDmAddress) {
+    throw new Error(`No USDm address configured for network: ${network}`);
   }
-  console.log(`cUSD address: ${cusdAddress}`);
+  console.log(`USDm address: ${USDmAddress}`);
 
   const RewardPool = await hre.ethers.getContractFactory("StrideRewardPool");
   // Deploy with ZeroAddress for commitmentContract — linked on Day 2
-  const rewardPool = await RewardPool.deploy(hre.ethers.ZeroAddress, cusdAddress);
+  const rewardPool = await RewardPool.deploy(hre.ethers.ZeroAddress, USDmAddress);
   await rewardPool.waitForDeployment();
   const rewardPoolAddress = await rewardPool.getAddress();
 
@@ -46,7 +46,7 @@ async function main() {
     ...existing,
     network,
     deployer: deployer.address,
-    cusd: cusdAddress,
+    USDm: USDmAddress,
     StrideRewardPool: rewardPoolAddress,
     updatedAt: new Date().toISOString(),
   };

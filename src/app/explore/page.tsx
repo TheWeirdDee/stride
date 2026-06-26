@@ -4,16 +4,16 @@ import { useRouter } from 'next/navigation'
 import RouteCard from '@/components/RouteCard'
 
 const STEPS = [
-  { n: '01', t: 'Commit', d: 'Set a goal and stake cUSD to lock it in.' },
+  { n: '01', t: 'Commit', d: 'Set a goal and stake USDm to lock it in.' },
   { n: '02', t: 'Move', d: 'Track your walk or run with live GPS.' },
   { n: '03', t: 'Verify', d: 'Your route is checked on-chain automatically.' },
   { n: '04', t: 'Earn', d: 'Hit the goal, reclaim your stake plus rewards.' },
 ]
 
 const ROUTES = [
-  { id: 'ex-1', city: 'Lagos', distanceKm: 3.2, durationMinutes: 28.2, rewardCUSD: 0.25, date: 'Today', activityType: 'run' as const, svgPath: 'M10,78 C40,50 60,72 92,44 C120,20 150,40 190,18' },
-  { id: 'ex-2', city: 'Nairobi', distanceKm: 5.0, durationMinutes: 31.6, rewardCUSD: 0.5, date: 'Today', activityType: 'run' as const, svgPath: 'M12,22 C40,48 70,30 100,58 C130,84 160,60 188,80' },
-  { id: 'ex-3', city: 'Accra', distanceKm: 2.1, durationMinutes: 19.0, rewardCUSD: 0.1, date: 'Today', activityType: 'walk' as const, svgPath: 'M10,52 C44,52 56,18 96,30 C140,44 150,80 190,58' },
+  { id: 'ex-1', city: 'Lagos', distanceKm: 3.2, durationMinutes: 28.2, rewardUSDm: 0.25, date: 'Today', activityType: 'run' as const, svgPath: 'M10,78 C40,50 60,72 92,44 C120,20 150,40 190,18' },
+  { id: 'ex-2', city: 'Nairobi', distanceKm: 5.0, durationMinutes: 31.6, rewardUSDm: 0.5, date: 'Today', activityType: 'run' as const, svgPath: 'M12,22 C40,48 70,30 100,58 C130,84 160,60 188,80' },
+  { id: 'ex-3', city: 'Accra', distanceKm: 2.1, durationMinutes: 19.0, rewardUSDm: 0.1, date: 'Today', activityType: 'walk' as const, svgPath: 'M10,52 C44,52 56,18 96,30 C140,44 150,80 190,58' },
 ]
 
 export default function ExplorePage() {
@@ -28,7 +28,7 @@ export default function ExplorePage() {
           Put money<br />on your<br /><span style={{ color: '#cdfb46' }}>next move.</span>
         </h1>
         <p style={{ margin: '18px 0 0', fontSize: 14.5, lineHeight: 1.5, color: 'var(--muted)', maxWidth: 298 }}>
-          Commit cUSD to a walking or running goal. Hit it — reclaim your stake plus rewards. Miss it — you forfeit. Real skin in the game.
+          Commit USDm to a walking or running goal. Hit it — reclaim your stake plus rewards. Miss it — you forfeit. Real skin in the game.
         </p>
         <button onClick={() => router.push('/commitment/new')} className="sd-btn sd-btn-lime" style={{ marginTop: 20 }}>
           Start a commitment <span style={{ fontSize: 17 }}>→</span>

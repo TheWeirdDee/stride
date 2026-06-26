@@ -523,7 +523,7 @@ export default function SessionPage() {
     const mins = gps.elapsedTime / 60
     const pace = km > 0.05 ? mins / km : 0
     const paceStr = pace > 0 ? `${Math.floor(pace)}:${String(Math.round((pace % 1) * 60)).padStart(2, '0')} /km` : '—'
-    const text = `I just finished a ${km.toFixed(2)} km goal on Stride — staked cUSD and earned it back plus a bonus. 💪`
+    const text = `I just finished a ${km.toFixed(2)} km goal on Stride — staked USDm and earned it back plus a bonus. 💪`
     const url = typeof window !== 'undefined' ? window.location.origin : 'https://stride-pay.netlify.app'
     try {
       const coords = gps.path.map((c) => ({ lat: c.latitude, lng: c.longitude }))
@@ -656,7 +656,7 @@ export default function SessionPage() {
           <div className="sd-card" style={{ marginTop: 22, padding: '4px 18px' }}>
             {[
               ['Goal', isDistanceGoal ? `${(Number(commitment.distanceGoal) / 1000).toFixed(1)} km` : `${Number(commitment.stepGoal).toLocaleString()} steps`, false],
-              ['Staked', `${parseFloat(formatUnits(commitment.stakeAmount, 18)).toFixed(2)} cUSD`, true],
+              ['Staked', `${parseFloat(formatUnits(commitment.stakeAmount, 18)).toFixed(2)} USDm`, true],
               ['Time left', fmtDeadline(commitment.deadline), false],
             ].map(([k, v, lime], i) => (
               <div key={k as string} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 0', borderBottom: i < 2 ? '1px solid var(--line)' : 'none' }}>
